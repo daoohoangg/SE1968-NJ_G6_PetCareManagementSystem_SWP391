@@ -1,0 +1,10 @@
+<component name="ArtifactManager">
+  <artifact type="jpackage" name="SE1968-NJ_G6_PetCareManagementSystem_SWP391">
+    <output-path>$PROJECT_DIR$/out/artifacts/SE1968_NJ_G6_PetCareManagementSystem_SWP391</output-path>
+    <root id="root">
+      <element id="archive" name="SE1968_NJ_G6_PetCareManagementSystem_SWP391.jar">
+        <element id="module-output" name="SE1968-NJ_G6_PetCareManagementSystem_SWP391" />
+      </element>
+    </root>
+  </artifact>
+</component>
