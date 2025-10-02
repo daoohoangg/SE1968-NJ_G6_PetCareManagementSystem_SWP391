@@ -35,7 +35,16 @@
             <input type="password" name="password" required />
         </div>
         <button type="submit">Login</button>
+        <div class="row">
+            <label>
+                <input type="checkbox" name="remember" /> Remember Me
+            </label>
+        </div>
     </form>
+    <div class="row" style="text-align:center; margin-top:10px;">
+        <a href="<%= request.getContextPath() %>/register">Register</a> |
+        <a href="<%= request.getContextPath() %>/forgotpassword">Forgot Password?</a>
+    </div>
 </div>
 </body>
 </html>
