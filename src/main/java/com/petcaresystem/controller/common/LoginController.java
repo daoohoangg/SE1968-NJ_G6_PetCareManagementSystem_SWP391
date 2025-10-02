@@ -24,7 +24,8 @@ public class LoginController extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         String username = req.getParameter("username");
         String password = req.getParameter("password");
-
+        //add remember
+        String remember = req.getParameter("remember");
         SimpleAuthService.User u = auth.check(username, password);
         if (u == null) {
             req.setAttribute("error", "Sai username hoặc password");
@@ -36,7 +37,23 @@ public class LoginController extends HttpServlet {
         HttpSession session = req.getSession(true);
         session.setAttribute("user", u);              // có thể là entity Account
         session.setAttribute("role", u.role());       // 'ADMIN' | 'STAFF' | 'USER'
-
+        // xử lý Remember Me
+        if ("on".equals(remember)) {
+            Cookie ckUser = new Cookie("username", username);
+            Cookie ckPass = new Cookie("password", password);
+            ckUser.setMaxAge(7 * 24 * 60 * 60);   // 7 ngày
+            ckPass.setMaxAge(7 * 24 * 60 * 60);
+            resp.addCookie(ckUser);
+            resp.addCookie(ckPass);
+        } else {
+            // clear cookie nếu không chọn
+            Cookie ckUser = new Cookie("username", "");
+            Cookie ckPass = new Cookie("password", "");
+            ckUser.setMaxAge(0);
+            ckPass.setMaxAge(0);
+            resp.addCookie(ckUser);
+            resp.addCookie(ckPass);
+        }
         // điều hướng theo role
         switch (u.role()) {
             case "ADMIN" -> resp.sendRedirect(req.getContextPath() + "/admin/dashboard");
