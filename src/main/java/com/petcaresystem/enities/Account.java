@@ -19,4 +19,6 @@ public class Account {
     private String password;
     @Column(nullable = false, length = 16)
     private String role;
+    @Column(nullable = false, unique = true)
+    private String email;
 }
