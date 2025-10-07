@@ -13,4 +13,7 @@
         <div class="row"><div>Cat Vaccination <small>Annual package</small></div><div>Medical</div><div>30 min</div><div>$75</div><div><span class="pill active">active</span></div><div class="actions">✏️ 🗑️</div></div>
         <div class="row"><div>Health Checkup</div><div>Medical</div><div>45 min</div><div>$65</div><div><span class="pill locked">inactive</span></div><div class="actions">✏️ 🗑️</div></div>
     </div>
+    <div>
+
+    </div>
 </section>
