@@ -55,6 +55,17 @@ public class AccountDAO {
             return false;
         }
     }
+    public Account getAccountByEmailOrUsername(String input) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "FROM Account WHERE username = :input OR email = :input";
+            Query<Account> query = session.createQuery(hql, Account.class);
+            query.setParameter("input", input);
+            return query.uniqueResult();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     public static void main(String[] args) {
         AccountDAO accountDAO = new AccountDAO();
