@@ -66,6 +66,26 @@ public class AccountDAO {
             return null;
         }
     }
+    public Account findById(int id) {
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            return s.get(Account.class, id);
+        }
+    }
+
+    public boolean updateAccount(Account account) {
+        Transaction tx = null;
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            tx = s.beginTransaction();
+            s.merge(account);
+            tx.commit();
+            return true;
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 
     public static void main(String[] args) {
         AccountDAO accountDAO = new AccountDAO();
