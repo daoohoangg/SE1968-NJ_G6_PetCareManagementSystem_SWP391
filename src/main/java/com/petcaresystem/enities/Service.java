@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity
@@ -31,8 +33,9 @@ public class Service {
     @Column(name = "duration_minutes")
     private Integer durationMinutes;
 
-    @Column(name = "category", length = 50)
-    private String category;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false) // Foreign key column
+    private ServiceCategory category;
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
@@ -43,6 +46,14 @@ public class Service {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // Relationships
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private Administration createdBy;
+
+    @ManyToMany(mappedBy = "services")
+    private List<Appointment> appointments = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -52,5 +63,23 @@ public class Service {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public void activate() {
+        this.isActive = true;
+    }
+
+    public void deactivate() {
+        this.isActive = false;
+    }
+
+    public void updatePrice(BigDecimal newPrice) {
+        if (newPrice.compareTo(BigDecimal.ZERO) > 0) {
+            this.price = newPrice;
+        }
+    }
+
+    public boolean isAvailable() {
+        return this.isActive;
     }
 }

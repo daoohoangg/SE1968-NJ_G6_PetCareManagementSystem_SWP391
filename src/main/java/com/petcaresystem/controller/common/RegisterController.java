@@ -2,12 +2,15 @@ package com.petcaresystem.controller.common;
 import com.petcaresystem.dao.AccountDAO;
 import com.petcaresystem.enities.Account;
 
+import com.petcaresystem.enities.Customer;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+
+import static com.petcaresystem.enities.enu.AccountRoleEnum.CUSTOMER;
 
 @WebServlet("/register")
 public class RegisterController extends HttpServlet {
@@ -45,10 +48,10 @@ public class RegisterController extends HttpServlet {
         }
 
         // Tạo account mới
-        Account account = new Account();
+        Customer account = new Customer();
         account.setUsername(username);
         account.setPassword(password);
-        account.setRole("USER");
+        account.setRole(CUSTOMER);
 
         // Lưu DB
         boolean success = accountDAO.register(account);

@@ -22,9 +22,12 @@ public class PetServiceHistory {
     private String description;
     private LocalDate serviceDate;
     private double cost;
-    private String staffName;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "staff_id")
+    private Staff staff;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pet_id")
     private Pet pet;
 }

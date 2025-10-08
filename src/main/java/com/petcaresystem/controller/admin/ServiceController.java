@@ -190,7 +190,7 @@ public class ServiceController extends HttpServlet {
             service.setDescription(description);
             service.setPrice(price);
             service.setDurationMinutes(durationMinutes);
-            service.setCategory(category);
+//            service.setCategory(category);
             service.setActive(isActive);
 
             boolean success = serviceManageService.createService(service);
@@ -230,7 +230,7 @@ public class ServiceController extends HttpServlet {
                 service.setDescription(description);
                 service.setPrice(price);
                 service.setDurationMinutes(durationMinutes);
-                service.setCategory(category);
+//                service.setCategory(category);
                 service.setActive(isActive);
 
                 boolean success = serviceManageService.updateService(service);
