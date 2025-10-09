@@ -76,6 +76,36 @@ public class PetDAO {
         session.close();
         return count != null && count > 0;
     }
+    public List<Pet> findByCustomerId(Long customerId) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                            "from Pet p where p.customer.accountId = :cid order by p.petId desc",
+                            Pet.class)
+                    .setParameter("cid", customerId)
+                    .getResultList();
+        }
+    }
+
+    public boolean deleteOwned(Long petId, Long customerId) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            Pet p = session.get(Pet.class, petId);
+            if (p != null && p.getCustomer() != null &&
+                    customerId.equals(p.getCustomer().getAccountId())) {
+                session.remove(p);
+                tx.commit();
+                return true;
+            }
+            if (tx != null) tx.rollback();
+            return false;
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 
     // ✅ Dành cho test trực tiếp
     public static void main(String[] args) {
