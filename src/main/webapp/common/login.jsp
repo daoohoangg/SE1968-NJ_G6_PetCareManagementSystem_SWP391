@@ -27,8 +27,8 @@
 
     <form method="post" action="<%= request.getContextPath() %>/login">
         <div class="row">
-            <label>Username</label>
-            <input type="text" name="username" required autofocus />
+            <label>Email</label>
+            <input type="email" name="email" required autofocus />
         </div>
         <div class="row">
             <label>Password</label>
@@ -41,6 +41,7 @@
             </label>
         </div>
     </form>
+
     <div class="row" style="text-align:center; margin-top:10px;">
         <a href="<%= request.getContextPath() %>/register">Register</a> |
         <a href="<%= request.getContextPath() %>/forgotpassword">Forgot Password?</a>
