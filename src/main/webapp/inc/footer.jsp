@@ -1,17 +1,11 @@
-<%--
-  Created by IntelliJ IDEA.
-  User: Admin
-  Date: 9/28/2025
-  Time: 11:27 PM
-  To change this template use File | Settings | File Templates.
---%>
+
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
 <head>
     <title>Footer</title>
     <style>
         .footer {
-            background-color: #1976d2; /* màu xanh dương chủ đạo */
+            background-color: #1976d2;
             color: #fff;
             padding: 25px 0;
             font-family: sans-serif;
