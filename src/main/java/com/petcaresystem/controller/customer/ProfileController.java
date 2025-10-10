@@ -1,7 +1,7 @@
 package com.petcaresystem.controller.customer;
 
 import com.petcaresystem.dao.AccountDAO;
-import com.petcaresystem.enities.Account;          // CHÚ Ý: enities (đúng theo main)
+import com.petcaresystem.enities.Account;
 import com.petcaresystem.utils.HibernateUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -76,7 +76,7 @@ public class ProfileController extends HttpServlet {
         Account me = currentUser(request);
         if (me == null) { response.sendRedirect(request.getContextPath() + "/login"); return; }
 
-        // Làm tươi dữ liệu bằng username/email có sẵn (DAO của bạn đã có hàm này)
+
         Account fresh = accountDAO.getAccountByEmailOrUsername(me.getUsername());
         request.setAttribute("profile", fresh != null ? fresh : me);
         request.getRequestDispatcher("/views/customer/profile-view.jsp").forward(request, response);
@@ -104,7 +104,7 @@ public class ProfileController extends HttpServlet {
         String phone    = request.getParameter("phone");
         String password = request.getParameter("password"); // có thể để trống nếu không đổi
 
-        // Validate trùng username/email (dùng DAO đang có)
+
         if (username != null && !username.equals(me.getUsername())) {
             Account clash = accountDAO.getAccountByEmailOrUsername(username);
             if (clash != null) {
@@ -122,7 +122,7 @@ public class ProfileController extends HttpServlet {
             }
         }
 
-        // Cập nhật trực tiếp bằng Hibernate (phù hợp với abstract Account + JOINED)
+
         Transaction tx = null;
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             tx = s.beginTransaction();
@@ -168,7 +168,7 @@ public class ProfileController extends HttpServlet {
         Account me = currentUser(request);
         if (me == null) { response.sendRedirect(request.getContextPath() + "/login"); return; }
 
-        // Nếu có DAO deactivate thì dùng; nếu chưa có, có thể tự set isActive=false tương tự như updateProfile
+
         Transaction tx = null;
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             tx = s.beginTransaction();
