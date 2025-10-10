@@ -139,4 +139,5 @@ public class Appointment {
         this.invoice = invoice;
         invoice.setAppointment(this);
     }
+
 }
