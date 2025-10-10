@@ -55,4 +55,8 @@ public class Customer extends Account {
         appointments.add(appointment);
         appointment.setCustomer(this);
     }
+
+    public Object getCustomerId() {
+        return super.getAccountId();
+    }
 }
