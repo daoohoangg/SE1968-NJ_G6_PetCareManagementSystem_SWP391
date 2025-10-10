@@ -50,12 +50,14 @@
         <h3>Pet Care Management System</h3>
         <p>Your trusted partner in pet health, grooming, and care.</p>
         <div class="links">
-            <a href="home.jsp">Home</a> |
-            <a href="about.jsp">About Us</a> |
-            <a href="contact.jsp">Contact</a> |
-            <a href="login.jsp">Login</a> |
+            <a href="home.jsp">Home</a>
+            <a href="about.jsp">About Us</a>
+            <a href="login.jsp">Login</a>
             <a href="register.jsp">Register</a>
         </div>
+        <p style="margin-top:10px; font-size:13px;">
+             Khu Công Nghệ Cao Hòa Lạc,km29,Đại lộ Thăng Long,Hà Nội, Việt Nam | ☎️ +84 123 456 789 | ✉️ support@petcare.com
+        </p>
         <div class="copyright">
             © 2025 Pet Care Management System — All Rights Reserved.
         </div>
