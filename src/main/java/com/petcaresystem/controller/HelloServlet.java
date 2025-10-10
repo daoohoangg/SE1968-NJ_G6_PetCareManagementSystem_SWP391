@@ -5,7 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 
-@WebServlet(urlPatterns = {"/home",""})
+@WebServlet(urlPatterns = {"/public/home","/public"})
 public class HelloServlet extends HttpServlet {
 
     @Override
