@@ -42,4 +42,24 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response)
             break;
     }
 }
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String action = request.getParameter("action");
+        if (action == null) {
+            action = "";
+
+            switch (action) {
+                case "insert":
+
+                    break;
+                case "update":
+
+                    break;
+                default:
+                    response.sendRedirect("staff?action=list");
+                    break;
+            }
+        }
 
