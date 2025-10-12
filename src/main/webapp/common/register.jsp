@@ -29,12 +29,20 @@
 
     <form method="post" action="<%= request.getContextPath() %>/register">
         <div class="row">
+            <label>Full Name</label>
+            <input type="text" name="fullName" required />
+        </div>
+        <div class="row">
             <label>Username</label>
-            <input type="text" name="username" required autofocus />
+            <input type="text" name="username" required />
         </div>
         <div class="row">
             <label>Email</label>
             <input type="email" name="email" required />
+        </div>
+        <div class="row">
+            <label>Phone</label>
+            <input type="text" name="phone" required />
         </div>
         <div class="row">
             <label>Password</label>

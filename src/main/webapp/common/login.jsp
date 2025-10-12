@@ -27,8 +27,8 @@
 
     <form method="post" action="<%= request.getContextPath() %>/login">
         <div class="row">
-            <label>Email</label>
-            <input type="email" name="email" required autofocus />
+            <label>Username or Email</label>
+            <input type="text" name="userInput" required autofocus />
         </div>
         <div class="row">
             <label>Password</label>
