@@ -27,14 +27,24 @@ public class RegisterController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         // Lấy dữ liệu từ form
+
+        String fullName = request.getParameter("fullName");
         String username = request.getParameter("username");
+        String email = request.getParameter("email");
+        String phone = request.getParameter("phone");
         String password = request.getParameter("password");
         String confirmPassword = request.getParameter("confirmPassword");
 
         // Validate
         String errorMessage = null;
-        if (username == null || username.isEmpty()) {
+        if (fullName == null || fullName.isEmpty()) {
+            errorMessage = "Full name is required!";
+        } else if (username == null || username.isEmpty()) {
             errorMessage = "Username is required!";
+        } else if (email == null || email.isEmpty()) {
+            errorMessage = "Email is required!";
+        } else if (phone == null || phone.isEmpty()) {
+            errorMessage = "Phone number is required!";
         } else if (password == null || password.isEmpty()) {
             errorMessage = "Password is required!";
         } else if (!password.equals(confirmPassword)) {
@@ -49,7 +59,10 @@ public class RegisterController extends HttpServlet {
 
         // Tạo account mới
         Customer account = new Customer();
+        account.setFullName(fullName);
         account.setUsername(username);
+        account.setEmail(email);
+        account.setPhone(phone);
         account.setPassword(password);
         account.setRole(CUSTOMER);
 

@@ -13,7 +13,7 @@
                     <a class="nav-link" href="${pageContext.request.contextPath}/home">Home</a>
                 </li>
 
-                <!-- Menu cho USER sẽ chỉnh sửa sau khi code user sửa xong -->
+                <!-- Menu cho customer sẽ chỉnh sửa sau khi code user sửa xong -->
                 <c:if test="${sessionScope.role == 'USER'}">
                     <li class="nav-item">
                         <a class="nav-link" href="${pageContext.request.contextPath}/user/petList">My Pets</a>
