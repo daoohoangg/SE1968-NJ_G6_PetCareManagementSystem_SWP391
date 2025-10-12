@@ -64,4 +64,11 @@ public class PetServiceHistoryDAO {
         List<PetServiceHistory> histories = dao.getAllHistories();
         histories.forEach(System.out::println);
     }
+    public PetServiceHistory getHistoryById(int idhistory) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        PetServiceHistory history = session.get(PetServiceHistory.class, idhistory);
+        session.close();
+        return history;
+    }
+
 }
