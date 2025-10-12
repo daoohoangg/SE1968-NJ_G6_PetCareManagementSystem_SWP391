@@ -27,6 +27,7 @@
     <div class="error"><%= error %></div>
     <% } %>
 
+
     <form method="post" action="<%= request.getContextPath() %>/register">
         <div class="row">
             <label>Full Name</label>

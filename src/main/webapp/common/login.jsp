@@ -42,6 +42,7 @@
         </div>
     </form>
 
+
     <div class="row" style="text-align:center; margin-top:10px;">
         <a href="<%= request.getContextPath() %>/register">Register</a> |
         <a href="<%= request.getContextPath() %>/forgotpassword">Forgot Password?</a>
