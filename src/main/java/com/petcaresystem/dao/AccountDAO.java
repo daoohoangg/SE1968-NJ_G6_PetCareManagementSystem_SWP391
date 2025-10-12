@@ -14,7 +14,7 @@ public class AccountDAO {
         return accounts;
     }
 
-    public Account login(String username, String password) {
+    public Account login(String username, String password) { //login bằng username
         Session session = HibernateUtil.getSessionFactory().openSession();
         Query<Account> query = session.createQuery(
                 "FROM Account WHERE username = :username AND password = :password", Account.class);
@@ -23,6 +23,15 @@ public class AccountDAO {
         Account account = query.uniqueResult();
         session.close();
         return account;
+    }
+    public Account loginWithEmail(String email, String password) { //login bằng email
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Query<Account> query = session.createQuery(
+                    "FROM Account WHERE email = :email AND password = :password", Account.class);
+            query.setParameter("email", email);
+            query.setParameter("password", password);
+            return query.uniqueResult();
+        }
     }
     public boolean register(Account account) {
         Transaction tx = null;
@@ -66,6 +75,8 @@ public class AccountDAO {
             return null;
         }
     }
+
+
     public Account findById(int id) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             return s.get(Account.class, id);
