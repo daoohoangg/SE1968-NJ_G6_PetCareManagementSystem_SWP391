@@ -94,7 +94,7 @@ public class PetServiceHistoryController extends HttpServlet {
         int idpet = Integer.parseInt(request.getParameter("idpet"));
 
         Pet pet = new Pet();
-        pet.setIdpet(idpet);
+//        pet.setIdpet(idpet);
 
         PetServiceHistory newHistory = new PetServiceHistory();
         newHistory.setServiceType(serviceType);
