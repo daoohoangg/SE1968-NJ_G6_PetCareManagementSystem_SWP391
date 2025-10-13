@@ -20,7 +20,7 @@ public class RoleFilter implements Filter {
 
         // Bỏ qua login và resource tĩnh
         // / để filter guest, cần vào home để filter lại đăng nhập
-        if (path.startsWith("/login") || path.startsWith("/") || path.matches(".*\\.(css|js|png|jpg)$")) {
+        if (path.startsWith("/login") || path.startsWith("/public/") || path.matches(".*\\.(css|js|png|jpg)$")) {
             chain.doFilter(request, response);
             return;
         }
