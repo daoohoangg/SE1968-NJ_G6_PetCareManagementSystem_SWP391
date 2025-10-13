@@ -29,42 +29,70 @@
 </div>
 
 <script>
-    (function(){
-        // ... phần setup, addBubble, toggle giữ nguyên ...
+    (function () {
+        // ===== DOM refs =====
+        const panel    = document.getElementById('aiChatPanel');
+        const openBtn  = document.getElementById('aiChatOpenBtn');
+        const closeBtn = document.getElementById('aiChatCloseBtn');
+        const bodyEl   = document.getElementById('aiChatBody');
+        const formEl   = document.getElementById('aiChatForm');
+        const inputEl  = document.getElementById('aiChatInput');
+
+        // ===== Helpers =====
+        function togglePanel(force) {
+            // Nếu truyền true/false thì ép; nếu không truyền thì tự đảo
+            let show;
+            if (typeof force === 'boolean') {
+                show = force;
+            } else {
+                show = panel.style.display === 'none' || !panel.style.display;
+            }
+            panel.style.display = show ? 'flex' : 'none';
+            if (show) inputEl.focus();
+        }
+
+        function addBubble(text, who) {
+            const div = document.createElement('div');
+            div.className = 'ai-bubble ' + (who === 'user' ? 'user' : 'bot');
+            div.textContent = text;
+            bodyEl.appendChild(div);
+            bodyEl.scrollTop = bodyEl.scrollHeight;
+        }
 
         function safeText(x) {
-            // Trả về chuỗi chắc chắn để hiển thị
-            if (x == null) return ' (không có nội dung) ';
+            if (x == null) return '(không có nội dung)';
             if (typeof x === 'string') return x;
             try { return JSON.stringify(x); } catch { return String(x); }
         }
 
-        document.getElementById('aiChatForm').addEventListener('submit', async (e)=>{
-            e.preventDefault();
-            const q = aiChatInput.value.trim();
-            if(!q) return;
+        // ===== Event wiring =====
+        openBtn.addEventListener('click', () => togglePanel());     // ← toggle qua lại
+        closeBtn.addEventListener('click', () => togglePanel(false));
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') togglePanel(false); });
 
-            addBubble(q,'user');
-            aiChatInput.value = '';
+        formEl.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const q = inputEl.value.trim();
+            if (!q) return;
+            addBubble(q, 'user');
+            inputEl.value = '';
 
             const loading = document.createElement('div');
             loading.className = 'ai-bubble bot';
             loading.textContent = 'Đang suy nghĩ...';
-            aiChatBody.appendChild(loading);
-            aiChatBody.scrollTop = aiChatBody.scrollHeight;
+            bodyEl.appendChild(loading);
+            bodyEl.scrollTop = bodyEl.scrollHeight;
 
-            try{
+            try {
                 const res = await fetch('<%= request.getContextPath() %>/ai/gemini', {
-                    method:'POST',
-                    headers:{'Content-Type':'application/json'},
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prompt: q })
                 });
 
-                // Dù server có trả string hay object, ta vẫn parse thành object
                 let data;
                 try {
                     data = await res.json();
-                    // Nếu server lỡ trả một JSON dạng string (double-encoded), parse thêm lần nữa
                     if (typeof data === 'string') data = JSON.parse(data);
                 } catch {
                     data = { error: 'Phản hồi không phải JSON hợp lệ.' };
@@ -77,16 +105,19 @@
                     return;
                 }
 
-                // Lấy câu trả lời: ưu tiên data.answer; nếu thiếu, rơi về toàn bộ data
                 const answer = (data && data.answer != null) ? data.answer : data;
                 addBubble(safeText(answer), 'bot');
-
-            }catch(err){
+            } catch (err) {
                 loading.remove();
                 addBubble('Có lỗi khi gọi AI: ' + (err?.message || err), 'bot');
             }
         });
+
+        // Ẩn ban đầu
+        togglePanel(false);
     })();
 </script>
+
+
 
 

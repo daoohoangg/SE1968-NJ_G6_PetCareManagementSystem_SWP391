@@ -1,5 +1,4 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -8,7 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-<%@ include file="inc/header.jsp" %> // header
+<%--<%@ include file="inc/header.jsp" %>--%>
 
 <div class="container my-5 text-center">
     <h1>Welcome to PetCare </h1>
@@ -45,7 +44,7 @@
     </div>
 </div>
 
-<%@ include file="inc/chatbox.jsp" %> // chatbox
-<%@ include file="inc/footer.jsp" %>  // footer
+<%@ include file="inc/chatbox.jsp" %>
+<%--<%@ include file="inc/footer.jsp" %>--%>
 </body>
 </html>

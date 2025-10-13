@@ -1,6 +1,4 @@
-
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<html>
 <head>
     <title>Footer</title>
     <style>
@@ -44,7 +42,7 @@
         }
     </style>
 </head>
-<body>
+<footer>
 <div class="footer">
     <div class="footer-content">
         <h3>Pet Care Management System</h3>
@@ -63,5 +61,4 @@
         </div>
     </div>
 </div>
-</body>
-</html>
+</footer>
