@@ -20,7 +20,7 @@
 
     <form method="post" action="<%= request.getContextPath() %>/forgotpassword">
         <div class="row">
-            <label>Username or Email</label>
+            <label>Email</label>
             <input type="text" name="userInput" required autofocus />
         </div>
         <button type="submit">Recover Password</button>
