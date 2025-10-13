@@ -60,7 +60,7 @@
         anytime, anywhere.
     </p>
     <div class="back-link">
-        <a href="home.jsp">← Back to Home</a>
+        <a href="<%= request.getContextPath() %>/home">← Back to Home</a>
     </div>
 </div>
 

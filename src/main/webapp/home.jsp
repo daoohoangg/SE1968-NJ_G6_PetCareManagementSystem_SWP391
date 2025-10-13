@@ -6,40 +6,7 @@
     <meta charset="UTF-8">
     <title>PetCare - Home</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .footer {
-            background-color: #1976d2;
-            color: #fff;
-            padding: 25px 0;
-            font-family: sans-serif;
-            text-align: center;
-            border-top: 4px solid #1565c0;
-            margin-top: 40px;
-        }
-        .footer .footer-content { max-width: 1000px; margin: auto; }
-        .footer h3 { margin: 0; font-size: 20px; font-weight: 600; }
-        .footer p { margin: 6px 0; font-size: 14px;
-            color: #e3f2fd;
-        }
 
-        .footer .links a {
-            color: #bbdefb;
-            text-decoration: none;
-            margin: 0 10px;
-            transition: color 0.2s;
-        }
-
-        .footer .links a:hover {
-            color: #fff;
-            text-decoration: underline;
-        }
-
-        .footer .copyright {
-            margin-top: 10px;
-            font-size: 13px;
-            color: #e0e0e0;
-        }
-    </style>
 </head>
 <body>
 <%@ include file="inc/header.jsp" %>
@@ -91,6 +58,7 @@
 </div>
 
 <%@ include file="inc/chatbox.jsp" %>
+<%@ include file="inc/footer.jsp"%>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
