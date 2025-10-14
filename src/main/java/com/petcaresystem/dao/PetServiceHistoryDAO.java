@@ -9,66 +9,76 @@ import java.util.List;
 
 public class PetServiceHistoryDAO {
 
-    // ✅ Lấy toàn bộ danh sách lịch sử dịch vụ
+    // ✅ Lấy toàn bộ lịch sử dịch vụ
     public List<PetServiceHistory> getAllHistories() {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        List<PetServiceHistory> histories = session.createQuery("from PetServiceHistory", PetServiceHistory.class).list();
-        session.close();
-        return histories;
-    }
-
-    // ✅ Lấy danh sách lịch sử dịch vụ theo ID thú cưng
-    public List<PetServiceHistory> getHistoriesByPetId(int idpet) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        List<PetServiceHistory> histories = session.createQuery(
-                        "from PetServiceHistory where pet.idpet = :idpet", PetServiceHistory.class)
-                .setParameter("idpet", idpet)
-                .list();
-        session.close();
-        return histories;
-    }
-
-    // ✅ Thêm mới một lịch sử dịch vụ
-    public void addHistory(PetServiceHistory history) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        Transaction tx = session.beginTransaction();
-        session.save(history);
-        tx.commit();
-        session.close();
-    }
-
-    // ✅ Cập nhật lịch sử dịch vụ
-    public void updateHistory(PetServiceHistory history) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        Transaction tx = session.beginTransaction();
-        session.update(history);
-        tx.commit();
-        session.close();
-    }
-
-    // ✅ Xóa lịch sử dịch vụ
-    public void deleteHistory(int idhistory) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        Transaction tx = session.beginTransaction();
-        PetServiceHistory history = session.get(PetServiceHistory.class, idhistory);
-        if (history != null) {
-            session.delete(history);
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("from PetServiceHistory", PetServiceHistory.class).list();
         }
-        tx.commit();
-        session.close();
     }
 
-    // ✅ Test nhanh DAO
+    // ✅ Lấy lịch sử theo Pet ID
+    public List<PetServiceHistory> getHistoriesByPetId(int petId) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                            "from PetServiceHistory where pet.id = :petId", PetServiceHistory.class)
+                    .setParameter("petId", petId)
+                    .list();
+        }
+    }
+
+    // ✅ Lấy chi tiết lịch sử theo ID
+    public PetServiceHistory getHistoryById(int id) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.get(PetServiceHistory.class, id);
+        }
+    }
+
+    // ✅ Thêm mới một bản ghi lịch sử
+    public void addHistory(PetServiceHistory history) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            session.persist(history);
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+        }
+    }
+
+    // ✅ Cập nhật lịch sử
+    public void updateHistory(PetServiceHistory history) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            session.merge(history);
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+        }
+    }
+
+    // ✅ Xóa lịch sử theo ID
+    public void deleteHistory(int id) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            PetServiceHistory history = session.get(PetServiceHistory.class, id);
+            if (history != null) {
+                session.remove(history);
+            }
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+        }
+    }
+
+    // ✅ Dành cho test trực tiếp
     public static void main(String[] args) {
         PetServiceHistoryDAO dao = new PetServiceHistoryDAO();
-        List<PetServiceHistory> histories = dao.getAllHistories();
-        histories.forEach(System.out::println);
+        List<PetServiceHistory> list = dao.getHistoriesByPetId(1);
+        list.forEach(System.out::println);
     }
-    public PetServiceHistory getHistoryById(int idhistory) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        PetServiceHistory history = session.get(PetServiceHistory.class, idhistory);
-        session.close();
-        return history;
-    }
-
 }
