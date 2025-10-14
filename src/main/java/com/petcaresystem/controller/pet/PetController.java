@@ -1,8 +1,10 @@
 package com.petcaresystem.controller.pet;
 
 import com.petcaresystem.dao.PetDAO;
+import com.petcaresystem.dao.PetServiceHistoryDAO;
 import com.petcaresystem.enities.Pet;
 import com.petcaresystem.enities.Account;
+import com.petcaresystem.enities.PetServiceHistory;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -16,10 +18,12 @@ import java.util.List;
 public class PetController extends HttpServlet {
 
     private PetDAO petDAO;
+    private PetServiceHistoryDAO historyDAO;
 
     @Override
     public void init() throws ServletException {
         petDAO = new PetDAO();
+        historyDAO = new PetServiceHistoryDAO();
     }
 
     // ------------------- XỬ LÝ GET -------------------
@@ -36,6 +40,9 @@ public class PetController extends HttpServlet {
                 break;
             case "delete":
                 deletePet(request, response);
+                break;
+            case "view": // 🆕 Xem chi tiết hồ sơ thú cưng
+                viewPetProfile(request, response);
                 break;
             default:
                 listPet(request, response);
@@ -79,7 +86,7 @@ public class PetController extends HttpServlet {
 
         // 🔸 Giả lập lấy chủ sở hữu (owner) từ session hoặc tạo tạm
         Account owner = new Account();
-        owner.setIdaccount(1); // tạm thời gán id = 1 (sau này lấy theo người dùng đăng nhập)
+        owner.setIdaccount(1); // sau này thay bằng user đang đăng nhập
 
         Pet newPet = new Pet();
         newPet.setName(name);
@@ -97,5 +104,20 @@ public class PetController extends HttpServlet {
         int id = Integer.parseInt(request.getParameter("id"));
         petDAO.deletePet(id);
         response.sendRedirect("pet?action=list");
+    }
+
+    // ------------------- 🆕 XEM HỒ SƠ THÚ CƯNG -------------------
+    private void viewPetProfile(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        int petId = Integer.parseInt(request.getParameter("id"));
+        Pet pet = petDAO.getPetById(petId);
+        List<PetServiceHistory> histories = historyDAO.getHistoriesByPetId(petId);
+
+        request.setAttribute("pet", pet);
+        request.setAttribute("historyList", histories);
+
+        // Chuyển đến trang xem hồ sơ chi tiết
+        request.getRequestDispatcher("/views/pet-profile.jsp").forward(request, response);
     }
 }
