@@ -78,15 +78,15 @@ public class PetController extends HttpServlet {
         String healthStatus = request.getParameter("healthStatus");
 
         // 🔸 Giả lập lấy chủ sở hữu (owner) từ session hoặc tạo tạm
-        Account owner = new Account();
-        owner.setIdaccount(1); // tạm thời gán id = 1 (sau này lấy theo người dùng đăng nhập)
+//        Account owner = new Account();
+       // owner.setIdaccount(1); // tạm thời gán id = 1 (sau này lấy theo người dùng đăng nhập)
 
         Pet newPet = new Pet();
         newPet.setName(name);
         newPet.setBreed(breed);
         newPet.setAge(age);
         newPet.setHealthStatus(healthStatus);
-        newPet.setOwner(owner);
+       // newPet.setOwner(owner);
 
         petDAO.addPet(newPet);
         response.sendRedirect("pet?action=list");
