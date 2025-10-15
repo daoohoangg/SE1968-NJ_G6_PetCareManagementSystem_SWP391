@@ -1,24 +1,36 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ page import="com.petcaresystem.enities.Account" %>
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>PetCare - Home</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
 </head>
 <body>
-<%@ include file="inc/header.jsp" %> // header
+<%@ include file="inc/header.jsp" %>
 
-<div class="container my-5 text-center">
-    <h1>Welcome to PetCare </h1>
-    <p class="text-muted">
-        <c:if test="${not empty sessionScope.user}">
-            Logged in as <b>${sessionScope.user.username}</b> (<i>${sessionScope.role}</i>)
-        </c:if>
-    </p>
+<div class="container mt-4">
 
-    <div class="row mt-5">
+    <div class="p-5 mb-4 bg-light rounded-3">
+        <div class="container-fluid py-5 text-center">
+            <h1 class="display-5 fw-bold">Welcome to PetCare</h1>
+            <p class="fs-4 text-muted">Your pet's health and happiness is our top priority.</p>
+            <%
+                Account user = (Account) session.getAttribute("user");
+                if (user != null) {
+            %>
+            <p class="text-muted mt-3">
+                Logged in as <b><%= user.getFullName() %></b> (<i><%= user.getRole().name() %></i>)
+            </p>
+            <%
+                }
+            %>
+        </div>
+    </div>
+
+    <div class="row text-center">
         <div class="col-md-4 mb-3">
             <div class="card p-3">
                 <h4>About Us</h4>
@@ -34,7 +46,6 @@
                 <a href="inc/footer.jsp" class="btn btn-success">Contact Us</a>
             </div>
         </div>
-
         <div class="col-md-4 mb-3">
             <div class="card p-3">
                 <h4>Chat Support</h4>
@@ -43,9 +54,11 @@
             </div>
         </div>
     </div>
+
 </div>
 
-<%@ include file="inc/chatbox.jsp" %> // chatbox
-<%@ include file="inc/footer.jsp" %>  // footer
+<%@ include file="inc/chatbox.jsp" %>
+<%@ include file="inc/footer.jsp"%>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

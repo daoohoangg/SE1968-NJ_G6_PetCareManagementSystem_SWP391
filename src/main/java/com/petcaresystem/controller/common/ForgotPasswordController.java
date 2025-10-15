@@ -15,7 +15,7 @@ public class ForgotPasswordController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        request.getRequestDispatcher("forgotpassword.jsp").forward(request, response);
+        request.getRequestDispatcher("/common/forgotpassword.jsp").forward(request, response);
     }
 
     @Override
@@ -28,11 +28,11 @@ public class ForgotPasswordController extends HttpServlet {
         Account acc = dao.getAccountByEmailOrUsername(userInput);
 
         if (acc != null) {
-            request.setAttribute("message", "Your password is: " + acc.getPassword());
+            request.setAttribute("message", "If an account with that email or username exists, a password reset link has been sent.");
         } else {
-            request.setAttribute("message", "No account found with that email or username!");
+            request.setAttribute("message", "If an account with that email or username exists, a password reset link has been sent.");
         }
 
-        request.getRequestDispatcher("forgotpassword.jsp").forward(request, response);
+        request.getRequestDispatcher("/common/forgotpassword.jsp").forward(request, response);
     }
-}
+    }

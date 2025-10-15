@@ -24,7 +24,6 @@ public class LoginController extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         String username = req.getParameter("username");
         String password = req.getParameter("password");
-        //add remember
         String remember = req.getParameter("remember");
         SimpleAuthService.User u = auth.check(username, password);
         if (u == null) {

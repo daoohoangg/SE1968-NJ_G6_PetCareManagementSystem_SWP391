@@ -20,7 +20,7 @@ public class RegisterController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         // Hiển thị form đăng ký
-        request.getRequestDispatcher("register.jsp").forward(request, response);
+        request.getRequestDispatcher("/common/register.jsp").forward(request, response);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class RegisterController extends HttpServlet {
 
         if (errorMessage != null) {
             request.setAttribute("error", errorMessage);
-            request.getRequestDispatcher("register.jsp").forward(request, response);
+            request.getRequestDispatcher("/common/register.jsp").forward(request, response);
             return;
         }
 
@@ -71,11 +71,11 @@ public class RegisterController extends HttpServlet {
 
         if (success) {
             // Đăng ký thành công -> chuyển về trang login
-            response.sendRedirect("login.jsp");
+            response.sendRedirect(request.getContextPath() + "/login");
         } else {
             // Thất bại -> báo lỗi
             request.setAttribute("error", "Registration failed! Username might already exist.");
-            request.getRequestDispatcher("register.jsp").forward(request, response);
+            request.getRequestDispatcher("/common/register.jsp").forward(request, response);
         }
     }
 }
