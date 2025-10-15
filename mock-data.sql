@@ -17,10 +17,10 @@ INSERT INTO accounts (
     updated_at,
     account_type
 )VALUES
-     (1, 'admin.sophia', 'Admin#2025', 'sophia.nguyen@petcare.com', 'Sophia Nguyen', '555-100-0001', 'ADMIN', 1, 1, '2025-09-28 07:45:00', '2025-08-15 09:00:00', '2025-09-28 11:30:00', 'ADMIN'),
-     (2, 'staff.mason', 'StaffMason!1', 'mason.lee@petcare.com', 'Mason Lee', '555-210-1001', 'STAFF', 1, 1, '2025-09-27 08:15:00', '2024-11-20 08:00:00', '2025-09-27 08:15:00', 'STAFF'),
+     (1, 'admin', '123', 'sophia.nguyen@petcare.com', 'Sophia Nguyen', '555-100-0001', 'ADMIN', 1, 1, '2025-09-28 07:45:00', '2025-08-15 09:00:00', '2025-09-28 11:30:00', 'ADMIN'),
+     (2, 'staff', '123', 'mason.lee@petcare.com', 'Mason Lee', '555-210-1001', 'STAFF', 1, 1, '2025-09-27 08:15:00', '2024-11-20 08:00:00', '2025-09-27 08:15:00', 'STAFF'),
      (3, 'staff.emma', 'EmmaStaff@2024', 'emma.torres@petcare.com', 'Emma Torres', '555-210-1002', 'STAFF', 1, 1, '2025-09-27 09:00:00', '2023-04-10 08:00:00', '2025-09-27 09:00:00', 'STAFF'),
-     (4, 'cust.liam', 'CustLiam#2025', 'liam.chu@example.com', 'Liam Chu', '555-410-2001', 'CUSTOMER', 1, 1, '2025-09-26 18:20:00', '2025-02-15 10:30:00', '2025-09-26 18:20:00', 'CUSTOMER'),
+     (4, 'cust', '123', 'liam.chu@example.com', 'Liam Chu', '555-410-2001', 'CUSTOMER', 1, 1, '2025-09-26 18:20:00', '2025-02-15 10:30:00', '2025-09-26 18:20:00', 'CUSTOMER'),
      (5, 'cust.olivia', 'CustOlivia#2025', 'olivia.fernandez@example.com', 'Olivia Fernandez', '555-410-2002', 'CUSTOMER', 1, 0, '2025-09-20 19:05:00', '2025-03-12 11:45:00', '2025-09-20 19:05:00', 'CUSTOMER'),
      (6, 'cust.evelyn', 'CustEvelyn#2025', 'evelyn.nguyen@example.com', 'Evelyn Nguyen', '555-410-2003', 'CUSTOMER', 1, 1, NULL, '2025-04-02 09:20:00', '2025-09-21 13:10:00', 'CUSTOMER'),
      (7, 'cust.noah', 'CustNoah#2025', 'noah.davis@example.com', 'Noah Davis', '555-410-2004', 'CUSTOMER', 1, 1, '2025-09-25 17:45:00', '2025-05-18 14:40:00', '2025-09-25 17:45:00', 'CUSTOMER'),

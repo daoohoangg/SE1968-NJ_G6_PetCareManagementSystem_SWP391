@@ -17,10 +17,13 @@ public class PetServiceHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-
+    @Column(name = "service_type")
     private String serviceType;
+    @Column(name = "description")
     private String description;
+    @Column(name = "service_date")
     private LocalDate serviceDate;
+    @Column(name = "cost")
     private double cost;
 
     @ManyToOne(fetch = FetchType.LAZY)
