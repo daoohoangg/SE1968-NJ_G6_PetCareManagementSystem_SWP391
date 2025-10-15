@@ -23,6 +23,7 @@
         .btn-secondary:hover { background: #e0e0e0; }
         .error { color:#c62828; margin:10px 0; background: #ffebee; padding: 10px; border-radius: 4px; }
         .link-container { text-align:center; margin-top:20px; font-size: 14px; }
+        .info-box { color:#0d5a21; margin:10px 0; background: #d1f7dc; padding: 10px; border-radius: 4px; border: 1px solid #a3e9b8; }
     </style>
 </head>
 <body>
@@ -34,6 +35,12 @@
         if (error != null) {
     %>
     <div class="error"><%= error %></div>
+    <% } %>
+    <%
+        String info = (String) request.getAttribute("info");
+        if (info != null) {
+    %>
+    <div class="info-box"><%= info %></div>
     <% } %>
 
     <%
