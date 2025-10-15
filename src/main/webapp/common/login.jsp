@@ -70,7 +70,7 @@
     <form method="post" action="<%= request.getContextPath() %>/login">
         <div class="row">
             <label>Username</label>
-            <input type="text" name="userInput" required autofocus />
+            <input type="text" name="username" required autofocus />
         </div>
         <div class="row">
             <label>Password</label>
