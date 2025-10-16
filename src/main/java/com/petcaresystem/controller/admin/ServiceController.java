@@ -55,6 +55,7 @@ public class ServiceController extends HttpServlet {
                 listServices(req, resp);
                 break;
         }
+        req.getRequestDispatcher("/adminpage/manage-services.jsp").forward(req, resp);
     }
 
     @Override
