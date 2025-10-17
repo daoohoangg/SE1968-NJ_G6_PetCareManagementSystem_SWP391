@@ -9,7 +9,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-
+import com.petcaresystem.service.email.EmailService;
 import static com.petcaresystem.enities.enu.AccountRoleEnum.CUSTOMER;
 
 @WebServlet("/register")
@@ -75,11 +75,18 @@ public class RegisterController extends HttpServlet {
         boolean success = accountDAO.register(account);
 
         if (success) {
-            // Đăng ký thành công -> chuyển về trang login
-            response.sendRedirect(request.getContextPath() + "/login");
             // Test phần lấy token
             String verificationLink = "http://localhost:8080" + request.getContextPath() + "/verify?token=" + token;
-            System.out.println("Verification Link for testing: " + verificationLink);
+            System.out.println("Verification Link (in case email fails): " + verificationLink);
+            try {
+                String contextPath = request.getContextPath();
+                EmailService.sendVerificationEmail(account.getEmail(), token, contextPath);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            // Đăng ký thành công -> chuyển về trang login
+            response.sendRedirect(request.getContextPath() + "/login?status=registered");
+
         } else {
             // Thất bại -> báo lỗi
             request.setAttribute("error", "Registration failed! Username might already exist.");

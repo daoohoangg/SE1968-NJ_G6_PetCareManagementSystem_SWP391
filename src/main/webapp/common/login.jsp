@@ -36,7 +36,7 @@
         String status = request.getParameter("status");
         if ("registered".equals(status)) {
     %>
-    <div class="message-box info">Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.</div>
+    <div class="message-box info">Đăng ký thành công! Vui lòng kiểm tra email để kích hoạt tài khoản.</div>
     <%
     } else if ("verified_success".equals(status)) {
     %>
