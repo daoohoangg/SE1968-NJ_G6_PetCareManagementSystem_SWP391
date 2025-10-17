@@ -19,7 +19,6 @@ public class AccountDAO {
         Query<Account> query = session.createQuery(
                 "FROM Account WHERE username = :username", Account.class);
         query.setParameter("username", username);
-        query.setParameter("password", password);
         Account account = query.uniqueResult();
         session.close();
         return account;
@@ -29,7 +28,6 @@ public class AccountDAO {
             Query<Account> query = session.createQuery(
                     "FROM Account WHERE email = :email", Account.class);
             query.setParameter("email", email);
-            query.setParameter("password", password);
             return query.uniqueResult();
         }
     }
