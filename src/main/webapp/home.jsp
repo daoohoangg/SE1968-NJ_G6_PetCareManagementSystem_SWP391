@@ -18,7 +18,7 @@
             <h1 class="display-5 fw-bold">Welcome to PetCare</h1>
             <p class="fs-4 text-muted">Your pet's health and happiness is our top priority.</p>
             <%
-                Account user = (Account) session.getAttribute("user");
+                Account user = (Account) session.getAttribute("account");
                 if (user != null) {
             %>
             <p class="text-muted mt-3">
