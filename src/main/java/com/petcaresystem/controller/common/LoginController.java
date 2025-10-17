@@ -38,6 +38,9 @@ public class LoginController extends HttpServlet {
         String infoMessage = null;
         if (account == null) {
             errorMessage = "Sai thông tin đăng nhập!";
+        }
+        else if (!password.equals(account.getPassword())) {
+                errorMessage = "Sai thông tin đăng nhập!";
         } else if (!account.getIsActive()) {
             errorMessage = "Tài khoản của bạn đã bị khóa!";
         } else if (!account.getIsVerified()) {
