@@ -1,7 +1,7 @@
 package com.petcaresystem.controller.common;
 import com.petcaresystem.dao.AccountDAO;
 import com.petcaresystem.enities.Account;
-
+import java.util.UUID;
 import com.petcaresystem.enities.Customer;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -51,12 +51,17 @@ public class RegisterController extends HttpServlet {
             errorMessage = "Passwords do not match!";
         }
 
+        if (accountDAO.getAccountByEmailOrUsername(username) != null) {
+            errorMessage = "Username or Email already exists!";
+        }
+
         if (errorMessage != null) {
             request.setAttribute("error", errorMessage);
             request.getRequestDispatcher("/common/register.jsp").forward(request, response);
             return;
         }
-
+        // Thêm token để xác thực
+        String token = UUID.randomUUID().toString();
         // Tạo account mới
         Customer account = new Customer();
         account.setFullName(fullName);
@@ -65,13 +70,16 @@ public class RegisterController extends HttpServlet {
         account.setPhone(phone);
         account.setPassword(password);
         account.setRole(CUSTOMER);
-
+        account.setVerificationToken(token);
         // Lưu DB
         boolean success = accountDAO.register(account);
 
         if (success) {
             // Đăng ký thành công -> chuyển về trang login
             response.sendRedirect(request.getContextPath() + "/login");
+            // Test phần lấy token
+            String verificationLink = "http://localhost:8080" + request.getContextPath() + "/verify?token=" + token;
+            System.out.println("Verification Link for testing: " + verificationLink);
         } else {
             // Thất bại -> báo lỗi
             request.setAttribute("error", "Registration failed! Username might already exist.");

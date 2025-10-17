@@ -17,7 +17,7 @@ public class AccountDAO {
     public Account login(String username, String password) { //login bằng username
         Session session = HibernateUtil.getSessionFactory().openSession();
         Query<Account> query = session.createQuery(
-                "FROM Account WHERE username = :username AND password = :password", Account.class);
+                "FROM Account WHERE username = :username", Account.class);
         query.setParameter("username", username);
         query.setParameter("password", password);
         Account account = query.uniqueResult();
@@ -27,7 +27,7 @@ public class AccountDAO {
     public Account loginWithEmail(String email, String password) { //login bằng email
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Query<Account> query = session.createQuery(
-                    "FROM Account WHERE email = :email AND password = :password", Account.class);
+                    "FROM Account WHERE email = :email", Account.class);
             query.setParameter("email", email);
             query.setParameter("password", password);
             return query.uniqueResult();
@@ -75,7 +75,14 @@ public class AccountDAO {
             return null;
         }
     }
-
+    public Account findByVerificationToken(String token) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "FROM Account WHERE verificationToken = :token";
+            Query<Account> query = session.createQuery(hql, Account.class);
+            query.setParameter("token", token);
+            return query.uniqueResultOptional().orElse(null);
+        }
+    }
 
     public Account findById(int id) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
