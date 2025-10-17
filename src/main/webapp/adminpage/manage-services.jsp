@@ -125,14 +125,14 @@
     </style>
 </head>
 <body>
-<%@ include file="inc/header.jsp" %>
+<%--<%@ include file="inc/header.jsp" %>--%>
 
 <div class="layout">
     <%-- set currentPage để sidebar.jsp đánh dấu active --%>
     <% request.setAttribute("currentPage", "manage-services"); %>
 
     <%-- Sidebar include (thay cho khối <aside> cũ) --%>
-    <%@ include file="inc/sidebar.jsp" %>
+    <%@ include file="../inc/side-bar.jsp" %>
 
     <!-- Main -->
     <main class="content">
@@ -225,6 +225,7 @@
                         <button class="icon-btn delete"><i class="ri-delete-bin-line"></i></button>
                     </td>
                 </tr>
+                <%@ include file="../inc/chatbox.jsp" %>
                 </tbody>
             </table>
         </div>
