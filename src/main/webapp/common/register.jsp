@@ -3,7 +3,7 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    <title>Sign Up</title>
+    <title>Register</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -63,7 +63,7 @@
 </head>
 <body>
 <div class="box">
-    <h2>Create Account</h2>
+    <h2>Register</h2>
 
     <%
         String error = (String) request.getAttribute("error");
@@ -98,12 +98,12 @@
             <label>Confirm Password</label>
             <input type="password" name="confirmPassword" required />
         </div>
-        <button type="submit">Register</button>
+        <button type="submit">Create Account</button>
     </form>
 
     <div class="row" style="text-align:center; margin-top:10px;">
         Already have an account?
-        <a href="<%= request.getContextPath() %>/login">Sign in</a>
+        <a href="<%= request.getContextPath() %>/login">Login</a>
     </div>
 </div>
 </body>

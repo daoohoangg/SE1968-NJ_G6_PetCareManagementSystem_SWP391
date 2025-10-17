@@ -16,6 +16,9 @@
             border-radius: 6px;
             box-sizing: border-box;
         }
+        .message-box { margin:10px 0; padding: 12px; border-radius: 4px; border: 1px solid transparent; }
+        .info { color:#0c5460; background-color:#d1ecf1; border-color:#bee5eb; }
+        .success { color:#155724; background-color:#d4edda; border-color:#c3e6cb; }
 
         button { width:100%; padding:12px; border:0; border-radius:6px; cursor:pointer; font-size: 16px; font-weight: 600; }
         .btn-primary { background:#1976d2; color:#fff; }
@@ -29,7 +32,18 @@
 <body>
 <div class="box">
     <h2>Login</h2>
-
+    <%
+        String status = request.getParameter("status");
+        if ("registered".equals(status)) {
+    %>
+    <div class="message-box info">Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.</div>
+    <%
+    } else if ("verified_success".equals(status)) {
+    %>
+    <div class="message-box success">Xác thực tài khoản thành công! Mời bạn đăng nhập.</div>
+    <%
+        }
+    %>
     <%
         String error = (String) request.getAttribute("error");
         if (error != null) {

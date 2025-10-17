@@ -46,7 +46,10 @@ public abstract class Account {
     
     @Column(name = "is_verified", nullable = false)
     private Boolean isVerified = false;
-    
+
+    @Column(name = "verification_token", length = 255)
+    private String verificationToken;
+
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
     
@@ -55,7 +58,9 @@ public abstract class Account {
     
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    
+
+
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
