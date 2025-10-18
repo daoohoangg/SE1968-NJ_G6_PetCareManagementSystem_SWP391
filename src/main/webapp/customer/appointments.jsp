@@ -60,7 +60,7 @@
                                 if (pets != null) {
                                     for (Pet p : pets) {
                             %>
-                            <option value="<%= p.getPetId() %>"><%= p.getName() %> - <%= p.getBreed() %></option>
+                            <option value="<%= p.getIdpet() %>"><%= p.getName() %> - <%= p.getBreed() %></option>
                             <%
                                     }
                                 }
