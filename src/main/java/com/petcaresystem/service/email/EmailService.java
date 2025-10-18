@@ -24,6 +24,20 @@ public class EmailService {
                 + "</html>";
         sendEmail(recipientEmail, subject, body);
     }
+    public static void sendNewPasswordEmail(String recipientEmail, String newPassword) {
+        String subject = "[PetCare] Mat khau moi cua ban";
+        String body = "<html>"
+                + "<body>"
+                + "<h2>Yeu cau dat lai mat khau PetCare</h2>"
+                + "<p>Mat khau moi cua ban la:</p>"
+                + "<h3 style='padding: 10px; background-color: #f0f0f0; border-radius: 5px;'>"
+                + newPassword
+                + "</h3>"
+                + "<p>Vui long dang nhap va doi mat khau ngay lap tuc.</p>"
+                + "</body>"
+                + "</html>";
+        sendEmail(recipientEmail, subject, body);
+    }
 
     private static void sendEmail(String to, String subject, String body) {
         Properties props = new Properties();
