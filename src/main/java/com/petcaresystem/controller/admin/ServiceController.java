@@ -10,6 +10,7 @@ import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 
 @WebServlet("/admin/service")
@@ -54,10 +55,12 @@ public class ServiceController extends HttpServlet {
     private void listServices(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         List<Service> services = serviceManageService.getAllServices();
+        if (services == null) services = Collections.emptyList();
         List<ServiceCategory> categories = serviceManageService.getAllCategories();
         req.setAttribute("services", services);
+        req.setAttribute("serviceList", services); // ensure JSP fallback works
+        req.setAttribute("rows", services);
         req.setAttribute("categories", categories);
-        System.out.println(services);
         req.getRequestDispatcher("/adminpage/manage-services.jsp").forward(req, resp);
     }
 
@@ -72,9 +75,12 @@ public class ServiceController extends HttpServlet {
         List<Service> services = serviceManageService.searchServices(
                 keyword, categoryId, isActive, sortBy, sortOrder
         );
+        if (services == null) services = Collections.emptyList();
         List<ServiceCategory> categories = serviceManageService.getAllCategories();
 
         req.setAttribute("services", services);
+        req.setAttribute("serviceList", services); // keep compatibility with JSP alias
+        req.setAttribute("rows", services);
         req.setAttribute("categories", categories);
         req.setAttribute("keyword", keyword);
         req.setAttribute("selectedCategoryId", categoryId);

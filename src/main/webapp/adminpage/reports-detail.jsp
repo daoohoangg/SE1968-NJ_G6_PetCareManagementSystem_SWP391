@@ -1,4 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
+<jsp:include page="../inc/header.jsp" />
 <section class="page">
     <div class="page-title">
         <h1>Generate Reports</h1>
@@ -85,3 +86,5 @@
             datasets:[{data:[35,25,20,15,5]}]}
     });
 </script>
+<jsp:include page="../inc/chatbox.jsp" />
+<jsp:include page="../inc/footer.jsp" />

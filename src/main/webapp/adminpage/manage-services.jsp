@@ -74,6 +74,7 @@
     </style>
 </head>
 <body>
+<jsp:include page="../inc/header.jsp" />
 <div class="layout">
     <% request.setAttribute("currentPage", "manage-services"); %>
 
@@ -138,10 +139,8 @@
         </form>
 
         <!-- Data binding -->
-        <c:set var="rows" value="${serviceList}" />
-        <c:if test="${empty rows}">
-            <c:set var="rows" value="${services}" />
-        </c:if>
+        <c:set var="rows"
+               value="${not empty requestScope.rows ? requestScope.rows : (not empty serviceList ? serviceList : services)}" />
 
         <div class="card">
             <table>
@@ -204,5 +203,6 @@
 </div>
 
 <jsp:include page="../inc/chatbox.jsp" />
+<jsp:include page="../inc/footer.jsp" />
 </body>
 </html>

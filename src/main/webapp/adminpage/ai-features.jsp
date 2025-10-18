@@ -1,4 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
+<jsp:include page="../inc/header.jsp" />
 <section class="page grid-2-1">
     <jsp:include page="../inc/side-bar.jsp" />
     <div class="card">
@@ -49,3 +50,5 @@
         <button class="btn primary" style="width:100%">Generate New Suggestions</button>
     </div>
 </section>
+<jsp:include page="../inc/chatbox.jsp" />
+<jsp:include page="../inc/footer.jsp" />

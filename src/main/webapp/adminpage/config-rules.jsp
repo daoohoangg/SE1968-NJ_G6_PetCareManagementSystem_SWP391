@@ -1,11 +1,14 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
+<jsp:include page="../inc/header.jsp" />
 <section class="page">
-  <h1>System Configuration</h1><p>Configure rules, schedules, vouchers, and email notifications</p>
+  <jsp:include page="../inc/side-bar.jsp" />
+  <h1>System Configuration</h1>
+  <p>Configure rules, schedules, vouchers, and email notifications</p>
   <div class="tabs sub">
-    <a class="tab" href="${cxt}/config/schedule">Schedule</a>
-    <a class="tab" href="${cxt}/config/vouchers">Vouchers</a>
-    <a class="tab" href="${cxt}/config/email">Email</a>
-    <a class="tab active" href="${cxt}/config/rules">Rules</a>
+    <a class="tab" href="${pageContext.request.contextPath}/config/schedule">Schedule</a>
+    <a class="tab" href="${pageContext.request.contextPath}/config/vouchers">Vouchers</a>
+    <a class="tab" href="${pageContext.request.contextPath}/config/email">Email</a>
+    <a class="tab active" href="${pageContext.request.contextPath}/config/rules">Rules</a>
   </div>
 
   <div class="card">
@@ -17,4 +20,5 @@
     <button class="btn success">Save All Settings</button>
   </div>
 </section>
-<% pageContext.setAttribute("cxt", request.getContextPath()); %>
+<jsp:include page="../inc/chatbox.jsp" />
+<jsp:include page="../inc/footer.jsp" />
