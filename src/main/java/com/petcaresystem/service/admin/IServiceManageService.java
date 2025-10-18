@@ -7,12 +7,10 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public interface IServiceManageService {
-    // Query
     List<Service> getAllServices();
     Service getServiceById(int serviceId);
     List<Service> getActiveServices();
 
-    // Search/List with filters & sort (categoryId thay cho tên)
     List<Service> searchServices(String keyword, Integer categoryId, Boolean isActive,
                                  String sortBy, String sortOrder);
 

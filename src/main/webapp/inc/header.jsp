@@ -2,87 +2,61 @@
 <%@ page import="com.petcaresystem.enities.Account" %>
 <%@ page import="com.petcaresystem.enities.enu.AccountRoleEnum" %>
 <%
-    Account loggedInAccount = (Account) session.getAttribute("account");
+    Account loggedInAccount = (Account) session.getAttribute("user");
 %>
-<style>
-    .navbar {
-        transition: background-color 0.3s ease;
+<%
+    if (request.getAttribute("globalHeaderAssetsLoaded") == null) {
+        request.setAttribute("globalHeaderAssetsLoaded", Boolean.TRUE);
+%>
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"/>
+<script defer
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+<%
     }
-    .nav-link {
-        font-weight: 500;
-        transition: color 0.2s ease-in-out;
-    }
-    .nav-link i {
-        margin-right: 8px;
-    }
-    .navbar-brand {
-        font-weight: bold;
-        letter-spacing: 1px;
-    }
-    .dropdown-menu {
-        border-radius: 0.5rem;
-        box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
-        border: none;
-    }
-    .user-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background-color: #0d6efd;
-        color: white;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        margin-right: 8px;
-        font-size: 14px;
-    }
-</style>
+%>
 <header>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light px-3 border-bottom shadow-sm">
-        <a class="navbar-brand text-primary" href="<%= request.getContextPath() %>/home">
-            <i class="bi bi-hearts"></i> PetCare
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
+        <a class="navbar-brand" href="<%= request.getContextPath() %>/home">PetCare</a>
 
-        <div class="collapse navbar-collapse" id="mainNavbar">
+        <div class="collapse navbar-collapse">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
                 <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/home"><i class="bi bi-house-door-fill"></i>Home</a>
+                    <a class="nav-link" href="<%= request.getContextPath() %>/home">Home</a>
                 </li>
 
                 <%
                     if (loggedInAccount != null) {
                         AccountRoleEnum role = loggedInAccount.getRole();
-                        if (role == AccountRoleEnum.ADMIN) { //Phần này dành cho admin
+                        if (role == AccountRoleEnum.CUSTOMER) {
                 %>
                 <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/admin/dashboard"><i class="bi bi-speedometer2"></i>Dashboard</a>
+                    <a class="nav-link" href="<%= request.getContextPath() %>/user/petList">My Pets</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/admin/users"><i class="bi bi-people-fill"></i>Manage Users</a>
+                    <a class="nav-link" href="<%= request.getContextPath() %>/user/appointments">Appointments</a>
                 </li>
                 <%
                 }
-                else if (role == AccountRoleEnum.STAFF) { // Phần này dành cho Staff
+                else if (role == AccountRoleEnum.STAFF) {
                 %>
                 <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/staff/customers"><i class="bi bi-person-lines-fill"></i>Manage Customers</a>
+                    <a class="nav-link" href="<%= request.getContextPath() %>/staff/customers">Manage Customers</a>
                 </li>
                 <%
                 }
-                else { // Phần này dành cho Customer
+                else if (role == AccountRoleEnum.ADMIN) {
                 %>
                 <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/services"><i class="bi bi-briefcase-fill"></i>Services</a>
+                    <a class="nav-link" href="<%= request.getContextPath() %>/admin/dashboard">Dashboard</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/user/petList"><i class="bi bi-heart-fill"></i>My Pets</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/customer/appointments.jsp"><i class="bi bi-calendar-check-fill"></i>Appointments</a>
+                    <a class="nav-link" href="<%= request.getContextPath() %>/admin/users">Manage Users</a>
                 </li>
                 <%
                         }
@@ -90,19 +64,17 @@
                 %>
             </ul>
 
-            <ul class="navbar-nav ms-auto align-items-center">
+            <ul class="navbar-nav ms-auto">
                 <%
                     if (loggedInAccount != null) {
                 %>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
-                        <div class="user-avatar"><%= loggedInAccount.getFullName().substring(0, 1) %></div>
-                        <%= loggedInAccount.getFullName() %>
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        Account
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="<%= request.getContextPath() %>/profile"><i class="bi bi-person-circle"></i>Profile</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="<%= request.getContextPath() %>/logout"><i class="bi bi-box-arrow-right"></i>Logout</a></li>
+                        <li><a class="dropdown-item" href="<%= request.getContextPath() %>/profile">Profile</a></li>
+                        <li><a class="dropdown-item" href="<%= request.getContextPath() %>/logout">Logout</a></li>
                     </ul>
                 </li>
                 <%
@@ -111,10 +83,8 @@
                 <li class="nav-item">
                     <a class="nav-link" href="<%= request.getContextPath() %>/login">Login</a>
                 </li>
-                <li class="nav-item ms-2">
-                    <a class="btn btn-primary btn-sm" href="<%= request.getContextPath() %>/register">
-                        <i class="bi bi-person-plus-fill"></i> Register
-                    </a>
+                <li class="nav-item  ms-2">
+                    <a class="nav-link" href="<%= request.getContextPath() %>/register">Register</a>
                 </li>
                 <%
                     }

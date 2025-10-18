@@ -1,4 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
+<jsp:include page="../inc/header.jsp" />
 <section class="page">
     <jsp:include page="../inc/side-bar.jsp" />
     <div class="page-title header-row">
@@ -63,3 +64,5 @@
         </div>
     </div>
 </section>
+<jsp:include page="../inc/chatbox.jsp" />
+<jsp:include page="../inc/footer.jsp" />

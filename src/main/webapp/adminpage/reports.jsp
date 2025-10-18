@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<jsp:include page="../inc/header.jsp" />
 <section class="page">
     <jsp:include page="../inc/side-bar.jsp" />
 
@@ -91,3 +92,5 @@
             ] }
     });
 </script>
+<jsp:include page="../inc/chatbox.jsp" />
+<jsp:include page="../inc/footer.jsp" />

@@ -1,4 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
+<jsp:include page="../inc/header.jsp" />
 <section class="page">
     <div class="page-title"><h1>Dashboard</h1><p>Welcome to PetCare Management System</p></div>
     <jsp:include page="../inc/side-bar.jsp" />
@@ -36,3 +37,5 @@
     new Chart(document.getElementById('rev6'),{type:'line',data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],datasets:[{label:'Revenue',data:[15000,18000,17000,20000,23000,22500]}]}});
     new Chart(document.getElementById('svcPie'),{type:'pie',data:{labels:['Grooming 35%','Veterinary 28%','Training 18%','Boarding 12%','Daycare 7%'],datasets:[{data:[35,28,18,12,7]}]}});
 </script>
+<jsp:include page="../inc/chatbox.jsp" />
+<jsp:include page="../inc/footer.jsp" />

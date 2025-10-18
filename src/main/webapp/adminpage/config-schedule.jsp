@@ -1,5 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
+<jsp:include page="../inc/header.jsp" />
 <section class="page">
+    <jsp:include page="../inc/side-bar.jsp" />
     <h1>System Configuration</h1><p>Configure rules, schedules, vouchers, and email notifications</p>
     <div class="tabs sub">
         <a class="tab active" href="${pageContext.request.contextPath}/config/schedule">Schedule</a>
@@ -22,3 +24,5 @@
         <button class="btn success">Save All Settings</button>
     </div>
 </section>
+<jsp:include page="../inc/chatbox.jsp" />
+<jsp:include page="../inc/footer.jsp" />

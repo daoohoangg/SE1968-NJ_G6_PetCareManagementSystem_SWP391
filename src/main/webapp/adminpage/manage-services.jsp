@@ -71,9 +71,63 @@
         .icon-btn.delete:hover{color:#dc2626;border-color:#fecaca;background:#fff}
 
         @media (max-width:900px){.content{padding:22px}.desc{display:none}}
+
+        .modal-backdrop{
+            position:fixed;inset:0;background:#ffffff;
+            display:none;align-items:center;justify-content:center;
+            z-index:1200;padding:20px;
+        }
+        .modal-backdrop.show{display:flex}
+        .modal-card{
+            width:100%;max-width:520px;background:#fff;border-radius:16px;
+            box-shadow:0 28px 60px rgba(15,23,42,.25);
+            border:1px solid rgba(148,163,184,.18);
+            overflow:hidden;animation:modalShow .22s ease-out;
+            color:var(--text);
+        }
+        .modal-card form{background:#fff;}
+        .modal-header{
+            padding:22px 28px 12px;display:flex;justify-content:space-between;align-items:flex-start;
+        }
+        .modal-title{margin:0;font-size:20px;font-weight:600;color:var(--text)}
+        .modal-sub{margin:4px 0 0;font-size:13px;color:var(--muted)}
+        .modal-close{
+            border:none;background:transparent;color:#6b7280;font-size:22px;cursor:pointer;
+            padding:0;margin:0 0 0 12px;line-height:1;
+        }
+        .modal-body{padding:0 28px 28px}
+        .modal-grid{display:grid;gap:14px}
+        .modal-field{display:flex;flex-direction:column;gap:6px}
+        .modal-field label{font-size:13px;font-weight:600;color:#374151}
+        .modal-field input,
+        .modal-field textarea,
+        .modal-field select{
+            border:1px solid var(--line);border-radius:10px;padding:11px 12px;
+            font-size:14px;color:var(--text);background:#fff;
+            transition:border-color .15s, box-shadow .15s;
+        }
+        .modal-field textarea{min-height:90px;resize:vertical}
+        .modal-field input:focus,
+        .modal-field textarea:focus,
+        .modal-field select:focus{
+            border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.18);outline:none;
+        }
+        .modal-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:22px}
+        .modal-actions button{
+            padding:10px 16px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;
+        }
+        .btn-cancel{background:#f3f4f6;color:#374151}
+        .btn-primary{background:var(--primary);color:#fff;box-shadow:0 1px 0 rgba(0,0,0,.05)}
+        .btn-primary:hover{filter:brightness(.96)}
+        body.modal-open{overflow:hidden}
+        @keyframes modalShow{
+            0%{transform:translateY(18px);opacity:0}
+            100%{transform:translateY(0);opacity:1}
+        }
     </style>
 </head>
 <body>
+<jsp:include page="../inc/header.jsp" />
 <div class="layout">
     <% request.setAttribute("currentPage", "manage-services"); %>
 
@@ -86,9 +140,81 @@
                 <h2>Manage Services</h2>
                 <p class="subtitle">Add, update, or delete service information</p>
             </div>
-            <a class="btn-add" href="${pageContext.request.contextPath}/admin/service?action=add">
+            <button type="button" class="btn-add" id="btnAddService">
                 <i class="ri-add-line"></i> Add Service
-            </a>
+            </button>
+        </div>
+
+        <div id="addServiceModal" class="modal-backdrop" aria-hidden="true">
+            <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addServiceTitle">
+                <form method="post" action="${pageContext.request.contextPath}/admin/service">
+                    <div class="modal-header">
+                        <div>
+                            <h3 class="modal-title" id="addServiceTitle">Add New Service</h3>
+                            <p class="modal-sub">Create a new service for your pet care business.</p>
+                        </div>
+                        <button type="button" class="modal-close" data-close-modal aria-label="Close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="action" value="create"/>
+                        <div class="modal-grid">
+                            <div class="modal-field">
+                                <label for="serviceNameInput">Service Name</label>
+                                <input type="text"
+                                       id="serviceNameInput"
+                                       name="serviceName"
+                                       maxlength="100"
+                                       required
+                                       placeholder="e.g. Premium Grooming"/>
+                            </div>
+                            <div class="modal-field">
+                                <label for="categorySelect">Category</label>
+                                <select id="categorySelect" name="categoryId" required>
+                                    <option value="" disabled selected>Select category</option>
+                                    <c:forEach var="cat" items="${categories}">
+                                        <option value="${cat.categoryId}">${cat.name}</option>
+                                    </c:forEach>
+                                </select>
+                            </div>
+                            <div class="modal-field">
+                                <label for="durationInput">Duration (minutes)</label>
+                                <input type="number"
+                                       id="durationInput"
+                                       name="durationMinutes"
+                                       min="0"
+                                       placeholder="e.g. 60"/>
+                            </div>
+                            <div class="modal-field">
+                                <label for="priceInput">Price ($)</label>
+                                <input type="number"
+                                       id="priceInput"
+                                       name="price"
+                                       min="0.01"
+                                       step="0.01"
+                                       required
+                                       placeholder="e.g. 49.99"/>
+                            </div>
+                            <div class="modal-field">
+                                <label for="descriptionInput">Description</label>
+                                <textarea id="descriptionInput"
+                                          name="description"
+                                          placeholder="Add a short description"></textarea>
+                            </div>
+                            <div class="modal-field">
+                                <label for="statusSelect">Status</label>
+                                <select id="statusSelect" name="status">
+                                    <option value="active" selected>Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-cancel" data-close-modal>Cancel</button>
+                            <button type="submit" class="btn-primary">Add Service</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <!-- Flash -->
@@ -138,10 +264,8 @@
         </form>
 
         <!-- Data binding -->
-        <c:set var="rows" value="${serviceList}" />
-        <c:if test="${empty rows}">
-            <c:set var="rows" value="${services}" />
-        </c:if>
+        <c:set var="rows"
+               value="${not empty requestScope.rows ? requestScope.rows : (not empty serviceList ? serviceList : services)}" />
 
         <div class="card">
             <table>
@@ -176,7 +300,12 @@
                                         <c:otherwise><span class="tag">${catName}</span></c:otherwise>
                                     </c:choose>
                                 </td>
-                                <td><c:out value="${empty s.durationMinutes ? '-' : s.durationMinutes + ' min'}"/></td>
+                                <td>
+                                    <c:choose>
+                                        <c:when test="${empty s.durationMinutes}">-</c:when>
+                                        <c:otherwise><c:out value="${s.durationMinutes}"/> min</c:otherwise>
+                                    </c:choose>
+                                </td>
                                 <td><fmt:formatNumber value="${s.price}" type="currency" currencySymbol="$" minFractionDigits="2"/></td>
                                 <td>
                                     <c:choose>
@@ -203,6 +332,66 @@
     </main>
 </div>
 
+<script>
+    (function () {
+        const modal = document.getElementById('addServiceModal');
+        if (!modal) return;
+
+        const openBtn = document.getElementById('btnAddService');
+        const closeBtns = modal.querySelectorAll('[data-close-modal]');
+        const form = modal.querySelector('form');
+        const statusSelect = modal.querySelector('#statusSelect');
+        const categorySelect = modal.querySelector('#categorySelect');
+        const nameInput = modal.querySelector('#serviceNameInput');
+        const shouldOpenOnLoad = '${openAddModal == true}' === 'true';
+
+        const showModal = () => {
+            if (form) {
+                form.reset();
+                if (statusSelect) statusSelect.value = 'active';
+                if (categorySelect) categorySelect.selectedIndex = 0;
+            }
+            modal.classList.add('show');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-open');
+            window.setTimeout(() => nameInput && nameInput.focus(), 70);
+        };
+
+        const hideModal = () => {
+            modal.classList.remove('show');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('modal-open');
+        };
+
+        openBtn && openBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            showModal();
+        });
+
+        closeBtns.forEach(btn => btn.addEventListener('click', (event) => {
+            event.preventDefault();
+            hideModal();
+        }));
+
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                hideModal();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && modal.classList.contains('show')) {
+                hideModal();
+            }
+        });
+
+        if (shouldOpenOnLoad) {
+            showModal();
+        }
+    })();
+</script>
+
 <jsp:include page="../inc/chatbox.jsp" />
+<jsp:include page="../inc/footer.jsp" />
 </body>
 </html>

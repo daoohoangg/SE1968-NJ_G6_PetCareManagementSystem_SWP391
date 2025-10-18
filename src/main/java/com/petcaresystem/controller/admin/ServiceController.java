@@ -10,6 +10,7 @@ import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 
 @WebServlet("/admin/service")
@@ -55,9 +56,7 @@ public class ServiceController extends HttpServlet {
             throws ServletException, IOException {
         List<Service> services = serviceManageService.getAllServices();
         List<ServiceCategory> categories = serviceManageService.getAllCategories();
-        req.setAttribute("services", services);
-        req.setAttribute("categories", categories);
-        System.out.println(services);
+        populateListAttributes(req, services, categories);
         req.getRequestDispatcher("/adminpage/manage-services.jsp").forward(req, resp);
     }
 
@@ -74,8 +73,7 @@ public class ServiceController extends HttpServlet {
         );
         List<ServiceCategory> categories = serviceManageService.getAllCategories();
 
-        req.setAttribute("services", services);
-        req.setAttribute("categories", categories);
+        populateListAttributes(req, services, categories);
         req.setAttribute("keyword", keyword);
         req.setAttribute("selectedCategoryId", categoryId);
         req.setAttribute("selectedActive", req.getParameter("isActive"));
@@ -105,8 +103,11 @@ public class ServiceController extends HttpServlet {
 
     private void showAddForm(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        req.setAttribute("categories", serviceManageService.getAllCategories());
-        req.getRequestDispatcher("/adminpage/add-service.jsp").forward(req, resp);
+        List<Service> services = serviceManageService.getAllServices();
+        List<ServiceCategory> categories = serviceManageService.getAllCategories();
+        populateListAttributes(req, services, categories);
+        req.setAttribute("openAddModal", true);
+        req.getRequestDispatcher("/adminpage/manage-services.jsp").forward(req, resp);
     }
 
     private void showEditForm(HttpServletRequest req, HttpServletResponse resp)
@@ -159,7 +160,7 @@ public class ServiceController extends HttpServlet {
         BigDecimal price  = parseMoney(req.getParameter("price"));
         Integer duration  = parseInt(req.getParameter("durationMinutes"));
         Integer categoryId= parseInt(req.getParameter("categoryId"));
-        boolean isActive  = req.getParameter("isActive") != null;
+        boolean isActive  = parseActiveFlag(req);
 
         boolean ok = serviceManageService.createService(
                 name, desc, price, duration, categoryId, isActive
@@ -183,7 +184,7 @@ public class ServiceController extends HttpServlet {
         BigDecimal price  = parseMoney(req.getParameter("price"));
         Integer duration  = parseInt(req.getParameter("durationMinutes"));
         Integer categoryId= parseInt(req.getParameter("categoryId"));
-        boolean isActive  = req.getParameter("isActive") != null;
+        boolean isActive  = parseActiveFlag(req);
 
         boolean ok = serviceManageService.updateService(
                 serviceId, name, desc, price, duration, categoryId, isActive
@@ -221,7 +222,37 @@ public class ServiceController extends HttpServlet {
         if (s == null || s.isBlank()) return null;
         return Boolean.parseBoolean(s);
     }
+    private static boolean parseActiveFlag(HttpServletRequest req) {
+        String[] keys = {"status", "serviceStatus", "isActive", "active"};
+        for (String key : keys) {
+            String raw = trim(req.getParameter(key));
+            if (raw == null) continue;
+            switch (raw.toLowerCase()) {
+                case "true":
+                case "1":
+                case "on":
+                case "active":
+                case "yes":
+                    return true;
+                case "false":
+                case "0":
+                case "off":
+                case "inactive":
+                case "no":
+                    return false;
+            }
+        }
+        return req.getParameter("isActive") != null;
+    }
     private static void flash(HttpServletRequest req, String key, String msg) {
         req.getSession().setAttribute(key, msg);
+    }
+    private void populateListAttributes(HttpServletRequest req, List<Service> services, List<ServiceCategory> categories) {
+        List<Service> safeServices = services != null ? services : Collections.emptyList();
+        List<ServiceCategory> safeCategories = categories != null ? categories : Collections.emptyList();
+        req.setAttribute("services", safeServices);
+        req.setAttribute("serviceList", safeServices); // ensure JSP fallback works
+        req.setAttribute("rows", safeServices);
+        req.setAttribute("categories", safeCategories);
     }
 }
