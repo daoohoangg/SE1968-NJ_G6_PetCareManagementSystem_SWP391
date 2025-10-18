@@ -100,7 +100,7 @@
                         <%= loggedInAccount.getFullName() %>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="<%= request.getContextPath() %>/profile"><i class="bi bi-person-circle"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="<%= request.getContextPath() %>/customer/profile-edit.jsp"><i class="bi bi-person-circle"></i>Profile</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger" href="<%= request.getContextPath() %>/logout"><i class="bi bi-box-arrow-right"></i>Logout</a></li>
                     </ul>
