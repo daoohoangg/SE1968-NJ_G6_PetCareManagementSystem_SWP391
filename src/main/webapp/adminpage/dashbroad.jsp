@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
 <section class="page">
     <div class="page-title"><h1>Dashboard</h1><p>Welcome to PetCare Management System</p></div>
-
+    <jsp:include page="../inc/side-bar.jsp" />
     <div class="actions-row">
         <a class="btn primary">+ New Appointment</a>
         <a class="btn">+ Add Customer</a>
