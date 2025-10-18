@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <section class="page grid-2-1">
+    <jsp:include page="../inc/side-bar.jsp" />
     <div class="card">
         <div class="card-head"><strong>AI Assistant Chat</strong></div>
         <div class="chat-box">

@@ -1,18 +1,37 @@
 package com.petcaresystem.service.admin;
 
 import com.petcaresystem.enities.Service;
+import com.petcaresystem.enities.ServiceCategory;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface IServiceManageService {
+    // Query
     List<Service> getAllServices();
     Service getServiceById(int serviceId);
-    boolean createService(Service service);
-    boolean updateService(Service service);
+    List<Service> getActiveServices();
+
+    // Search/List with filters & sort (categoryId thay cho tên)
+    List<Service> searchServices(String keyword, Integer categoryId, Boolean isActive,
+                                 String sortBy, String sortOrder);
+
+    List<Service> getServicesByCategoryId(Integer categoryId);
+
+    // CRUD
+    boolean createService(Service s);
+    boolean updateService(Service s);
     boolean deleteService(int serviceId);
     boolean hardDeleteService(int serviceId);
-    List<Service> searchServices(String keyword, String category, Boolean isActive, String sortBy, String sortOrder);
-    List<Service> getActiveServices();
-    List<Service> getServicesByCategory(String category);
-    List<String> getAllCategories();
+
+    // Category helpers (ENTITY thay vì String)
+    List<ServiceCategory> getAllCategories();
+    ServiceCategory getCategoryById(int id);
+
+    // (Tùy chọn) các hàm “move-from-controller”: nhận raw params, map & validate ở service
+    boolean createService(String serviceName, String description, BigDecimal price,
+                          Integer durationMinutes, Integer categoryId, boolean isActive);
+
+    boolean updateService(int serviceId, String serviceName, String description, BigDecimal price,
+                          Integer durationMinutes, Integer categoryId, boolean isActive);
 }
