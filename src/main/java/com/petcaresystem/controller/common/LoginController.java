@@ -8,13 +8,10 @@ import java.io.IOException;
 
 @WebServlet("/login")
 public class LoginController extends HttpServlet {
-
     private final AccountDAO accountDAO = new AccountDAO();
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        // GET -> show form
         req.getRequestDispatcher("common/login.jsp").forward(req, resp);
     }
 
