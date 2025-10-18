@@ -12,6 +12,7 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 
 import java.io.IOException;
+import java.util.Objects;
 
 @WebServlet(name = "ProfileController", urlPatterns = {"/customer/profile"})
 public class ProfileController extends HttpServlet {
@@ -23,111 +24,99 @@ public class ProfileController extends HttpServlet {
         accountDAO = new AccountDAO();
     }
 
-    // ------------------- Helpers -------------------
-    /** Đọc user từ session: dùng khóa "account" cho đồng nhất với header.jsp */
-    private Account currentUser(HttpServletRequest request) {
-        Object obj = request.getSession().getAttribute("account");
-        if (obj == null) obj = request.getSession().getAttribute("user");
-        return (Account) obj;
-    }
+    /* ===== Helpers ===== */
 
-    /** Lưu user vào session với cả 2 khóa để tương thích */
-    private void syncSessionUser(HttpServletRequest request, Account acc) {
-        request.getSession().setAttribute("account", acc);
-        request.getSession().setAttribute("user", acc);
+    private Account currentUser(HttpServletRequest req) {
+        Object o = req.getSession().getAttribute("account");
+        if (o == null) o = req.getSession().getAttribute("user");
+        return (Account) o;
     }
 
     private void flash(HttpServletRequest req, String msg) {
         req.getSession().setAttribute("flash", msg);
     }
 
-    // ------------------- GET -------------------
+    private void syncSessionUser(HttpServletRequest req, Account acc) {
+        req.getSession().setAttribute("account", acc);
+        req.getSession().setAttribute("user", acc);
+    }
+
+    private static String trim(String s) { return s == null ? null : s.trim(); }
+
+    /* ===== GET ===== */
+
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        String action = request.getParameter("action");
+        String action = req.getParameter("action");
         if (action == null) action = "view";
 
         switch (action) {
             case "edit":
-                showEditForm(request, response);
+                showEdit(req, resp);
                 break;
-            default: // view
-                viewProfile(request, response);
-                break;
+            default:
+                view(req, resp);
         }
     }
 
-    private void viewProfile(HttpServletRequest request, HttpServletResponse response)
+    private void view(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        Account me = currentUser(request);
-        if (me == null) { response.sendRedirect(request.getContextPath() + "/login"); return; }
-
+        Account me = currentUser(req);
+        if (me == null) { resp.sendRedirect(req.getContextPath() + "/login"); return; }
 
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             Account fresh = s.get(Account.class, me.getAccountId());
-            request.setAttribute("profile", fresh != null ? fresh : me);
+            req.setAttribute("profile", fresh != null ? fresh : me);
         }
-        // ĐÚNG đường dẫn theo cây thư mục thực tế
-        request.getRequestDispatcher("/customer/profile-view.jsp").forward(request, response);
+        req.getRequestDispatcher("/home.jsp").forward(req, resp);
     }
 
-    private void showEditForm(HttpServletRequest request, HttpServletResponse response)
+    private void showEdit(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        Account me = currentUser(request);
-        if (me == null) { response.sendRedirect(request.getContextPath() + "/login"); return; }
+        Account me = currentUser(req);
+        if (me == null) { resp.sendRedirect(req.getContextPath() + "/login"); return; }
 
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             Account fresh = s.get(Account.class, me.getAccountId());
-            request.setAttribute("profile", fresh != null ? fresh : me);
+            req.setAttribute("profile", fresh != null ? fresh : me);
         }
-        request.getRequestDispatcher("/customer/profile-edit.jsp").forward(request, response);
+        req.getRequestDispatcher("/customer/profile-edit.jsp").forward(req, resp);
     }
 
-    // ------------------- POST -------------------
+    /* ===== POST ===== */
+
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-
-        String action = request.getParameter("action");
+        String action = req.getParameter("action");
         if (action == null) action = "update";
 
         switch (action) {
-            case "update":
-                updateProfile(request, response);
-                break;
             case "change-password":
-                changePassword(request, response);
+                changePassword(req, resp);
                 break;
-            case "deactivate":
-                deactivateAccount(request, response);
-                break;
+            case "update":
             default:
-                viewProfile(request, response);
-                break;
+                updateProfile(req, resp);
         }
     }
 
-    /** Cập nhật username/email/fullName/phone và (optional) password */
-    private void updateProfile(HttpServletRequest request, HttpServletResponse response)
+    private void updateProfile(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
-        Account me = currentUser(request);
-        if (me == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
-        }
+        Account me = currentUser(req);
+        if (me == null) { resp.sendRedirect(req.getContextPath() + "/login"); return; }
 
-        String username = trim(request.getParameter("username"));
-        String email    = trim(request.getParameter("email"));
-        String fullName = trim(request.getParameter("fullName"));
-        String phone    = trim(request.getParameter("phone"));
-        String password = trim(request.getParameter("password")); // có thể trống
+        String username = trim(req.getParameter("username"));
+        String email    = trim(req.getParameter("email"));
+        String fullName = trim(req.getParameter("fullName"));
+        String phone    = trim(req.getParameter("phone"));
+        String password = trim(req.getParameter("password"));
 
-        // Bắt buộc tối thiểu
         if (username == null || username.isEmpty() || email == null || email.isEmpty()) {
-            request.getSession().setAttribute("flash", "Username và Email là bắt buộc.");
-            response.sendRedirect(request.getContextPath() + "/customer/profile?action=edit");
+            flash(req, "Username và Email là bắt buộc.");
+            resp.sendRedirect(req.getContextPath() + "/customer/profile?action=edit");
             return;
         }
 
@@ -137,137 +126,114 @@ public class ProfileController extends HttpServlet {
 
             Account db = s.get(Account.class, me.getAccountId());
             if (db == null) {
-                request.getSession().setAttribute("flash", "Account not found.");
-                response.sendRedirect(request.getContextPath() + "/customer/profile?action=edit");
+                flash(req, "Account không tồn tại.");
+                resp.sendRedirect(req.getContextPath() + "/customer/profile?action=edit");
                 return;
             }
 
             boolean changed = false;
 
-            // Nếu thay đổi username -> kiểm tra trùng
-            if (!safeEquals(username, db.getUsername())) {
+
+            if (!Objects.equals(username, db.getUsername())) {
                 Account clash = accountDAO.getAccountByEmailOrUsername(username);
                 if (clash != null && !clash.getAccountId().equals(db.getAccountId())) {
-                    request.getSession().setAttribute("flash", "Username đã được sử dụng.");
-                    response.sendRedirect(request.getContextPath() + "/customer/profile?action=edit");
+                    flash(req, "Username đã được sử dụng.");
+                    resp.sendRedirect(req.getContextPath() + "/customer/profile?action=edit");
                     return;
                 }
                 db.setUsername(username);
                 changed = true;
             }
 
-            // Nếu thay đổi email -> kiểm tra trùng
-            if (!safeEquals(email, db.getEmail())) {
+
+            if (!Objects.equals(email, db.getEmail())) {
                 Account clash = accountDAO.getAccountByEmailOrUsername(email);
                 if (clash != null && !clash.getAccountId().equals(db.getAccountId())) {
-                    request.getSession().setAttribute("flash", "Email đã được sử dụng.");
-                    response.sendRedirect(request.getContextPath() + "/customer/profile?action=edit");
+                    flash(req, "Email đã được sử dụng.");
+                    resp.sendRedirect(req.getContextPath() + "/customer/profile?action=edit");
                     return;
                 }
                 db.setEmail(email);
                 changed = true;
             }
 
-            // Full name
-            if (!safeEquals(fullName, db.getFullName())) {
+            if (!Objects.equals(fullName, db.getFullName())) {
                 db.setFullName(fullName);
                 changed = true;
             }
-
-            // Phone
-            if (!safeEquals(phone, db.getPhone())) {
+            if (!Objects.equals(phone, db.getPhone())) {
                 db.setPhone(phone);
                 changed = true;
             }
 
-            // Password (nếu có nhập)
+
             if (password != null && !password.isBlank()) {
-                db.setPassword(password); // TODO: hash nếu cần
+                boolean ok = accountDAO.changePassword(db.getAccountId().intValue(), password);
+                if (!ok) {
+                    if (tx != null) tx.rollback();
+                    flash(req, "Đổi mật khẩu thất bại.");
+                    resp.sendRedirect(req.getContextPath() + "/customer/profile?action=edit");
+                    return;
+                }
+
+                db = s.get(Account.class, me.getAccountId());
                 changed = true;
             }
 
-            // Không thay đổi gì → quay lại trang edit
             if (!changed) {
-                request.getSession().setAttribute("flash", "Không có thay đổi nào để lưu.");
-                response.sendRedirect(request.getContextPath() + "/customer/profile?action=edit");
+                flash(req, "Không có thay đổi nào để lưu.");
+                resp.sendRedirect(req.getContextPath() + "/customer/profile?action=edit");
                 return;
             }
 
+
             s.merge(db);
+            s.flush();
             tx.commit();
 
-            // Cập nhật lại session để hiển thị dữ liệu mới
-            request.getSession().setAttribute("user", db);
-            request.getSession().setAttribute("account", db);
-            request.getSession().setAttribute("flash", "Cập nhật thành công.");
 
-            // Muốn về home thì đổi dòng dưới thành: response.sendRedirect(ctx + "/home");
-            response.sendRedirect(request.getContextPath() + "/customer/profile?action=view");
+            syncSessionUser(req, db);
+            flash(req, "Cập nhật thành công.");
+            resp.sendRedirect(req.getContextPath() + "/customer/profile?action=view");
 
         } catch (Exception e) {
             if (tx != null) tx.rollback();
             e.printStackTrace();
-            request.getSession().setAttribute("flash", "Cập nhật thất bại.");
-            response.sendRedirect(request.getContextPath() + "/customer/profile?action=edit");
+            flash(req, "Cập nhật thất bại.");
+            resp.sendRedirect(req.getContextPath() + "/customer/profile?action=edit");
         }
     }
 
-    // Helpers nhỏ
-    private static String trim(String s) {
-        return (s == null) ? null : s.trim();
-    }
-    private static boolean safeEquals(Object a, Object b) {
-        return java.util.Objects.equals(a, b);
-    }
-
-    private void changePassword(HttpServletRequest request, HttpServletResponse response)
+    private void changePassword(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
-        Account me = currentUser(request);
-        if (me == null) { response.sendRedirect(request.getContextPath() + "/login"); return; }
+        Account me = currentUser(req);
+        if (me == null) { resp.sendRedirect(req.getContextPath() + "/login"); return; }
 
-        String newPassword = request.getParameter("password");
-        String redirect = request.getParameter("redirect");
+        String newPassword = trim(req.getParameter("password"));
+        String redirect = req.getParameter("redirect");
 
         if (newPassword == null || newPassword.isBlank()) {
+            flash(req, "Password không được để trống.");
+            resp.sendRedirect(req.getContextPath() + "/customer/profile?action=edit");
+            return;
+        }
 
-            flash(request, "Password cannot be empty.");
-            response.sendRedirect(request.getContextPath() + "/customer/profile?action=view");
+        boolean ok = accountDAO.changePassword(me.getAccountId().intValue(), newPassword);
+        if (!ok) {
+            flash(req, "Đổi mật khẩu thất bại.");
+            resp.sendRedirect(req.getContextPath() + "/customer/profile?action=edit");
             return;
         }
 
 
-        flash(request, "Password changed.");
+        Account fresh = accountDAO.findById(me.getAccountId().intValue());
+        if (fresh != null) syncSessionUser(req, fresh);
+
+        flash(req, "Đổi mật khẩu thành công.");
         if ("home".equalsIgnoreCase(redirect)) {
-            response.sendRedirect(request.getContextPath() + "/home");
+            resp.sendRedirect(req.getContextPath() + "/home");
         } else {
-            response.sendRedirect(request.getContextPath() + "/customer/profile?action=view");
-        }
-    }
-
-    private void deactivateAccount(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-        Account me = currentUser(request);
-        if (me == null) { response.sendRedirect(request.getContextPath() + "/login"); return; }
-
-        Transaction tx = null;
-        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
-            tx = s.beginTransaction();
-            Account db = s.get(Account.class, me.getAccountId());
-            if (db != null) {
-                db.setIsActive(false);
-                s.merge(db);
-                tx.commit();
-                request.getSession().invalidate();
-                response.sendRedirect(request.getContextPath() + "/");
-            } else {
-                if (tx != null) tx.rollback();
-                flash(request, "Account not found.");
-                response.sendRedirect(request.getContextPath() + "/customer/profile?action=view");
-            }
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            flash(request, "Deactivate failed.");
-            response.sendRedirect(request.getContextPath() + "/customer/profile?action=view");
+            resp.sendRedirect(req.getContextPath() + "/customer/profile?action=view");
         }
     }
 }
