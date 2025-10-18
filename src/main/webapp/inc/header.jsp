@@ -12,9 +12,6 @@
         font-weight: 500;
         transition: color 0.2s ease-in-out;
     }
-    .nav-link i {
-        margin-right: 8px;
-    }
     .navbar-brand {
         font-weight: bold;
         letter-spacing: 1px;
@@ -41,7 +38,7 @@
 <header>
     <nav class="navbar navbar-expand-lg navbar-light bg-light px-3 border-bottom shadow-sm">
         <a class="navbar-brand text-primary" href="<%= request.getContextPath() %>/home">
-            <i class="bi bi-hearts"></i> PetCare
+            PetCare
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
             <span class="navbar-toggler-icon"></span>
@@ -50,7 +47,7 @@
         <div class="collapse navbar-collapse" id="mainNavbar">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/home"><i class="bi bi-house-door-fill"></i>Home</a>
+                    <a class="nav-link" href="<%= request.getContextPath() %>/home">Home</a>
                 </li>
 
                 <%
@@ -59,30 +56,30 @@
                         if (role == AccountRoleEnum.ADMIN) { //Phần này dành cho admin
                 %>
                 <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/admin/dashboard"><i class="bi bi-speedometer2"></i>Dashboard</a>
+                    <a class="nav-link" href="<%= request.getContextPath() %>/admin/dashboard">Dashboard</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/admin/users"><i class="bi bi-people-fill"></i>Manage Users</a>
+                    <a class="nav-link" href="<%= request.getContextPath() %>/admin/users">Manage Users</a>
                 </li>
                 <%
                 }
                 else if (role == AccountRoleEnum.STAFF) { // Phần này dành cho Staff
                 %>
                 <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/staff/customers"><i class="bi bi-person-lines-fill"></i>Manage Customers</a>
+                    <a class="nav-link" href="<%= request.getContextPath() %>/staff/customers">Manage</a>
                 </li>
                 <%
                 }
                 else { // Phần này dành cho Customer
                 %>
                 <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/services"><i class="bi bi-briefcase-fill"></i>Services</a>
+                    <a class="nav-link" href="<%= request.getContextPath() %>/services">Services</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/user/petList"><i class="bi bi-heart-fill"></i>My Pets</a>
+                    <a class="nav-link" href="<%= request.getContextPath() %>/user/petList">My Pets</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/customer/appointments.jsp"><i class="bi bi-calendar-check-fill"></i>Appointments</a>
+                    <a class="nav-link" href="<%= request.getContextPath() %>/customer/appointments.jsp">Appointments</a>
                 </li>
                 <%
                         }
@@ -100,9 +97,9 @@
                         <%= loggedInAccount.getFullName() %>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="<%= request.getContextPath() %>/customer/profile-edit.jsp"><i class="bi bi-person-circle"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="<%= request.getContextPath() %>/customer/profile-edit.jsp">Profile</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="<%= request.getContextPath() %>/logout"><i class="bi bi-box-arrow-right"></i>Logout</a></li>
+                        <li><a class="dropdown-item text-danger" href="<%= request.getContextPath() %>/logout">Logout</a></li>
                     </ul>
                 </li>
                 <%
@@ -113,7 +110,7 @@
                 </li>
                 <li class="nav-item ms-2">
                     <a class="btn btn-primary btn-sm" href="<%= request.getContextPath() %>/register">
-                        <i class="bi bi-person-plus-fill"></i> Register
+                        Register
                     </a>
                 </li>
                 <%
