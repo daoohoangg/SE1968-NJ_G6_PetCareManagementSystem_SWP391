@@ -7,30 +7,49 @@ import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
 import java.util.List;
+import java.util.Map;
 
 public class ServiceDAO {
 
-    // Get all services
+    // Whitelist cột sort -> tránh lỗi cú pháp & injection
+    private static final Map<String, String> SORT_MAP = Map.of(
+            "serviceId",   "s.serviceId",
+            "serviceName", "s.serviceName",
+            "price",       "s.price",
+            "duration",    "s.durationMinutes",
+            "updated",     "s.updatedAt",
+            "category",    "c.name" // sort theo thuộc tính scalar của category
+    );
+
+    /** Lấy tất cả service + category (tránh N+1) */
     public List<Service> getAllServices() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("FROM Service ORDER BY serviceId DESC", Service.class).list();
+            List<Service> list = session.createQuery(
+                    "SELECT s FROM Service s LEFT JOIN FETCH s.category c ORDER BY s.serviceId DESC",
+                    Service.class
+            ).list();
+            System.out.println("[DAO] services size = " + (list == null ? "null" : list.size()));
+            return list != null ? list : java.util.Collections.emptyList();
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return java.util.Collections.emptyList();
         }
     }
 
-    // Get service by ID
+    /** Lấy 1 service kèm category */
     public Service getServiceById(int serviceId) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.get(Service.class, serviceId);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            return session.createQuery(
+                            "SELECT s FROM Service s " +
+                                    "LEFT JOIN FETCH s.category " +
+                                    "WHERE s.serviceId = :id",
+                            Service.class
+                    ).setParameter("id", serviceId)
+                    .uniqueResult();
         }
     }
 
-    // Create new service
+    /** Tạo service */
     public boolean createService(Service service) {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
@@ -40,12 +59,11 @@ public class ServiceDAO {
             return true;
         } catch (Exception e) {
             if (tx != null) tx.rollback();
-            e.printStackTrace();
             return false;
         }
     }
 
-    // Update service
+    /** Cập nhật service */
     public boolean updateService(Service service) {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
@@ -55,133 +73,114 @@ public class ServiceDAO {
             return true;
         } catch (Exception e) {
             if (tx != null) tx.rollback();
-            e.printStackTrace();
             return false;
         }
     }
 
-    // Delete service (soft delete by setting isActive to false)
+    /** Soft delete: set isActive = false */
     public boolean deleteService(int serviceId) {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             tx = session.beginTransaction();
-            Service service = session.get(Service.class, serviceId);
-            if (service != null) {
-                service.setActive(false);
-                session.merge(service);
+            Service s = session.get(Service.class, serviceId);
+            if (s != null) {
+                s.setActive(false);
+                session.merge(s);
                 tx.commit();
                 return true;
             }
             return false;
         } catch (Exception e) {
             if (tx != null) tx.rollback();
-            e.printStackTrace();
             return false;
         }
     }
 
-    // Hard delete service
+    /** Hard delete */
     public boolean hardDeleteService(int serviceId) {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             tx = session.beginTransaction();
-            Service service = session.get(Service.class, serviceId);
-            if (service != null) {
-                session.remove(service);
+            Service s = session.get(Service.class, serviceId);
+            if (s != null) {
+                session.remove(s);
                 tx.commit();
                 return true;
             }
             return false;
         } catch (Exception e) {
             if (tx != null) tx.rollback();
-            e.printStackTrace();
             return false;
         }
     }
 
-    // Search services with filters and sorting
-    public List<Service> searchServices(String keyword, String category, Boolean isActive,
+    /** Search + filter + sort (dùng categoryId) */
+    public List<Service> searchServices(String keyword, Integer categoryId, Boolean isActive,
                                         String sortBy, String sortOrder) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            StringBuilder hql = new StringBuilder("FROM Service WHERE 1=1");
+            StringBuilder hql = new StringBuilder(
+                    "SELECT s FROM Service s " +
+                            "LEFT JOIN FETCH s.category c " + // fetch để JSP đọc s.category an toàn
+                            "WHERE 1=1 "
+            );
 
-            // Add keyword search
-            if (keyword != null && !keyword.trim().isEmpty()) {
-                hql.append(" AND (LOWER(serviceName) LIKE :keyword OR LOWER(description) LIKE :keyword)");
+            if (keyword != null && !keyword.isBlank()) {
+                hql.append("AND (LOWER(s.serviceName) LIKE :kw OR LOWER(s.description) LIKE :kw) ");
             }
-
-            // Add category filter
-            if (category != null && !category.trim().isEmpty()) {
-                hql.append(" AND category = :category");
-            }
-
-            // Add active status filter
-            if (isActive != null) {
-                hql.append(" AND isActive = :isActive");
-            }
-
-            // Add sorting
-            if (sortBy != null && !sortBy.trim().isEmpty()) {
-                hql.append(" ORDER BY ").append(sortBy);
-                if (sortOrder != null && sortOrder.equalsIgnoreCase("DESC")) {
-                    hql.append(" DESC");
-                } else {
-                    hql.append(" ASC");
-                }
-            } else {
-                hql.append(" ORDER BY serviceId DESC");
-            }
-
-            Query<Service> query = session.createQuery(hql.toString(), Service.class);
-
-            // Set parameters
-            if (keyword != null && !keyword.trim().isEmpty()) {
-                query.setParameter("keyword", "%" + keyword.toLowerCase() + "%");
-            }
-            if (category != null && !category.trim().isEmpty()) {
-                query.setParameter("category", category);
+            if (categoryId != null) {
+                hql.append("AND c.categoryId = :cid ");
             }
             if (isActive != null) {
-                query.setParameter("isActive", isActive);
+                hql.append("AND s.isActive = :ia ");
             }
 
-            return query.list();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            String orderField = SORT_MAP.getOrDefault(
+                    sortBy == null ? "" : sortBy.trim(),
+                    "s.serviceId"
+            );
+            hql.append("ORDER BY ").append(orderField)
+                    .append(" DESC".equalsIgnoreCase(sortOrder) ? " DESC" : " ASC");
+
+            Query<Service> q = session.createQuery(hql.toString(), Service.class);
+
+            if (keyword != null && !keyword.isBlank()) {
+                q.setParameter("kw", "%" + keyword.toLowerCase() + "%");
+            }
+            if (categoryId != null) {
+                q.setParameter("cid", categoryId);
+            }
+            if (isActive != null) {
+                q.setParameter("ia", isActive);
+            }
+
+            return q.list();
         }
     }
 
-    // Get all active services
+    /** Active services */
     public List<Service> getActiveServices() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("FROM Service WHERE isActive = true ORDER BY serviceName", Service.class).list();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            return session.createQuery(
+                    "SELECT s FROM Service s " +
+                            "LEFT JOIN FETCH s.category " +
+                            "WHERE s.isActive = true " +
+                            "ORDER BY s.serviceName",
+                    Service.class
+            ).list();
         }
     }
 
-    // Get services by category
-    public List<Service> getServicesByCategory(String category) {
+    /** Dịch vụ theo categoryId */
+    public List<Service> getServicesByCategoryId(int categoryId) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Query<Service> query = session.createQuery(
-                    "FROM Service WHERE category = :category ORDER BY serviceName", Service.class);
-            query.setParameter("category", category);
-            return query.list();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    // Get all distinct categories
-    public List<String> getAllCategories() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("SELECT DISTINCT category FROM Service WHERE category IS NOT NULL ORDER BY category", String.class).list();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            return session.createQuery(
+                            "SELECT s FROM Service s " +
+                                    "LEFT JOIN FETCH s.category c " +
+                                    "WHERE c.categoryId = :cid " +
+                                    "ORDER BY s.serviceName",
+                            Service.class
+                    ).setParameter("cid", categoryId)
+                    .list();
         }
     }
 }

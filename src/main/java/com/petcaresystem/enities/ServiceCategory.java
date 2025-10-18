@@ -1,9 +1,7 @@
 package com.petcaresystem.enities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -35,6 +33,8 @@ public class ServiceCategory {
 
     // Relationships
     // One category can contain multiple services
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Service> services = new ArrayList<>();
 

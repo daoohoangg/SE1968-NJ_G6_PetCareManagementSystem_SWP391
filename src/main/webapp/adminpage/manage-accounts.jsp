@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <section class="page">
+    <jsp:include page="../inc/side-bar.jsp" />
     <div class="page-title header-row">
         <div>
             <h1>Account Management</h1>

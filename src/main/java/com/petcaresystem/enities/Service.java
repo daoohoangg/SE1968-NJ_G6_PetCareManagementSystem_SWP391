@@ -1,9 +1,7 @@
 package com.petcaresystem.enities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -47,10 +45,12 @@ public class Service {
     private LocalDateTime updatedAt;
 
     // Relationships
+    @ToString.Exclude @EqualsAndHashCode.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private Administration createdBy;
 
+    @ToString.Exclude @EqualsAndHashCode.Exclude
     @ManyToMany(mappedBy = "services")
     private List<Appointment> appointments = new ArrayList<>();
 

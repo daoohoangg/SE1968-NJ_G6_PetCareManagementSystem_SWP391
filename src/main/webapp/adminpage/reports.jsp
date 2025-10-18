@@ -1,6 +1,8 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <section class="page">
+    <jsp:include page="../inc/side-bar.jsp" />
+
     <div class="page-title">
         <h1>Generate Reports</h1>
         <p>Operational and financial reports from the system</p>
