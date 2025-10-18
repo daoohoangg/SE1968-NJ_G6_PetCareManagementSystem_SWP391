@@ -82,7 +82,7 @@
                     <a class="nav-link" href="<%= request.getContextPath() %>/user/petList"><i class="bi bi-heart-fill"></i>My Pets</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/user/appointments"><i class="bi bi-calendar-check-fill"></i>Appointments</a>
+                    <a class="nav-link" href="<%= request.getContextPath() %>/customer/appointments.jsp"><i class="bi bi-calendar-check-fill"></i>Appointments</a>
                 </li>
                 <%
                         }
