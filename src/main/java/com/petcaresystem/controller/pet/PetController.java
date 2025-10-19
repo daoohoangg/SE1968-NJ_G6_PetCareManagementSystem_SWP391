@@ -2,12 +2,13 @@ package com.petcaresystem.controller.pet;
 
 import com.petcaresystem.dao.PetDAO;
 import com.petcaresystem.enities.Pet;
-import com.petcaresystem.enities.Account;
+import com.petcaresystem.enities.Customer;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,7 +23,6 @@ public class PetController extends HttpServlet {
         petDAO = new PetDAO();
     }
 
-    // ------------------- XỬ LÝ GET -------------------
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -43,7 +43,6 @@ public class PetController extends HttpServlet {
         }
     }
 
-    // ------------------- XỬ LÝ POST -------------------
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -61,8 +60,6 @@ public class PetController extends HttpServlet {
         }
     }
 
-    // ------------------- CÁC HÀM XỬ LÝ -------------------
-
     private void listPet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         List<Pet> pets = petDAO.getPet();
@@ -77,16 +74,19 @@ public class PetController extends HttpServlet {
         int age = Integer.parseInt(request.getParameter("age"));
         String healthStatus = request.getParameter("healthStatus");
 
-        // 🔸 Giả lập lấy chủ sở hữu (owner) từ session hoặc tạo tạm
-//        Account owner = new Account();
-       // owner.setIdaccount(1); // tạm thời gán id = 1 (sau này lấy theo người dùng đăng nhập)
+        // ✅ Lấy customer hiện tại (nếu có)
+        HttpSession session = request.getSession();
+        Customer currentCustomer = (Customer) session.getAttribute("account");
 
         Pet newPet = new Pet();
         newPet.setName(name);
         newPet.setBreed(breed);
         newPet.setAge(age);
         newPet.setHealthStatus(healthStatus);
-       // newPet.setOwner(owner);
+
+        if (currentCustomer != null) {
+            newPet.setCustomer(currentCustomer);
+        }
 
         petDAO.addPet(newPet);
         response.sendRedirect("pet?action=list");

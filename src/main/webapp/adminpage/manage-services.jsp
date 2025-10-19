@@ -73,9 +73,11 @@
         @media (max-width:900px){.content{padding:22px}.desc{display:none}}
 
         .modal-backdrop{
-            position:fixed;inset:0;background:#ffffff;
+            position:fixed;inset:0;background:rgba(17,24,39,.7);
             display:none;align-items:center;justify-content:center;
             z-index:1200;padding:20px;
+            backdrop-filter:none !important;
+            -webkit-backdrop-filter:none !important;
         }
         .modal-backdrop.show{display:flex}
         .modal-card{
@@ -83,9 +85,17 @@
             box-shadow:0 28px 60px rgba(15,23,42,.25);
             border:1px solid rgba(148,163,184,.18);
             overflow:hidden;animation:modalShow .22s ease-out;
+            opacity: 1 !important;
+            filter: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter:none !important;
+            background-color:#fff;
             color:var(--text);
         }
         .modal-card form{background:#fff;}
+        .modal-header,
+        .modal-body,
+        .modal-actions{background:#fff;}
         .modal-header{
             padding:22px 28px 12px;display:flex;justify-content:space-between;align-items:flex-start;
         }

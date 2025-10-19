@@ -13,8 +13,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.hibernate.Session;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 @WebServlet(name = "PetSelfController", urlPatterns = {"/customer/pets"})
@@ -29,7 +27,6 @@ public class PetSelfController extends HttpServlet {
 
     /* ------------ helpers ------------ */
 
-    /** Lấy accountId (Long) từ user trong session (có thể là Customer hoặc Account) */
     private Long currentAccountId(HttpServletRequest req) {
         Object u = req.getSession().getAttribute("user");
         if (u == null) return null;
@@ -37,16 +34,19 @@ public class PetSelfController extends HttpServlet {
         if (u instanceof Account a)  return a.getAccountId();
         return null;
     }
-
-    /** Lấy Customer từ session (nên lưu Customer khi login) */
     private Customer currentCustomer(HttpServletRequest req) {
         Object u = req.getSession().getAttribute("user");
         return (u instanceof Customer) ? (Customer) u : null;
+
     }
 
     private boolean isBlank(String s) { return s == null || s.isBlank(); }
 
-    /** Lấy Pet theo id (DAO của bạn chưa có findById(Long) nên dùng Hibernate trực tiếp) */
+    private Integer parseIntOrNull(String s) {
+        try { return isBlank(s) ? null : Integer.valueOf(s.trim()); }
+        catch (NumberFormatException e) { return null; }
+    }
+
     private Pet getPetById(Long id) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             return s.get(Pet.class, id);
@@ -112,6 +112,7 @@ public class PetSelfController extends HttpServlet {
 
     private void list(HttpServletRequest req, HttpServletResponse resp, Long customerAccountId)
             throws ServletException, IOException {
+        // Giả định PetDAO có hàm findByCustomerId(accountId)
         List<Pet> pets = petDAO.findByCustomerId(customerAccountId);
         req.setAttribute("pets", pets);
         req.getRequestDispatcher("/views/customer/pet-list.jsp").forward(req, resp);
@@ -122,8 +123,7 @@ public class PetSelfController extends HttpServlet {
 
         Customer customer = currentCustomer(req);
         if (customer == null) {
-
-            req.getSession().setAttribute("flash", "Cannot create pet: user is not a Customer.");
+            req.getSession().setAttribute("flash", "Không thể tạo thú cưng: bạn chưa đăng nhập bằng tài khoản khách hàng.");
             resp.sendRedirect(req.getContextPath() + "/customer/pets?action=list");
             return;
         }
@@ -131,21 +131,11 @@ public class PetSelfController extends HttpServlet {
         Pet p = new Pet();
         p.setCustomer(customer);
 
+        // Chỉ set các field có trong entity Pet
         p.setName(req.getParameter("name"));
-        p.setSpecies(req.getParameter("species"));
         p.setBreed(req.getParameter("breed"));
-        p.setGender(req.getParameter("gender"));
+        p.setAge(parseIntOrNull(req.getParameter("age")));
         p.setHealthStatus(req.getParameter("healthStatus"));
-        p.setMedicalNotes(req.getParameter("medicalNotes"));
-
-        String age = req.getParameter("age");
-        p.setAge(isBlank(age) ? null : Integer.valueOf(age));
-
-        String dob = req.getParameter("dateOfBirth");
-        p.setDateOfBirth(isBlank(dob) ? null : LocalDate.parse(dob));
-
-        String weight = req.getParameter("weight");
-        p.setWeight(isBlank(weight) ? null : new BigDecimal(weight));
 
         petDAO.addPet(p);
         resp.sendRedirect(req.getContextPath() + "/customer/pets?action=list");
@@ -162,20 +152,9 @@ public class PetSelfController extends HttpServlet {
         }
 
         p.setName(req.getParameter("name"));
-        p.setSpecies(req.getParameter("species"));
         p.setBreed(req.getParameter("breed"));
-        p.setGender(req.getParameter("gender"));
+        p.setAge(parseIntOrNull(req.getParameter("age")));
         p.setHealthStatus(req.getParameter("healthStatus"));
-        p.setMedicalNotes(req.getParameter("medicalNotes"));
-
-        String age = req.getParameter("age");
-        p.setAge(isBlank(age) ? null : Integer.valueOf(age));
-
-        String dob = req.getParameter("dateOfBirth");
-        p.setDateOfBirth(isBlank(dob) ? null : LocalDate.parse(dob));
-
-        String weight = req.getParameter("weight");
-        p.setWeight(isBlank(weight) ? null : new BigDecimal(weight));
 
         petDAO.updatePet(p);
         resp.sendRedirect(req.getContextPath() + "/customer/pets?action=list");
