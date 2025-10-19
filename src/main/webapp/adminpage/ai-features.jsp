@@ -393,6 +393,7 @@
 <jsp:include page="../inc/header.jsp" />
 <main class="content-wrapper">
     <section class="page ai-page">
+        <% request.setAttribute("currentPage", "ai-features"); %>
         <jsp:include page="../inc/side-bar.jsp" />
         <div class="ai-main">
             <div class="ai-header">

@@ -402,6 +402,7 @@
 <jsp:include page="../inc/header.jsp" />
 <main class="content-wrapper">
     <section class="page dashboard-page">
+        <% request.setAttribute("currentPage", "dashboard"); %>
         <jsp:include page="../inc/side-bar.jsp" />
         <div class="dashboard-main">
             <div class="dashboard-header">
