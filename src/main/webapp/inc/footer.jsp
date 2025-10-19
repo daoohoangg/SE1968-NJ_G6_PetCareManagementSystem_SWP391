@@ -6,7 +6,7 @@
         font-family: sans-serif;
         text-align: center;
         border-top: 4px solid #1565c0;
-        margin-top: 40px;
+        box-shadow: 0 -6px 20px rgba(0,0,0,0.08);
     }
     .footer .footer-content { max-width: 1000px; margin: auto; }
     .footer h3 { margin: 0; font-size: 20px; font-weight: 600; }

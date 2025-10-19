@@ -16,6 +16,38 @@
         src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
+<style>
+    html, body{
+        min-height:100%;
+        min-height:100vh;
+    }
+    body{
+        display:flex;
+        flex-direction:column;
+        min-height:100vh;
+    }
+    body > header,
+    body > footer{
+        flex-shrink:0;
+    }
+    body > footer{
+        margin-top:auto;
+    }
+    body > main,
+    body > section.page,
+    body > .page,
+    body > .layout,
+    body > .container,
+    body > .config-page,
+    body > .content-wrapper{
+        flex:1 0 auto;
+    }
+    body > .content-wrapper{
+        width:100%;
+        display:flex;
+        flex-direction:column;
+    }
+</style>
 <%
     }
 %>
