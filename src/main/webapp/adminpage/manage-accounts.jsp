@@ -1,4 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 <style>
@@ -357,6 +359,7 @@
 <jsp:include page="../inc/header.jsp" />
 <main class="content-wrapper">
     <section class="page accounts-page">
+        <% request.setAttribute("currentPage", "manage-accounts"); %>
         <jsp:include page="../inc/side-bar.jsp" />
         <div class="accounts-main">
             <div class="accounts-header">
@@ -372,42 +375,44 @@
             <div class="stats-row">
                 <div class="stat-card">
                     <span class="stat-title">Total</span>
-                    <span class="stat-value">4</span>
+                    <span class="stat-value"><c:out value="${accountsTotal}" default="0"/></span>
                 </div>
                 <div class="stat-card">
                     <span class="stat-title">Active</span>
-                    <span class="stat-value">3</span>
+                    <span class="stat-value"><c:out value="${accountsActive}" default="0"/></span>
                 </div>
                 <div class="stat-card">
                     <span class="stat-title">Locked</span>
-                    <span class="stat-value">1</span>
+                    <span class="stat-value"><c:out value="${accountsLocked}" default="0"/></span>
                 </div>
                 <div class="stat-card">
                     <span class="stat-title">Admins</span>
-                    <span class="stat-value">1</span>
+                    <span class="stat-value"><c:out value="${accountsAdmin}" default="0"/></span>
                 </div>
                 <div class="stat-card">
                     <span class="stat-title">Staff</span>
-                    <span class="stat-value">1</span>
+                    <span class="stat-value"><c:out value="${accountsStaff}" default="0"/></span>
                 </div>
                 <div class="stat-card">
                     <span class="stat-title">Customers</span>
-                    <span class="stat-value">2</span>
+                    <span class="stat-value"><c:out value="${accountsCustomer}" default="0"/></span>
                 </div>
             </div>
 
-            <div class="filters">
+            <form class="filters" method="get" action="${pageContext.request.contextPath}/admin/accounts">
+                <input type="hidden" name="action" value="search" />
                 <div class="search-field">
                     <i class="ri-search-line"></i>
-                    <input type="text" placeholder="Search accounts..." />
+                    <input name="keyword" type="text" placeholder="Search accounts..." value="${fn:escapeXml(param.keyword)}" />
                 </div>
-                <select class="role-filter">
-                    <option>All Roles</option>
-                    <option>Admin</option>
-                    <option>Staff</option>
-                    <option>Customer</option>
+                <select name="role" class="role-filter">
+                    <option value="all" ${param.role == null || param.role == 'all' ? 'selected' : ''}>All Roles</option>
+                    <option value="ADMIN" ${param.role == 'ADMIN' ? 'selected' : ''}>Admin</option>
+                    <option value="STAFF" ${param.role == 'STAFF' ? 'selected' : ''}>Staff</option>
+                    <option value="CUSTOMER" ${param.role == 'CUSTOMER' ? 'selected' : ''}>Customer</option>
                 </select>
-            </div>
+                <button class="add-account-btn" type="submit" style="margin-left:8px">Search</button>
+            </form>
 
             <table class="accounts-table">
                 <thead>
@@ -421,205 +426,163 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr>
-                    <td>
-                        <div class="user-cell">
-                            <div class="avatar">JA</div>
-                            <div class="user-meta">
-                                <strong>John Admin</strong>
-                                <span><i class="ri-mail-line"></i>admin@petcare.com</span>
-                                <span><i class="ri-phone-line"></i>+1 (555) 123-4567</span>
+                <c:forEach var="acc" items="${requestScope.accounts}">
+                    <tr>
+                        <td>
+                            <div class="user-cell">
+                                <div class="avatar"><c:out value="${fn:substring(acc.fullName,0,2)}" default="U"/></div>
+                                <div class="user-meta">
+                                    <strong><c:out value="${acc.fullName}"/></strong>
+                                    <span><i class="ri-mail-line"></i><c:out value="${acc.email}"/></span>
+                                    <span><i class="ri-phone-line"></i><c:out value="${acc.phone}"/></span>
+                                </div>
                             </div>
-                        </div>
-                    </td>
-                    <td><span class="role-pill role-admin">Admin</span></td>
-                    <td><span class="status-pill status-active">active</span></td>
-                    <td>2024-01-15 09:30</td>
-                    <td>2024-01-01</td>
-                    <td>
-                        <div class="actions-cell">
-                            <button class="icon-btn" type="button" data-open-modal="editAccountModal" title="Edit">
-                                <i class="ri-pencil-line"></i>
-                            </button>
-                            <button class="icon-btn" type="button" title="Lock">
-                                <i class="ri-lock-line"></i>
-                            </button>
-                            <button class="icon-btn" type="button" title="Delete">
-                                <i class="ri-delete-bin-line"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="user-cell">
-                            <div class="avatar">SS</div>
-                            <div class="user-meta">
-                                <strong>Sarah Staff</strong>
-                                <span><i class="ri-mail-line"></i>sarah@petcare.com</span>
-                                <span><i class="ri-phone-line"></i>+1 (555) 234-5678</span>
+                        </td>
+                        <td>
+                            <c:choose>
+                                <c:when test="${acc.role eq 'ADMIN'}"><span class="role-pill role-admin">Admin</span></c:when>
+                                <c:when test="${acc.role eq 'STAFF'}"><span class="role-pill role-staff">Staff</span></c:when>
+                                <c:otherwise><span class="role-pill role-customer">Customer</span></c:otherwise>
+                            </c:choose>
+                        </td>
+                        <td>
+                            <c:choose>
+                                <c:when test="${not acc.isActive}">
+                                    <span class="status-pill status-locked">locked</span>
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="status-pill status-active">active</span>
+                                </c:otherwise>
+                            </c:choose>
+                        </td>
+                        <td><c:out value="${acc.lastLogin}"/></td>
+                        <td><c:out value="${acc.createdAt}"/></td>
+                        <td>
+                            <div class="actions-cell">
+                                <a class="icon-btn" href="${pageContext.request.contextPath}/admin/accounts?action=edit&id=${acc.accountId}" title="Edit">
+                                    <i class="ri-pencil-line"></i>
+                                </a>
+                                <form method="post" action="${pageContext.request.contextPath}/admin/accounts" style="display:inline">
+                                    <input type="hidden" name="action" value="${acc.isActive ? 'lock' : 'unlock'}" />
+                                    <input type="hidden" name="id" value="${acc.accountId}" />
+                                    <button class="icon-btn" type="submit" title="${acc.isActive ? 'Lock' : 'Unlock'}">
+                                        <i class="${acc.isActive ? 'ri-lock-line' : 'ri-lock-unlock-line'}"></i>
+                                    </button>
+                                </form>
+                                <form method="post" action="${pageContext.request.contextPath}/admin/accounts" style="display:inline" onsubmit="return confirm('Delete this account?');">
+                                    <input type="hidden" name="action" value="delete" />
+                                    <input type="hidden" name="id" value="${acc.accountId}" />
+                                    <button class="icon-btn" type="submit" title="Delete">
+                                        <i class="ri-delete-bin-line"></i>
+                                    </button>
+                                </form>
                             </div>
-                        </div>
-                    </td>
-                    <td><span class="role-pill role-staff">Staff</span></td>
-                    <td><span class="status-pill status-active">active</span></td>
-                    <td>2024-01-15 08:45</td>
-                    <td>2024-01-05</td>
-                    <td>
-                        <div class="actions-cell">
-                            <button class="icon-btn" type="button" data-open-modal="editAccountModal" title="Edit">
-                                <i class="ri-pencil-line"></i>
-                            </button>
-                            <button class="icon-btn" type="button" title="Lock">
-                                <i class="ri-lock-line"></i>
-                            </button>
-                            <button class="icon-btn" type="button" title="Delete">
-                                <i class="ri-delete-bin-line"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="user-cell">
-                            <div class="avatar">MC</div>
-                            <div class="user-meta">
-                                <strong>Mike Customer</strong>
-                                <span><i class="ri-mail-line"></i>mike@email.com</span>
-                                <span><i class="ri-phone-line"></i>+1 (555) 345-6789</span>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="role-pill role-customer">Customer</span></td>
-                    <td><span class="status-pill status-active">active</span></td>
-                    <td>2024-01-14 16:20</td>
-                    <td>2024-01-10</td>
-                    <td>
-                        <div class="actions-cell">
-                            <button class="icon-btn" type="button" data-open-modal="editAccountModal" title="Edit">
-                                <i class="ri-pencil-line"></i>
-                            </button>
-                            <button class="icon-btn" type="button" title="Lock">
-                                <i class="ri-lock-line"></i>
-                            </button>
-                            <button class="icon-btn" type="button" title="Delete">
-                                <i class="ri-delete-bin-line"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="user-cell">
-                            <div class="avatar">EW</div>
-                            <div class="user-meta">
-                                <strong>Emma Wilson</strong>
-                                <span><i class="ri-mail-line"></i>emma@email.com</span>
-                                <span><i class="ri-phone-line"></i>+1 (555) 456-7890</span>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="role-pill role-customer">Customer</span></td>
-                    <td><span class="status-pill status-locked">locked</span></td>
-                    <td>2024-01-12 14:15</td>
-                    <td>2024-01-08</td>
-                    <td>
-                        <div class="actions-cell">
-                            <button class="icon-btn" type="button" data-open-modal="editAccountModal" title="Edit">
-                                <i class="ri-pencil-line"></i>
-                            </button>
-                            <button class="icon-btn" type="button" title="Unlock">
-                                <i class="ri-lock-unlock-line"></i>
-                            </button>
-                            <button class="icon-btn" type="button" title="Delete">
-                                <i class="ri-delete-bin-line"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
+                        </td>
+                    </tr>
+                </c:forEach>
                 </tbody>
             </table>
+        </div>
         </div>
     </section>
 </main>
 
 <div class="modal-backdrop" id="addAccountModal" aria-hidden="true">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addAccountTitle">
-        <div class="modal-header">
-            <div>
-                <h2 id="addAccountTitle">Add New Account</h2>
-                <p>Create a new user account with role-based access.</p>
+        <form method="post" action="${pageContext.request.contextPath}/admin/accounts">
+            <div class="modal-header">
+                <div>
+                    <h2 id="addAccountTitle">Add New Account</h2>
+                    <p>Create a new user account with role-based access.</p>
+                </div>
+                <button class="close-btn" type="button" data-close-modal>&times;</button>
             </div>
-            <button class="close-btn" type="button" data-close-modal>&times;</button>
-        </div>
-        <form class="modal-body">
-            <div class="modal-field">
-                <label for="addFullName">Full Name</label>
-                <input id="addFullName" type="text" placeholder="Full name" />
+            <div class="modal-body">
+                <input type="hidden" name="action" value="create" />
+                <div class="modal-field">
+                    <label for="addFullName">Full Name</label>
+                    <input id="addFullName" name="fullName" type="text" placeholder="Full name" required />
+                </div>
+                <div class="modal-field">
+                    <label for="addUsername">Username</label>
+                    <input id="addUsername" name="username" type="text" placeholder="username" required />
+                </div>
+                <div class="modal-field">
+                    <label for="addEmail">Email</label>
+                    <input id="addEmail" name="email" type="email" placeholder="name@example.com" required />
+                </div>
+                <div class="modal-field">
+                    <label for="addPhone">Phone</label>
+                    <input id="addPhone" name="phone" type="tel" placeholder="+1 (555) 000-0000" />
+                </div>
+                <div class="modal-field">
+                    <label for="addRole">Role</label>
+                    <select id="addRole" name="role">
+                        <option value="CUSTOMER">Customer</option>
+                        <option value="STAFF">Staff</option>
+                        <option value="ADMIN">Admin</option>
+                    </select>
+                </div>
+                <div class="modal-field">
+                    <label for="addPassword">Password</label>
+                    <input id="addPassword" name="password" type="password" placeholder="••••••••" required />
+                </div>
             </div>
-            <div class="modal-field">
-                <label for="addEmail">Email</label>
-                <input id="addEmail" type="email" placeholder="name@example.com" />
-            </div>
-            <div class="modal-field">
-                <label for="addPhone">Phone</label>
-                <input id="addPhone" type="tel" placeholder="+1 (555) 000-0000" />
-            </div>
-            <div class="modal-field">
-                <label for="addRole">Role</label>
-                <select id="addRole">
-                    <option>Customer</option>
-                    <option>Staff</option>
-                    <option>Admin</option>
-                </select>
-            </div>
-            <div class="modal-field">
-                <label for="addPassword">Password</label>
-                <input id="addPassword" type="password" placeholder="••••••••" />
+            <div class="modal-actions">
+                <button class="btn-outline" type="button" data-close-modal>Cancel</button>
+                <button class="btn-primary" type="submit">Create Account</button>
             </div>
         </form>
-        <div class="modal-actions">
-            <button class="btn-outline" type="button" data-close-modal>Cancel</button>
-            <button class="btn-primary" type="button">Create Account</button>
-        </div>
     </div>
 </div>
 
 <div class="modal-backdrop" id="editAccountModal" aria-hidden="true">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editAccountTitle">
-        <div class="modal-header">
-            <div>
-                <h2 id="editAccountTitle">Edit Account</h2>
-                <p>Update account details and permissions.</p>
+        <form method="post" action="${pageContext.request.contextPath}/admin/accounts">
+            <div class="modal-header">
+                <div>
+                    <h2 id="editAccountTitle">Edit Account</h2>
+                    <p>Update account details and permissions.</p>
+                </div>
+                <button class="close-btn" type="button" data-close-modal>&times;</button>
             </div>
-            <button class="close-btn" type="button" data-close-modal>&times;</button>
-        </div>
-        <form class="modal-body">
-            <div class="modal-field">
-                <label for="editFullName">Full Name</label>
-                <input id="editFullName" type="text" value="Mike Customer" />
+            <div class="modal-body">
+                <input type="hidden" name="action" value="update" />
+                <input type="hidden" id="editAccountId" name="accountId" />
+                <div class="modal-field">
+                    <label for="editFullName">Full Name</label>
+                    <input id="editFullName" name="fullName" type="text" />
+                </div>
+                <div class="modal-field">
+                    <label for="editUsername">Username</label>
+                    <input id="editUsername" name="username" type="text" />
+                </div>
+                <div class="modal-field">
+                    <label for="editEmail">Email</label>
+                    <input id="editEmail" name="email" type="email" />
+                </div>
+                <div class="modal-field">
+                    <label for="editPhone">Phone</label>
+                    <input id="editPhone" name="phone" type="tel" />
+                </div>
+                <div class="modal-field">
+                    <label for="editRole">Role</label>
+                    <select id="editRole" name="role">
+                        <option value="CUSTOMER">Customer</option>
+                        <option value="STAFF">Staff</option>
+                        <option value="ADMIN">Admin</option>
+                    </select>
+                </div>
+                <div class="modal-field">
+                    <label for="editPassword">Password (leave blank to keep)</label>
+                    <input id="editPassword" name="password" type="password" />
+                </div>
             </div>
-            <div class="modal-field">
-                <label for="editEmail">Email</label>
-                <input id="editEmail" type="email" value="mike@email.com" />
-            </div>
-            <div class="modal-field">
-                <label for="editPhone">Phone</label>
-                <input id="editPhone" type="tel" value="+1 (555) 345-6789" />
-            </div>
-            <div class="modal-field">
-                <label for="editRole">Role</label>
-                <select id="editRole">
-                    <option>Customer</option>
-                    <option>Staff</option>
-                    <option>Admin</option>
-                </select>
+            <div class="modal-actions">
+                <button class="btn-outline" type="button" data-close-modal>Cancel</button>
+                <button class="btn-primary" type="submit">Update Account</button>
             </div>
         </form>
-        <div class="modal-actions">
-            <button class="btn-outline" type="button" data-close-modal>Cancel</button>
-            <button class="btn-primary" type="button">Update Account</button>
-        </div>
     </div>
 </div>
 
@@ -668,5 +631,38 @@
         });
     })();
 </script>
+<c:if test="${not empty editAccount}">
+    <script>
+        (function () {
+            const modal = document.getElementById('editAccountModal');
+            if (!modal) return;
+            const idField = modal.querySelector('#editAccountId');
+            const nameField = modal.querySelector('#editFullName');
+            const usernameField = modal.querySelector('#editUsername');
+            const emailField = modal.querySelector('#editEmail');
+            const phoneField = modal.querySelector('#editPhone');
+            const roleField = modal.querySelector('#editRole');
+
+            if (idField) idField.value = '${editAccount.accountId}';
+            if (nameField) nameField.value = '${fn:escapeXml(editAccount.fullName)}';
+            if (usernameField) usernameField.value = '${fn:escapeXml(editAccount.username)}';
+            if (emailField) emailField.value = '${fn:escapeXml(editAccount.email)}';
+            if (phoneField) phoneField.value = '${fn:escapeXml(editAccount.phone)}';
+            <c:choose>
+                <c:when test="${not empty editAccount.role}">
+                    if (roleField) roleField.value = '${editAccount.role.name()}';
+                </c:when>
+                <c:otherwise>
+                    if (roleField) roleField.value = '';
+                </c:otherwise>
+            </c:choose>
+
+            modal.classList.add('show');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-open');
+            window.setTimeout(() => nameField && nameField.focus(), 70);
+        })();
+    </script>
+</c:if>
 <jsp:include page="../inc/chatbox.jsp" />
 <jsp:include page="../inc/footer.jsp" />

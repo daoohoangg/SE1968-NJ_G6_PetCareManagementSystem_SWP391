@@ -124,9 +124,13 @@ public class ServiceController extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/admin/service");
             return;
         }
+        List<Service> services = serviceManageService.getAllServices();
+        List<ServiceCategory> categories = serviceManageService.getAllCategories();
+        populateListAttributes(req, services, categories);
         req.setAttribute("service", s);
-        req.setAttribute("categories", serviceManageService.getAllCategories());
-        req.getRequestDispatcher("/adminpage/edit-service.jsp").forward(req, resp);
+        req.setAttribute("editService", s);
+        req.setAttribute("openEditModal", true);
+        req.getRequestDispatcher("/adminpage/manage-services.jsp").forward(req, resp);
     }
 
     // ---------------- POST (PRG) ----------------
@@ -198,7 +202,7 @@ public class ServiceController extends HttpServlet {
     private void handleDelete(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
         Integer id = parseInt(req.getParameter("id"));
-        boolean ok = (id != null) && serviceManageService.deleteService(id);
+        boolean ok = (id != null) && serviceManageService.hardDeleteService(id);
         flash(req, ok ? "success" : "error",
                 ok ? "Service deleted successfully" : "Failed to delete service");
         resp.sendRedirect(req.getContextPath() + "/admin/service?action=list");

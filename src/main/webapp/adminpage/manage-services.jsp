@@ -227,6 +227,93 @@
             </div>
         </div>
 
+        <div id="editServiceModal" class="modal-backdrop" aria-hidden="true">
+            <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editServiceTitle">
+                <form method="post" action="${pageContext.request.contextPath}/admin/service">
+                    <div class="modal-header">
+                        <div>
+                            <h3 class="modal-title" id="editServiceTitle">Edit Service</h3>
+                            <p class="modal-sub">Update service information and settings.</p>
+                        </div>
+                        <button type="button" class="modal-close" data-close-modal aria-label="Close">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="action" value="update"/>
+                        <input type="hidden" id="editServiceId" name="serviceId"/>
+                        <div class="modal-grid">
+                            <div class="modal-field">
+                                <label for="editServiceNameInput">Service Name</label>
+                                <input type="text"
+                                       id="editServiceNameInput"
+                                       name="serviceName"
+                                       maxlength="100"
+                                       required
+                                       placeholder="Service name"/>
+                            </div>
+                            <div class="modal-field">
+                                <label for="editCategorySelect">Category</label>
+                                <select id="editCategorySelect" name="categoryId" required>
+                                    <option value="" disabled>Select category</option>
+                                    <c:forEach var="cat" items="${categories}">
+                                        <option value="${cat.categoryId}">${cat.name}</option>
+                                    </c:forEach>
+                                </select>
+                            </div>
+                            <div class="modal-field">
+                                <label for="editDurationInput">Duration (minutes)</label>
+                                <input type="number"
+                                       id="editDurationInput"
+                                       name="durationMinutes"
+                                       min="0"
+                                       placeholder="e.g. 60"/>
+                            </div>
+                            <div class="modal-field">
+                                <label for="editPriceInput">Price ($)</label>
+                                <input type="number"
+                                       id="editPriceInput"
+                                       name="price"
+                                       min="0.01"
+                                       step="0.01"
+                                       required
+                                       placeholder="e.g. 49.99"/>
+                            </div>
+                            <div class="modal-field">
+                                <label for="editDescriptionInput">Description</label>
+                                <textarea id="editDescriptionInput"
+                                          name="description"
+                                          placeholder="Describe the service"></textarea>
+                            </div>
+                            <div class="modal-field">
+                                <label for="editStatusSelect">Status</label>
+                                <select id="editStatusSelect" name="status">
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-cancel" data-close-modal>Cancel</button>
+                            <button type="submit" class="btn-primary">Update Service</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <c:if test="${not empty editService}">
+            <a id="autoEditTrigger"
+               href="#"
+               data-open-edit
+               data-id="${editService.serviceId}"
+               data-name="${fn:escapeXml(editService.serviceName)}"
+               data-description="${editService.description != null ? fn:escapeXml(editService.description) : ''}"
+               data-price="${editService.price}"
+               data-duration="${editService.durationMinutes != null ? editService.durationMinutes : ''}"
+               data-category-id="${editService.category != null ? editService.category.categoryId : ''}"
+               data-active="${editService.active}"
+               style="display:none;"></a>
+        </c:if>
+
         <!-- Flash -->
         <c:if test="${not empty sessionScope.success}">
             <div style="margin:8px 0;color:#065f46;background:#d1fae5;border:1px solid #a7f3d0;padding:10px;border-radius:8px">${sessionScope.success}</div>
@@ -325,7 +412,19 @@
                                 </td>
                                 <td class="actions">
                                     <a class="icon-btn" href="${pageContext.request.contextPath}/admin/service?action=view&id=${s.serviceId}" title="View"><i class="ri-eye-line"></i></a>
-                                    <a class="icon-btn" href="${pageContext.request.contextPath}/admin/service?action=edit&id=${s.serviceId}" title="Edit"><i class="ri-pencil-line"></i></a>
+                                    <a class="icon-btn"
+                                       href="${pageContext.request.contextPath}/admin/service?action=edit&id=${s.serviceId}"
+                                       title="Edit"
+                                       data-open-edit
+                                       data-id="${s.serviceId}"
+                                       data-name="${fn:escapeXml(s.serviceName)}"
+                                       data-description="${s.description != null ? fn:escapeXml(s.description) : ''}"
+                                       data-price="${s.price}"
+                                       data-duration="${s.durationMinutes != null ? s.durationMinutes : ''}"
+                                       data-category-id="${s.category != null ? s.category.categoryId : ''}"
+                                       data-active="${s.active}">
+                                        <i class="ri-pencil-line"></i>
+                                    </a>
                                     <form method="post" action="${pageContext.request.contextPath}/admin/service" style="display:inline">
                                         <input type="hidden" name="action" value="delete"/>
                                         <input type="hidden" name="id" value="${s.serviceId}"/>
@@ -397,6 +496,102 @@
 
         if (shouldOpenOnLoad) {
             showModal();
+        }
+    })();
+
+    (function () {
+        const modal = document.getElementById('editServiceModal');
+        if (!modal) return;
+
+        const openButtons = document.querySelectorAll('[data-open-edit]');
+        if (!openButtons.length) return;
+
+        const closeButtons = modal.querySelectorAll('[data-close-modal]');
+        const form = modal.querySelector('form');
+        const idField = modal.querySelector('#editServiceId');
+        const nameField = modal.querySelector('#editServiceNameInput');
+        const categoryField = modal.querySelector('#editCategorySelect');
+        const durationField = modal.querySelector('#editDurationInput');
+        const priceField = modal.querySelector('#editPriceInput');
+        const descriptionField = modal.querySelector('#editDescriptionInput');
+        const statusField = modal.querySelector('#editStatusSelect');
+        const shouldOpenOnLoad = '${openEditModal == true}' === 'true';
+
+        const sanitize = (value) => (value == null ? '' : value);
+        const applyDataToForm = (data) => {
+            if (!data) return;
+            if (form) form.reset();
+
+            if (idField) idField.value = sanitize(data.id);
+            if (nameField) nameField.value = sanitize(data.name);
+            if (categoryField) categoryField.value = sanitize(data.categoryId);
+            if (durationField) durationField.value = sanitize(data.duration);
+            if (priceField) priceField.value = sanitize(data.price);
+            if (descriptionField) descriptionField.value = sanitize(data.description).replace(/\r?\n/g, '\n');
+
+            const rawStatus = sanitize(data.active).toString().toLowerCase();
+            if (statusField) {
+                statusField.value = (rawStatus === 'false' || rawStatus === 'inactive' || rawStatus === '0') ? 'inactive' : 'active';
+            }
+        };
+
+        const showModal = (data) => {
+            applyDataToForm(data);
+            modal.classList.add('show');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-open');
+            window.setTimeout(() => nameField && nameField.focus(), 70);
+        };
+
+        const hideModal = () => {
+            modal.classList.remove('show');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('modal-open');
+        };
+
+        const collectDataset = (target) => {
+            if (!target) return null;
+            const dataset = target.dataset;
+            return {
+                id: dataset.id,
+                name: dataset.name,
+                categoryId: dataset.categoryId,
+                duration: dataset.duration,
+                price: dataset.price,
+                description: dataset.description,
+                active: dataset.active
+            };
+        };
+
+        openButtons.forEach((btn) => {
+            btn.addEventListener('click', (event) => {
+                event.preventDefault();
+                showModal(collectDataset(btn));
+            });
+        });
+
+        closeButtons.forEach((btn) => btn.addEventListener('click', (event) => {
+            event.preventDefault();
+            hideModal();
+        }));
+
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                hideModal();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && modal.classList.contains('show')) {
+                hideModal();
+            }
+        });
+
+        if (shouldOpenOnLoad) {
+            const autoTrigger = document.getElementById('autoEditTrigger');
+            if (autoTrigger) {
+                showModal(collectDataset(autoTrigger));
+            }
         }
     })();
 </script>
