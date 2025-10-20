@@ -120,6 +120,7 @@
                 <%
                         }
                     }
+
                 %>
                 <li class="nav-item">
                     <a class="nav-link" href="<%= request.getContextPath() %>/inc/contact.jsp">Contact Us</a>
