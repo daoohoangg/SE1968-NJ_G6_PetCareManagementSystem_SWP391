@@ -118,12 +118,7 @@
                         </p>
                     </div>
                     <div class="map-section">
-                        <iframe
-                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3725.122171569032!2d105.52187317498717!3d20.9870020806497!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31345b465a4e03fb%3A0x863371650371b6f0!2zVHLGsOG7nW5nIMSQ4bqhaSBI4buNYyBGUFQgSMOgIE7hu5lp!5e0!3m2!1svi!2svn!4v1729378619379!5m2!1svi!2svn"
-                            width="100%" height="450" style="border:0;"
-                            allowfullscreen="" loading="lazy"
-                            referrerpolicy="no-referrer-when-downgrade">
-                    </iframe>
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d6263.728864103876!2d105.52635412656335!3d21.015255038767684!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135abc60e7d3f19%3A0x2be9d7d0b5abcbf4!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBGUFQgSMOgIE7hu5lp!5e0!3m2!1svi!2s!4v1760922409624!5m2!1svi!2s" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                     </div>
 
                 </div>
