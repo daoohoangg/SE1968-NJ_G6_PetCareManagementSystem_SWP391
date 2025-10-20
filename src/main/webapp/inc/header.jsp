@@ -82,10 +82,10 @@
                     String servicesLink = request.getContextPath() + "/login";
                     if (loggedInAccount != null && loggedInAccount.getRole() == AccountRoleEnum.CUSTOMER) {
                         petsLink = request.getContextPath() + "/customer/pets";
-                        appointmentsLink = request.getContextPath() + "/customer/appointments";
-                        servicesLink = request.getContextPath() + "/customer/services";
+                        appointmentsLink = request.getContextPath() + "/customer/appointments.jsp";
+                        servicesLink = request.getContextPath() + "/services";
                     } else if (loggedInAccount != null) {
-                        servicesLink = request.getContextPath() + "/customer/services";
+                        servicesLink = request.getContextPath() + "/services";
                     }
                 %>
 
