@@ -31,13 +31,13 @@ public class ForgotPasswordController extends HttpServlet {
             acc.setPassword(newPassword);
             boolean updated = accountDAO.updateAccount(acc);
 
-            if (updated) {
-                try {
-                    EmailService.sendNewPasswordEmail(acc.getEmail(), newPassword);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
+//            if (updated) {
+//                try {
+//                    EmailService.sendNewPasswordEmail(acc.getEmail(), newPassword);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//            }
         }
         request.setAttribute("message", "Một mật khẩu mới đã được gửi đến email của bạn.");
         request.getRequestDispatcher("/common/forgotpassword.jsp").forward(request, response);

@@ -32,10 +32,14 @@ public class CheckOutController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-
-        int bookingId = Integer.parseInt(request.getParameter("bookingId"));
-        bookingService.checkOut(bookingId);
-
+        try {
+            int bookingId = Integer.parseInt(request.getParameter("bookingId"));
+            bookingService.checkOut(bookingId);
+            request.getSession().setAttribute("success", "Check-out completed successfully!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.getSession().setAttribute("error", "Failed to check-out: " + e.getMessage());
+        }
         response.sendRedirect(request.getContextPath() + "/reception/checkout");
     }
 }
