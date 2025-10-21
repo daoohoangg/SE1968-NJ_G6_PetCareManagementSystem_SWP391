@@ -109,9 +109,9 @@ public class PetServiceHistoryController extends HttpServlet {
             newHistory.setPet(pet);
             
             if (staffId != null) {
-                //Staff staff = new Staff();
-             //   staff.setAccountId(staffId);
-            //    newHistory.setStaff(staff);
+                Staff staff = new Staff();
+                staff.setAccountId(staffId);
+                newHistory.setStaff(staff);
             }
 
             petServiceHistoryDAO.addHistory(newHistory);
