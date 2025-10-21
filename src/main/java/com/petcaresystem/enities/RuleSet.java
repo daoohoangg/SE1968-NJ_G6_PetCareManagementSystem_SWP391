@@ -1,5 +1,9 @@
 package com.petcaresystem.enities;
 
+import com.petcaresystem.enities.embeddable.BookingPolicy;
+import com.petcaresystem.enities.embeddable.EmailRule;
+import com.petcaresystem.enities.embeddable.VoucherRule;
+import com.petcaresystem.enities.embeddable.WeeklySchedule;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import lombok.*;

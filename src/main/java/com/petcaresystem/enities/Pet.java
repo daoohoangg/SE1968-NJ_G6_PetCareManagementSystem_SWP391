@@ -19,9 +19,6 @@ public class Pet {
     @Column(name = "pet_id")
     private Long idpet;
 
-    @Column(name = "pet_id")
-    private Long petId;
-
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
