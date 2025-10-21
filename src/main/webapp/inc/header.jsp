@@ -17,21 +17,21 @@
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
 <style>
-    html, body{
-        min-height:100%;
-        min-height:100vh;
+    html, body {
+        min-height: 100%;
+        min-height: 100vh;
     }
-    body{
-        display:flex;
-        flex-direction:column;
-        min-height:100vh;
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
     }
     body > header,
-    body > footer{
-        flex-shrink:0;
+    body > footer {
+        flex-shrink: 0;
     }
-    body > footer{
-        margin-top:auto;
+    body > footer {
+        margin-top: auto;
     }
     body > main,
     body > section.page,
@@ -39,18 +39,19 @@
     body > .layout,
     body > .container,
     body > .config-page,
-    body > .content-wrapper{
-        flex:1 0 auto;
+    body > .content-wrapper {
+        flex: 1 0 auto;
     }
-    body > .content-wrapper{
-        width:100%;
-        display:flex;
-        flex-direction:column;
+    body > .content-wrapper {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
     }
 </style>
 <%
     }
 %>
+
 <header>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
         <a class="navbar-brand" href="<%= request.getContextPath() %>/home">PetCare</a>
@@ -58,31 +59,40 @@
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
+                <!-- Common for all roles -->
                 <li class="nav-item">
                     <a class="nav-link" href="<%= request.getContextPath() %>/home">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%= request.getContextPath() %>/services">Services</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%= request.getContextPath() %>/appointments">Appointments</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%= request.getContextPath() %>/contact">Contact Us</a>
                 </li>
 
                 <%
                     if (loggedInAccount != null) {
                         AccountRoleEnum role = loggedInAccount.getRole();
+
+                        // --- CUSTOMER ---
                         if (role == AccountRoleEnum.CUSTOMER) {
                 %>
                 <li class="nav-item">
                     <a class="nav-link" href="<%= request.getContextPath() %>/user/petList">My Pets</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/user/appointments">Appointments</a>
-                </li>
                 <%
-                }
-                else if (role == AccountRoleEnum.STAFF) {
+                    // --- STAFF ---
+                } else if (role == AccountRoleEnum.STAFF) {
                 %>
                 <li class="nav-item">
                     <a class="nav-link" href="<%= request.getContextPath() %>/staff/customers">Manage Customers</a>
                 </li>
                 <%
-                }
-                else if (role == AccountRoleEnum.ADMIN) {
+                    // --- ADMIN ---
+                } else if (role == AccountRoleEnum.ADMIN) {
                 %>
                 <li class="nav-item">
                     <a class="nav-link" href="<%= request.getContextPath() %>/admin/dashboard">Dashboard</a>
@@ -91,11 +101,25 @@
                     <a class="nav-link" href="<%= request.getContextPath() %>/admin/users">Manage Users</a>
                 </li>
                 <%
+                    // --- RECEPTIONIST ---
+            //    } else if (role == AccountRoleEnum.RECEPTIONIST) {
+                %>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%= request.getContextPath() %>/reception/checkin">Check-In</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%= request.getContextPath() %>/reception/checkout">Check-Out</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%= request.getContextPath() %>/reception/invoice">Invoice</a>
+                </li>
+                <%
                         }
                     }
                 %>
             </ul>
 
+            <!-- Account dropdown -->
             <ul class="navbar-nav ms-auto">
                 <%
                     if (loggedInAccount != null) {
@@ -115,7 +139,7 @@
                 <li class="nav-item">
                     <a class="nav-link" href="<%= request.getContextPath() %>/login">Login</a>
                 </li>
-                <li class="nav-item  ms-2">
+                <li class="nav-item ms-2">
                     <a class="nav-link" href="<%= request.getContextPath() %>/register">Register</a>
                 </li>
                 <%
