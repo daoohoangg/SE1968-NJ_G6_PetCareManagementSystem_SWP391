@@ -1,16 +1,55 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="java.util.*, com.petcaresystem.enities.Appointment, com.petcaresystem.enities.Pet, com.petcaresystem.enities.Service" %>
+<%@ page import="java.util.*, java.math.BigDecimal" %>
+<%@ page import="com.petcaresystem.enities.*" %>
+<%@ page import="com.petcaresystem.dao.ServiceDAO, com.petcaresystem.dao.PetDAO" %>
+
+
 
 <%
+    // ===== Context =====
     String ctx = request.getContextPath();
 
+    // ===== Nhận data có thể đã được set bởi servlet =====
     List<Appointment> appointments = (List<Appointment>) request.getAttribute("appointments");
-    List<Pet> pets = (List<Pet>) request.getAttribute("pets");
-    List<Service> services = (List<Service>) request.getAttribute("services");
+    List<Pet> pets                 = (List<Pet>) request.getAttribute("pets");
+    List<Service> services         = (List<Service>) request.getAttribute("services");
 
-    String error = (String) request.getAttribute("error");
-    String created = request.getParameter("created");
+
+    if (services == null || services.isEmpty()) {
+        try {
+            ServiceDAO sdao = new ServiceDAO();
+            services = sdao.getActiveServices();
+            request.setAttribute("services", services);
+        } catch (Exception ignore) { services = Collections.emptyList(); }
+    }
+    if (pets == null || pets.isEmpty()) {
+        try {
+            PetDAO pdao = new PetDAO();
+            pets = pdao.getPet();
+            request.setAttribute("pets", pets);
+        } catch (Exception ignore) { pets = Collections.emptyList(); }
+    }
+    if (appointments == null) appointments = Collections.emptyList();
+
+    String error     = (String) request.getAttribute("error");
+    String created   = request.getParameter("created");
     String cancelled = request.getParameter("cancelled");
+
+    // ===== Sort services theo category.name rồi serviceName (null-safe) =====
+    List<Service> sortedServices = new ArrayList<>(services);
+    Collections.sort(sortedServices, new Comparator<Service>() {
+        @Override public int compare(Service a, Service b) {
+            String ca = (a != null && a.getCategory()!=null && a.getCategory().getName()!=null)
+                    ? a.getCategory().getName() : "";
+            String cb = (b != null && b.getCategory()!=null && b.getCategory().getName()!=null)
+                    ? b.getCategory().getName() : "";
+            int c = ca.compareToIgnoreCase(cb);
+            if (c != 0) return c;
+            String sa = (a != null && a.getServiceName()!=null) ? a.getServiceName() : "";
+            String sb = (b != null && b.getServiceName()!=null) ? b.getServiceName() : "";
+            return sa.compareToIgnoreCase(sb);
+        }
+    });
 %>
 
 <!DOCTYPE html>
@@ -18,7 +57,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Appointments - PetCare</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         body { background-color:#f5f7fb; font-family: 'Segoe UI', sans-serif; }
@@ -29,8 +68,28 @@
         .required::after { content:"*"; color:#dc3545; margin-left:4px; }
         .btn-primary { background-color:#0d6efd; border-color:#0d6efd; font-weight:600; }
         .btn-primary:hover { background-color:#0b5ed7; }
+        .badge { letter-spacing:.3px; }
     </style>
 </head>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const el = document.getElementById('serviceIds');
+        if (el) {
+            new Choices(el, {
+                removeItemButton: true,
+                searchEnabled: true,
+                shouldSort: false,
+                placeholder: true,
+                placeholderValue: 'Chọn dịch vụ...',
+                noResultsText: 'Không tìm thấy dịch vụ',
+                itemSelectText: ''
+            });
+        }
+    });
+</script>
+
 <body>
 
 <jsp:include page="/inc/header.jsp"/>
@@ -38,13 +97,21 @@
 <div class="page-container">
 
     <!-- Alerts -->
-    <% if ("1".equals(created)) { %>
+    <%
+        if ("1".equals(created)) {
+    %>
     <div class="alert alert-success"><i class="bi bi-check-circle-fill me-2"></i>Lịch hẹn đã được tạo thành công.</div>
-    <% } else if ("1".equals(cancelled)) { %>
+    <%
+    } else if ("1".equals(cancelled)) {
+    %>
     <div class="alert alert-info"><i class="bi bi-info-circle-fill me-2"></i>Bạn đã huỷ lịch hẹn.</div>
-    <% } else if (error != null) { %>
+    <%
+    } else if (error != null) {
+    %>
     <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i><%= error %></div>
-    <% } %>
+    <%
+        }
+    %>
 
     <!-- Form Đặt lịch -->
     <div class="card mb-4">
@@ -52,48 +119,75 @@
         <div class="card-body">
             <form method="post" action="<%= ctx %>/customer/appointments">
                 <div class="row g-3">
+                    <!-- PET -->
                     <div class="col-md-6">
                         <label class="form-label required">Thú cưng</label>
                         <select name="petId" class="form-select" required>
                             <option value="" hidden>Chọn thú cưng</option>
                             <%
-                                if (pets != null) {
-                                    for (Pet p : pets) {
+                                for (Pet p : pets) {
+                                    if (p == null) continue;
                             %>
-                            <option value="<%= p.getIdpet() %>"><%= p.getName() %> - <%= p.getBreed() %></option>
+                            <option value="<%= p.getIdpet() %>">
+                                <%= p.getName() %><% if (p.getBreed()!=null && !p.getBreed().isEmpty()) { %> - <%= p.getBreed() %><% } %>
+                            </option>
                             <%
-                                    }
                                 }
                             %>
                         </select>
                     </div>
 
+                    <!-- SERVICES -->
                     <div class="col-md-6">
                         <label class="form-label required">Dịch vụ</label>
-                        <select name="serviceIds" class="form-select" multiple required>
+                        <select id="serviceIds" name="serviceIds" class="form-select" multiple required>
                             <%
-                                if (services != null) {
-                                    for (Service s : services) {
+                                if (sortedServices.isEmpty()) {
                             %>
-                            <option value="<%= s.getServiceId() %>"><%= s.getServiceName() %> (<%= s.getPrice() %>$)</option>
-                            <%
+                            <option disabled>(Chưa có dịch vụ khả dụng)</option>
+                                <%
+            } else {
+                String currentCat = null;
+                for (int i = 0; i < sortedServices.size(); i++) {
+                    Service s = sortedServices.get(i);
+                    if (s == null) continue;
+
+                    String catName = (s.getCategory()!=null && s.getCategory().getName()!=null)
+                            ? s.getCategory().getName() : "Khác";
+
+                    if (currentCat == null || !currentCat.equals(catName)) {
+                        if (currentCat != null) { %></optgroup><% }
+                            currentCat = catName;
+                        %>
+                            <optgroup label="<%= currentCat %>">
+                                <%
                                     }
-                                }
-                            %>
+                                    BigDecimal price = s.getPrice();
+                                    String priceStr = (price != null) ? price.toPlainString() : "0";
+                                %>
+                                <option value="<%= s.getServiceId() %>">
+                                    <%= s.getServiceName() %> (<%= priceStr %> đ)
+                                </option>
+                                <%
+                                    if (i == sortedServices.size() - 1) { %></optgroup><% }
+                        } // end for
+                        } // end else
+                        %>
                         </select>
-                        <div class="form-text">Giữ Ctrl/⌘ để chọn nhiều dịch vụ</div>
+
                     </div>
 
+                    <!-- TIME -->
                     <div class="col-md-6">
                         <label class="form-label required">Ngày & giờ bắt đầu</label>
                         <input type="datetime-local" name="startAt" class="form-control" required>
                     </div>
-
                     <div class="col-md-6">
                         <label class="form-label">Kết thúc (tuỳ chọn)</label>
                         <input type="datetime-local" name="endAt" class="form-control">
                     </div>
 
+                    <!-- NOTES -->
                     <div class="col-12">
                         <label class="form-label">Ghi chú</label>
                         <textarea name="notes" rows="3" class="form-control"
@@ -118,7 +212,7 @@
         <div class="card-header"><i class="bi bi-list-check me-2"></i>LỊCH HẸN CỦA TÔI</div>
         <div class="card-body">
             <%
-                if (appointments == null || appointments.isEmpty()) {
+                if (appointments.isEmpty()) {
             %>
             <p class="text-muted mb-0">Hiện chưa có lịch hẹn nào được tạo.</p>
             <%
@@ -140,47 +234,54 @@
                     <%
                         for (int i = 0; i < appointments.size(); i++) {
                             Appointment a = appointments.get(i);
-                            String status = a.getStatus().name();
+                            if (a == null) continue;
+                            String status = (a.getStatus()!=null) ? a.getStatus().name() : "PENDING";
                     %>
                     <tr>
                         <td><%= i + 1 %></td>
-                        <td><%= a.getPet().getName() %></td>
-                        <td><%= a.getAppointmentDate() %></td>
-                        <td><%= (a.getEndDate() != null ? a.getEndDate() : "—") %></td>
+                        <td><%= a.getPet()!=null ? a.getPet().getName() : "(N/A)" %></td>
+                        <td><%= a.getAppointmentDate()!=null ? a.getAppointmentDate() : "" %></td>
+                        <td><%= a.getEndDate()!=null ? a.getEndDate() : "—" %></td>
                         <td>
-                            <% if ("CONFIRMED".equals(status)) { %>
-                            <span class="badge bg-primary">CONFIRMED</span>
-                            <% } else if ("COMPLETED".equals(status)) { %>
-                            <span class="badge bg-success">COMPLETED</span>
-                            <% } else if ("CANCELLED".equals(status)) { %>
-                            <span class="badge bg-secondary">CANCELLED</span>
-                            <% } else { %>
-                            <span class="badge bg-warning text-dark"><%= status %></span>
-                            <% } %>
+                            <%
+                                if ("CONFIRMED".equals(status)) {
+                            %><span class="badge bg-primary">CONFIRMED</span><%
+                        } else if ("COMPLETED".equals(status)) {
+                        %><span class="badge bg-success">COMPLETED</span><%
+                        } else if ("CANCELLED".equals(status)) {
+                        %><span class="badge bg-secondary">CANCELLED</span><%
+                        } else {
+                        %><span class="badge bg-warning text-dark"><%= status %></span><%
+                            }
+                        %>
                         </td>
                         <td class="text-end">
-                            <% if (!"CANCELLED".equals(status) && !"COMPLETED".equals(status)) { %>
+                            <%
+                                if (!"CANCELLED".equals(status) && !"COMPLETED".equals(status)) {
+                            %>
                             <a href="<%= ctx %>/customer/appointments?action=cancel&id=<%= a.getAppointmentId() %>"
                                class="btn btn-outline-danger btn-sm">
                                 <i class="bi bi-x-circle"></i> Huỷ
                             </a>
-                            <% } %>
+                            <%
+                                }
+                            %>
                         </td>
                     </tr>
                     <%
-                        } // end for
+                        } // for
                     %>
                     </tbody>
                 </table>
             </div>
             <%
-                } // end else
+                } // else
             %>
         </div>
     </div>
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
