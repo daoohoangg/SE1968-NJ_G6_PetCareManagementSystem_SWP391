@@ -3,7 +3,6 @@ package com.petcaresystem.controller.pet;
 import com.petcaresystem.dao.PetServiceHistoryDAO;
 import com.petcaresystem.enities.PetServiceHistory;
 import com.petcaresystem.enities.Pet;
-import com.petcaresystem.enities.Staff;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -34,7 +33,7 @@ public class PetServiceHistoryController extends HttpServlet {
 
         switch (action) {
             case "add":
-                request.getRequestDispatcher("/views/pet_service_history_add.jsp").forward(request, response);
+                request.getRequestDispatcher("/petdata/pet-service-history-add.jsp").forward(request, response);
                 break;
             case "delete":
                 deleteHistory(request, response);
@@ -73,7 +72,7 @@ public class PetServiceHistoryController extends HttpServlet {
             throws ServletException, IOException {
         List<PetServiceHistory> histories = petServiceHistoryDAO.getAllHistories();
         request.setAttribute("historyList", histories);
-        request.getRequestDispatcher("/views/pet_service_history_list.jsp").forward(request, response);
+        request.getRequestDispatcher("/petdata/pet-service-history.jsp").forward(request, response);
     }
 
     // ✅ Hiển thị lịch sử dịch vụ theo ID thú cưng
@@ -83,35 +82,59 @@ public class PetServiceHistoryController extends HttpServlet {
         List<PetServiceHistory> histories = petServiceHistoryDAO.getHistoriesByPetId(idpet);
         request.setAttribute("historyList", histories);
         request.setAttribute("petId", idpet);
-        request.getRequestDispatcher("/views/pet_service_history_list.jsp").forward(request, response);
+        request.getRequestDispatcher("/petdata/pet-service-history.jsp").forward(request, response);
     }
 
     // ✅ Thêm lịch sử dịch vụ
     private void addHistory(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        String serviceType = request.getParameter("serviceType");
-        String serviceDate = request.getParameter("serviceDate");
-        String notes = request.getParameter("notes");
-        int idpet = Integer.parseInt(request.getParameter("idpet"));
+        try {
+            String serviceType = request.getParameter("serviceType");
+            String serviceDate = request.getParameter("serviceDate");
+            String description = request.getParameter("description");
+            double cost = Double.parseDouble(request.getParameter("cost"));
+            long idpet = Long.parseLong(request.getParameter("idpet"));
+            
+            String staffIdParam = request.getParameter("staffId");
+            Long staffId = (staffIdParam != null && !staffIdParam.isEmpty()) ? Long.parseLong(staffIdParam) : null;
 
-        Pet pet = new Pet();
-//        pet.setIdpet(idpet);
+            Pet pet = new Pet();
+            pet.setIdpet(idpet);
 
-        PetServiceHistory newHistory = new PetServiceHistory();
-        newHistory.setServiceType(serviceType);
-        //newHistory.setServiceDate(Date.valueOf(serviceDate));
-        //newHistory.setNotes(notes);
-        newHistory.setPet(pet);
+            PetServiceHistory newHistory = new PetServiceHistory();
+            newHistory.setServiceType(serviceType);
+            newHistory.setServiceDate(java.time.LocalDate.parse(serviceDate));
+            newHistory.setDescription(description);
+            newHistory.setCost(cost);
+            newHistory.setPet(pet);
+            
+            if (staffId != null) {
+                //Staff staff = new Staff();
+               // staff.setAccountId(staffId);
+               // newHistory.setStaff(staff);
+            }
 
-        petServiceHistoryDAO.addHistory(newHistory);
-        response.sendRedirect("petServiceHistory?action=viewByPet&idpet=" + idpet);
+            petServiceHistoryDAO.addHistory(newHistory);
+            request.getSession().setAttribute("success", "Service history added successfully!");
+            response.sendRedirect("petServiceHistory?action=list");
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.getSession().setAttribute("error", "Failed to add service history: " + e.getMessage());
+            response.sendRedirect("petServiceHistory?action=add");
+        }
     }
 
     // ✅ Xóa lịch sử dịch vụ
     private void deleteHistory(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        int id = Integer.parseInt(request.getParameter("idhistory"));
-        petServiceHistoryDAO.deleteHistory(id);
+        try {
+            int id = Integer.parseInt(request.getParameter("idhistory"));
+            petServiceHistoryDAO.deleteHistory(id);
+            request.getSession().setAttribute("success", "Service history deleted successfully!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.getSession().setAttribute("error", "Failed to delete service history: " + e.getMessage());
+        }
         response.sendRedirect("petServiceHistory?action=list");
     }
 }
