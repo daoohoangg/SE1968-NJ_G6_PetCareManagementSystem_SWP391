@@ -56,6 +56,9 @@
         font-size: 14px;
     }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
 <%
     }
 %>
@@ -105,7 +108,7 @@
                         if (role == AccountRoleEnum.STAFF) {
                 %>
                 <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/staff/customers">Manage Customers</a>
+                    <a class="nav-link" href="<%= request.getContextPath() %>/staff/home">home</a>
                 </li>
                 <%
                 }
@@ -136,7 +139,13 @@
                         <%= loggedInAccount.getFullName() %>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
+                        <%
+                            if (loggedInAccount.getRole() != AccountRoleEnum.ADMIN) {
+                        %>
                         <li><a class="dropdown-item" href="<%= request.getContextPath() %>/customer/profile?action=edit">Profile</a></li>
+                        <%
+                            }
+                        %>
                         <li><a class="dropdown-item" href="<%= request.getContextPath() %>/logout">Logout</a></li>
                     </ul>
                 </li>
