@@ -171,7 +171,7 @@
            class="menu-item ${currentPage == 'reports' ? 'active' : ''}">
             <i class="ri-bar-chart-2-line"></i>Generate Reports
         </a>
-
+<%-- Chỉ roll reception
         <a href="${pageContext.request.contextPath}/reception/checkin"
            class="menu-item ${currentPage == 'checkin' ? 'active' : ''}">
             <i class="ri-login-box-line"></i>Check-In
@@ -181,7 +181,7 @@
            class="menu-item ${currentPage == 'checkout' ? 'active' : ''}">
             <i class="ri-logout-box-line"></i>Check-Out
         </a>
-
+--%>
         <a href="${pageContext.request.contextPath}/petServiceHistory"
            class="menu-item ${currentPage == 'pet-data' ? 'active' : ''}">
             <i class="ri-file-list-3-line"></i>Pet Data
