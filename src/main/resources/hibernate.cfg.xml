@@ -34,11 +34,6 @@
         <mapping class="com.petcaresystem.enities.PetServiceHistory"/>
         <mapping class="com.petcaresystem.enities.Voucher"/>
         <mapping class="com.petcaresystem.enities.ServiceCategory"/>
-        <mapping class="com.petcaresystem.enities.BookingPolicy"/>
-        <mapping class="com.petcaresystem.enities.DaySchedule"/>
-        <mapping class="com.petcaresystem.enities.EmailRule"/>
         <mapping class="com.petcaresystem.enities.RuleSet"/>
-        <mapping class="com.petcaresystem.enities.VoucherRule"/>
-        <mapping class="com.petcaresystem.enities.WeeklySchedule"/>
     </session-factory>
 </hibernate-configuration>

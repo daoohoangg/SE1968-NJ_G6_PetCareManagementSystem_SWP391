@@ -1,4 +1,4 @@
-package com.petcaresystem.enities;
+package com.petcaresystem.enities.embeddable;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;

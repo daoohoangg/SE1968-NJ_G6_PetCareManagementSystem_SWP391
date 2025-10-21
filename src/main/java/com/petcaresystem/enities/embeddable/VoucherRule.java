@@ -1,4 +1,4 @@
-package com.petcaresystem.enities;
+package com.petcaresystem.enities.embeddable;
 
 import com.petcaresystem.enities.enu.DiscountType;
 import jakarta.persistence.*;
