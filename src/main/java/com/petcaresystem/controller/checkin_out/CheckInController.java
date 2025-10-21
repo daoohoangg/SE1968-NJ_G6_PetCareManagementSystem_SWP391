@@ -31,10 +31,14 @@ public class CheckInController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-
-        int bookingId = Integer.parseInt(request.getParameter("bookingId"));
-        bookingService.checkIn(bookingId);
-
+        try {
+            int bookingId = Integer.parseInt(request.getParameter("bookingId"));
+            bookingService.checkIn(bookingId);
+            request.getSession().setAttribute("success", "Check-in completed successfully!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.getSession().setAttribute("error", "Failed to check-in: " + e.getMessage());
+        }
         response.sendRedirect(request.getContextPath() + "/reception/checkin");
     }
 }
