@@ -269,3 +269,67 @@ INSERT INTO notifications (
      (4, 'PAYMENT_REMINDER', 'Payment reminder for INV-20251006-001', 'A balance of $29.40 remains due by Oct 13. Please submit payment to avoid late fees.', 'SCHEDULED', '2025-10-09 09:00:00', NULL, 'HIGH', 0, NULL, '2025-10-07 08:30:00', '2025-10-07 08:30:00', 5, 1, 2, 2),
      (5, 'PROMOTIONAL', 'Training bundle offer for Luna', 'Book three obedience sessions and receive 15 percent off your next grooming.', 'SENT', NULL, '2025-09-25 12:00:00', 'LOW', 0, NULL, '2025-09-24 10:00:00', '2025-09-25 12:00:00', 6, 1, 3, NULL);
 SET IDENTITY_INSERT notifications OFF;
+
+-- Bookings
+SET IDENTITY_INSERT Booking ON;
+INSERT INTO Booking (
+    bookingId,
+    pet_name,
+    customer_name,
+    bookingDate,
+    status
+) VALUES
+     (1, 'Bella', 'Liam Chu', '2025-10-04 08:30:00', 'Pending'),
+     (2, 'Milo', 'Olivia Fernandez', '2025-10-06 13:30:00', 'Checked-In'),
+     (3, 'Luna', 'Evelyn Nguyen', '2025-10-07 10:45:00', 'Pending'),
+     (4, 'Rocky', 'Noah Davis', '2025-10-07 15:30:00', 'Checked-Out'),
+     (5, 'Coco', 'Amelia Patel', '2025-10-08 09:15:00', 'Pending');
+SET IDENTITY_INSERT Booking OFF;
+
+-- Rule sets
+SET IDENTITY_INSERT rule_sets ON;
+INSERT INTO rule_sets (
+    rule_set_id,
+    owner_type,
+    owner_id,
+    voucher_code,
+    amount,
+    discount_type,
+    expires_at,
+    voucher_active,
+    appointment_confirmation,
+    reminder_notify,
+    promotional_email,
+    reminder_hours,
+    email_template,
+    maximum_booking_days,
+    cancel_notice_hours,
+    auto_confirm,
+    is_active
+) VALUES
+     (1, 'SERVICE_CATEGORY', 1, 'WELLNESS10', 10.00, 'PERCENTAGE', '2025-12-31 23:59:59', 1, 1, 1, 0, 6, 'Hi {customer}, this is a reminder for your wellness appointment tomorrow.', 30, 12, 1, 1),
+     (2, 'SERVICE_CATEGORY', 2, 'GROOM5', 5.00, 'FIXED_AMOUNT', '2025-11-30 23:59:59', 1, 1, 0, 1, NULL, 'Grooming special: enjoy a follow-up spa within two weeks.', 14, 24, 0, 1);
+SET IDENTITY_INSERT rule_sets OFF;
+
+-- Weekly schedules for rule sets
+INSERT INTO rule_week_days (
+    rule_set_id,
+    day_of_week,
+    is_open,
+    open_time,
+    close_time
+) VALUES
+     (1, 'MONDAY', 1, '08:00:00', '18:00:00'),
+     (1, 'TUESDAY', 1, '08:00:00', '18:00:00'),
+     (1, 'WEDNESDAY', 1, '08:00:00', '18:00:00'),
+     (1, 'THURSDAY', 1, '08:00:00', '18:00:00'),
+     (1, 'FRIDAY', 1, '08:00:00', '18:00:00'),
+     (1, 'SATURDAY', 1, '09:00:00', '14:00:00'),
+     (1, 'SUNDAY', 0, NULL, NULL),
+     (2, 'MONDAY', 0, NULL, NULL),
+     (2, 'TUESDAY', 1, '10:00:00', '19:00:00'),
+     (2, 'WEDNESDAY', 1, '10:00:00', '19:00:00'),
+     (2, 'THURSDAY', 1, '10:00:00', '19:00:00'),
+     (2, 'FRIDAY', 1, '10:00:00', '19:00:00'),
+     (2, 'SATURDAY', 1, '09:00:00', '16:00:00'),
+     (2, 'SUNDAY', 0, NULL, NULL);
