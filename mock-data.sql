@@ -24,7 +24,9 @@ INSERT INTO accounts (
      (5, 'cust.olivia', 'CustOlivia#2025', 'olivia.fernandez@example.com', 'Olivia Fernandez', '555-410-2002', 'CUSTOMER', 1, 0, '2025-09-20 19:05:00', '2025-03-12 11:45:00', '2025-09-20 19:05:00', 'CUSTOMER'),
      (6, 'cust.evelyn', 'CustEvelyn#2025', 'evelyn.nguyen@example.com', 'Evelyn Nguyen', '555-410-2003', 'CUSTOMER', 1, 1, NULL, '2025-04-02 09:20:00', '2025-09-21 13:10:00', 'CUSTOMER'),
      (7, 'cust.noah', 'CustNoah#2025', 'noah.davis@example.com', 'Noah Davis', '555-410-2004', 'CUSTOMER', 1, 1, '2025-09-25 17:45:00', '2025-05-18 14:40:00', '2025-09-25 17:45:00', 'CUSTOMER'),
-     (8, 'cust.amelia', 'CustAmelia#2025', 'amelia.patel@example.com', 'Amelia Patel', '555-410-2005', 'CUSTOMER', 1, 0, NULL, '2025-06-05 16:25:00', '2025-09-24 12:05:00', 'CUSTOMER');
+     (8, 'cust.amelia', 'CustAmelia#2025', 'amelia.patel@example.com', 'Amelia Patel', '555-410-2005', 'CUSTOMER', 1, 0, NULL, '2025-06-05 16:25:00', '2025-09-24 12:05:00', 'CUSTOMER'),
+     (9, 'recep.ava', 'RecepAva#2025', 'ava.reed@petcare.com', 'Ava Reed', '555-310-3001', 'RECEPTIONIST', 1, 1, '2025-09-28 07:30:00', '2024-09-01 08:00:00', '2025-09-28 07:30:00', 'RECEPTIONIST'),
+     (10, 'recep.liam', 'RecepLiam#2025', 'liam.foster@petcare.com', 'Liam Foster', '555-310-3002', 'RECEPTIONIST', 1, 1, '2025-09-27 17:20:00', '2024-10-05 08:15:00', '2025-09-27 17:20:00', 'RECEPTIONIST');
 SET IDENTITY_INSERT accounts OFF;
 
 -- Administration profiles

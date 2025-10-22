@@ -6,7 +6,7 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.*;
 
-@WebFilter(urlPatterns = {"/admin/*", "/staff/*", "/user/*"})
+@WebFilter(urlPatterns = {"/admin/*", "/staff/*", "/user/*","/receptionist/*"})
 public class RoleFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response,
@@ -35,7 +35,10 @@ public class RoleFilter implements Filter {
             res.sendRedirect(req.getContextPath() + "/exception/403.jsp");
             return;
         }
-
+        if (path.startsWith("/receptionist/") && !( "RECEPTIONIST".equals(role) || "ADMIN".equals(role) )) {
+            res.sendRedirect(req.getContextPath() + "/exception/403.jsp");
+            return;
+        }
         chain.doFilter(request, response);
     }
 }

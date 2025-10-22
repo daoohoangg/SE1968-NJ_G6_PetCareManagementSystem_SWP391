@@ -35,5 +35,6 @@
         <mapping class="com.petcaresystem.enities.Voucher"/>
         <mapping class="com.petcaresystem.enities.ServiceCategory"/>
         <mapping class="com.petcaresystem.enities.RuleSet"/>
+        <mapping class="com.petcaresystem.enities.Receptionist"/>
     </session-factory>
 </hibernate-configuration>
