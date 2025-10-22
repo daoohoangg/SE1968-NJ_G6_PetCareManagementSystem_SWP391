@@ -34,5 +34,6 @@
         <mapping class="com.petcaresystem.enities.PetServiceHistory"/>
         <mapping class="com.petcaresystem.enities.Voucher"/>
         <mapping class="com.petcaresystem.enities.ServiceCategory"/>
+        <mapping class="com.petcaresystem.enities.RuleSet"/>
     </session-factory>
 </hibernate-configuration>

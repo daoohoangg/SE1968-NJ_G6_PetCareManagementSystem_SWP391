@@ -73,6 +73,51 @@ public class AccountDAO {
             return null;
         }
     }
+
+    public Account findByUsername(String username) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "FROM Account WHERE username = :username";
+            Query<Account> query = session.createQuery(hql, Account.class);
+            query.setParameter("username", username);
+            return query.uniqueResultOptional().orElse(null);
+        }
+    }
+
+    public Account findByEmail(String email) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "FROM Account WHERE email = :email";
+            Query<Account> query = session.createQuery(hql, Account.class);
+            query.setParameter("email", email);
+            return query.uniqueResultOptional().orElse(null);
+        }
+    }
+
+    public List<Account> searchAccounts(String keyword, String role) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            StringBuilder hql = new StringBuilder("FROM Account a WHERE 1=1 ");
+            if (keyword != null && !keyword.isBlank()) {
+                hql.append(" AND (lower(a.fullName) like :kw OR lower(a.email) like :kw OR lower(a.username) like :kw)");
+            }
+            if (role != null && !role.isBlank() && !role.equalsIgnoreCase("all")) {
+                hql.append(" AND a.role = :role");
+            }
+            hql.append(" ORDER BY a.accountId DESC");
+
+            Query<Account> query = session.createQuery(hql.toString(), Account.class);
+            if (keyword != null && !keyword.isBlank()) {
+                String kw = "%" + keyword.trim().toLowerCase() + "%";
+                query.setParameter("kw", kw);
+            }
+            if (role != null && !role.isBlank() && !role.equalsIgnoreCase("all")) {
+                // role expected as enum name
+                query.setParameter("role", com.petcaresystem.enities.enu.AccountRoleEnum.valueOf(role.toUpperCase()));
+            }
+            return query.list();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return java.util.Collections.emptyList();
+        }
+    }
     public Account findByVerificationToken(String token) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             String hql = "FROM Account WHERE verificationToken = :token";
@@ -95,6 +140,24 @@ public class AccountDAO {
             s.merge(account);
             tx.commit();
             return true;
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean deleteById(int accountId) {
+        Transaction tx = null;
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            tx = s.beginTransaction();
+            Account acc = s.get(Account.class, Long.valueOf(accountId));
+            if (acc != null) {
+                s.remove(acc);
+                tx.commit();
+                return true;
+            }
+            return false;
         } catch (Exception e) {
             if (tx != null) tx.rollback();
             e.printStackTrace();

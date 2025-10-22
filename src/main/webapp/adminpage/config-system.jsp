@@ -170,6 +170,7 @@
 <jsp:include page="../inc/header.jsp" />
 <main class="content-wrapper">
     <section class="page config-page">
+        <% request.setAttribute("currentPage", "configure-system"); %>
         <jsp:include page="../inc/side-bar.jsp" />
         <div class="config-main">
             <div class="config-card">

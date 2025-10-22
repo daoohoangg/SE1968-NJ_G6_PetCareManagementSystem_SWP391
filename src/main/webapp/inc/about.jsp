@@ -1,13 +1,13 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<html>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<!DOCTYPE html>
+<html lang="vi">
 <head>
-    <title>About Us - Pet Care Management System</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - PetCareManagementSystem</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background-color: #f5f5f5;
-            color: #333;
+            background-color: #f8f9fa;
         }
         .about-container {
             max-width: 850px;
@@ -18,18 +18,15 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             text-align: center;
         }
-        .about-container img {
-            width: 120px;
-            height: auto;
-            margin-bottom: 20px;
-        }
         h1 {
             color: #1976d2;
             margin-bottom: 15px;
+            font-weight: 700;
         }
         p {
-            font-size: 15px;
-            line-height: 1.6;
+            font-size: 1.1rem;
+            line-height: 1.7;
+            color: #555;
             margin-bottom: 20px;
         }
         .back-link {
@@ -46,24 +43,21 @@
     </style>
 </head>
 <body>
-
+<jsp:include page="header.jsp" />
 <div class="about-container">
-    <img src="images/logo.png" alt="Pet Care Logo"> // sẽ thêm ảnh sau
-    <h1>About Pet Care Management System</h1>
+    <h1>Pet Care Management System</h1>
     <p>
-        Pet Care Management System is an innovative platform designed to simplify and modernize pet care operations.
-        Our goal is to connect pet owners, caregivers, and service providers through an easy-to-use system that supports
-        online booking, product purchasing, and pet health management.
+        Hệ thống Quản lý Thú cưng (PCMS) là một nền tảng sáng tạo được thiết kế để đơn giản hóa và hiện đại hóa các hoạt động chăm sóc thú cưng.
     </p>
     <p>
-        The system ensures better convenience, accuracy, and reliability — helping you take care of your pets
-        anytime, anywhere.
+        Mục tiêu của chúng tôi là kết nối chủ sở hữu thú cưng, người chăm sóc và nhà cung cấp dịch vụ thông qua một hệ thống dễ sử dụng, hỗ trợ
+        đặt lịch trực tuyến, mua sản phẩm và quản lý sức khỏe thú cưng.
+    </p>
+    <p>
+        Hệ thống đảm bảo sự tiện lợi, chính xác và độ tin cậy cao hơn — giúp bạn chăm sóc thú cưng của mình mọi lúc, mọi nơi.
     </p>
     <div class="back-link">
-        <a href="<%= request.getContextPath() %>/home">← Back to Home</a>
+        <a href="<%= request.getContextPath() %>/home">Back Home</a>
     </div>
 </div>
-
 <jsp:include page="footer.jsp" />
-</body>
-</html>
