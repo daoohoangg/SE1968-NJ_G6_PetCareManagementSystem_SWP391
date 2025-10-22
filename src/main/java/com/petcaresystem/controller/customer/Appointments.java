@@ -83,8 +83,13 @@ public class Appointments extends HttpServlet {
         var appts = appointmentDAO.findByCustomer(customerId);
         req.setAttribute("appointments", appts);
 
+        req.setAttribute("pets", petDAO.getPet());
+        req.setAttribute("services", serviceDAO.getActiveServices());
+
         req.getRequestDispatcher("/WEB-INF/views/customer/appointments.jsp").forward(req, resp);
     }
+
+
 
     private void showCreateForm(HttpServletRequest req, HttpServletResponse resp, Long customerId)
             throws ServletException, IOException {
