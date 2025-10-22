@@ -1,4 +1,4 @@
-package com.petcaresystem.enities;
+package com.petcaresystem.enities.embeddable;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.AssertTrue;
@@ -11,8 +11,6 @@ import java.io.Serializable;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.Objects;
-@Entity
-@Table(name = "day_schedule")
 @Embeddable
 @Data
 @NoArgsConstructor
@@ -20,10 +18,6 @@ import java.util.Objects;
 @Builder
 public class DaySchedule implements Serializable {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "day_schedule_id")
-    private Long dayScheduleId;
     // Sử dụng DayOfWeek chuẩn Java: SUNDAY..SATURDAY
     @Enumerated(EnumType.STRING)
     @Column(name = "day_of_week", nullable = false, length = 10)
