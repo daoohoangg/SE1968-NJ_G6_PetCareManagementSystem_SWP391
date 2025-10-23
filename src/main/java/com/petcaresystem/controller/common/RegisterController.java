@@ -19,14 +19,11 @@ public class RegisterController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Hiển thị form đăng ký
         request.getRequestDispatcher("/common/register.jsp").forward(request, response);
     }
-
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Lấy dữ liệu từ form
 
         String fullName = request.getParameter("fullName");
         String username = request.getParameter("username");
@@ -34,8 +31,6 @@ public class RegisterController extends HttpServlet {
         String phone = request.getParameter("phone");
         String password = request.getParameter("password");
         String confirmPassword = request.getParameter("confirmPassword");
-
-        // Validate
         String errorMessage = null;
         if (fullName == null || fullName.isEmpty()) {
             errorMessage = "Full name is required!";
@@ -60,9 +55,7 @@ public class RegisterController extends HttpServlet {
             request.getRequestDispatcher("/common/register.jsp").forward(request, response);
             return;
         }
-        // Thêm token để xác thực
         String token = UUID.randomUUID().toString();
-        // Tạo account mới
         Customer account = new Customer();
         account.setFullName(fullName);
         account.setUsername(username);
@@ -71,11 +64,9 @@ public class RegisterController extends HttpServlet {
         account.setPassword(password);
         account.setRole(CUSTOMER);
         account.setVerificationToken(token);
-        // Lưu DB
         boolean success = accountDAO.register(account);
 
         if (success) {
-            // Test phần lấy token
             String verificationLink = "http://localhost:8080" + request.getContextPath() + "/verify?token=" + token;
             System.out.println("Verification Link (in case email fails): " + verificationLink);
             try {
@@ -84,11 +75,9 @@ public class RegisterController extends HttpServlet {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            // Đăng ký thành công -> chuyển về trang login
             response.sendRedirect(request.getContextPath() + "/login?status=registered");
 
         } else {
-            // Thất bại -> báo lỗi
             request.setAttribute("error", "Registration failed! Username might already exist.");
             request.getRequestDispatcher("/common/register.jsp").forward(request, response);
         }
