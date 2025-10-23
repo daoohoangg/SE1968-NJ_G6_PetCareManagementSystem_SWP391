@@ -1,5 +1,6 @@
 package com.petcaresystem.controller.admin;
 
+import com.petcaresystem.dto.PagedResult;
 import com.petcaresystem.enities.Service;
 import com.petcaresystem.enities.ServiceCategory;
 import com.petcaresystem.service.admin.IServiceManageService;
@@ -54,10 +55,7 @@ public class ServiceController extends HttpServlet {
 
     private void listServices(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        List<Service> services = serviceManageService.getAllServices();
-        List<ServiceCategory> categories = serviceManageService.getAllCategories();
-        populateListAttributes(req, services, categories);
-        req.getRequestDispatcher("/adminpage/manage-services.jsp").forward(req, resp);
+        renderServiceList(req, resp, null, null, null, null, null, "list");
     }
 
     private void searchServices(HttpServletRequest req, HttpServletResponse resp)
@@ -67,18 +65,34 @@ public class ServiceController extends HttpServlet {
         Boolean isActive = parseBool(req.getParameter("isActive"));
         String sortBy    = trim(req.getParameter("sortBy"));
         String sortOrder = trim(req.getParameter("sortOrder"));
+        renderServiceList(req, resp, keyword, categoryId, isActive, sortBy, sortOrder, "search");
+    }
 
-        List<Service> services = serviceManageService.searchServices(
-                keyword, categoryId, isActive, sortBy, sortOrder
+    private void renderServiceList(HttpServletRequest req, HttpServletResponse resp,
+                                   String keyword, Integer categoryId, Boolean isActive,
+                                   String sortBy, String sortOrder, String action)
+            throws ServletException, IOException {
+        int page = parsePage(req.getParameter("page"));
+        int size = parseSize(req.getParameter("size"));
+
+        String effectiveKeyword = keyword != null ? keyword : trim(req.getParameter("keyword"));
+        Integer effectiveCategory = categoryId != null ? categoryId : parseInt(req.getParameter("categoryId"));
+        Boolean effectiveActive = isActive != null ? isActive : parseBool(req.getParameter("isActive"));
+        String effectiveSortBy = sortBy != null ? sortBy : trim(req.getParameter("sortBy"));
+        String effectiveSortOrder = sortOrder != null ? sortOrder : trim(req.getParameter("sortOrder"));
+
+        PagedResult<Service> servicesPage = serviceManageService.getServicesPage(
+                effectiveKeyword, effectiveCategory, effectiveActive, effectiveSortBy, effectiveSortOrder, page, size
         );
         List<ServiceCategory> categories = serviceManageService.getAllCategories();
 
-        populateListAttributes(req, services, categories);
-        req.setAttribute("keyword", keyword);
-        req.setAttribute("selectedCategoryId", categoryId);
-        req.setAttribute("selectedActive", req.getParameter("isActive"));
-        req.setAttribute("sortBy", sortBy);
-        req.setAttribute("sortOrder", sortOrder);
+        populateListAttributes(req, servicesPage, categories);
+        req.setAttribute("filterKeyword", effectiveKeyword);
+        req.setAttribute("selectedCategoryId", effectiveCategory);
+        req.setAttribute("selectedActiveValue", effectiveActive);
+        req.setAttribute("sortBy", effectiveSortBy);
+        req.setAttribute("sortOrder", effectiveSortOrder);
+        req.setAttribute("serviceAction", action);
 
         req.getRequestDispatcher("/adminpage/manage-services.jsp").forward(req, resp);
     }
@@ -103,11 +117,8 @@ public class ServiceController extends HttpServlet {
 
     private void showAddForm(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        List<Service> services = serviceManageService.getAllServices();
-        List<ServiceCategory> categories = serviceManageService.getAllCategories();
-        populateListAttributes(req, services, categories);
         req.setAttribute("openAddModal", true);
-        req.getRequestDispatcher("/adminpage/manage-services.jsp").forward(req, resp);
+        renderServiceList(req, resp, null, null, null, null, null, "list");
     }
 
     private void showEditForm(HttpServletRequest req, HttpServletResponse resp)
@@ -124,13 +135,10 @@ public class ServiceController extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/admin/service");
             return;
         }
-        List<Service> services = serviceManageService.getAllServices();
-        List<ServiceCategory> categories = serviceManageService.getAllCategories();
-        populateListAttributes(req, services, categories);
         req.setAttribute("service", s);
         req.setAttribute("editService", s);
         req.setAttribute("openEditModal", true);
-        req.getRequestDispatcher("/adminpage/manage-services.jsp").forward(req, resp);
+        renderServiceList(req, resp, null, null, null, null, null, "list");
     }
 
     // ---------------- POST (PRG) ----------------
@@ -251,12 +259,41 @@ public class ServiceController extends HttpServlet {
     private static void flash(HttpServletRequest req, String key, String msg) {
         req.getSession().setAttribute(key, msg);
     }
-    private void populateListAttributes(HttpServletRequest req, List<Service> services, List<ServiceCategory> categories) {
-        List<Service> safeServices = services != null ? services : Collections.emptyList();
+    private int parsePage(String rawPage) {
+        Integer parsed = parseInt(rawPage);
+        if (parsed == null || parsed < 1) return 1;
+        return parsed;
+    }
+    private int parseSize(String rawSize) {
+        Integer parsed = parseInt(rawSize);
+        if (parsed == null) return 10;
+        int size = Math.max(parsed, 1);
+        if (size < 5) size = 5;
+        if (size > 50) size = 50;
+        return size;
+    }
+    private void populateListAttributes(HttpServletRequest req, PagedResult<Service> pageData, List<ServiceCategory> categories) {
+        List<Service> safeServices = pageData != null ? pageData.getItems() : Collections.emptyList();
         List<ServiceCategory> safeCategories = categories != null ? categories : Collections.emptyList();
         req.setAttribute("services", safeServices);
         req.setAttribute("serviceList", safeServices); // ensure JSP fallback works
         req.setAttribute("rows", safeServices);
         req.setAttribute("categories", safeCategories);
+
+        int currentPage = pageData != null ? pageData.getPage() : 1;
+        int pageSize = pageData != null ? pageData.getPageSize() : 10;
+        int totalPages = pageData != null ? pageData.getTotalPages() : (safeServices.isEmpty() ? 0 : 1);
+        long totalItems = pageData != null ? pageData.getTotalItems() : safeServices.size();
+        int startIndex = pageData != null ? pageData.getStartIndex() : (safeServices.isEmpty() ? 0 : 1);
+        int endIndex = pageData != null ? pageData.getEndIndex() : safeServices.size();
+
+        req.setAttribute("currentPage", currentPage);
+        req.setAttribute("pageSize", pageSize);
+        req.setAttribute("totalPages", totalPages);
+        req.setAttribute("totalItems", totalItems);
+        req.setAttribute("pageStart", startIndex);
+        req.setAttribute("pageEnd", endIndex);
+        req.setAttribute("hasPrevPage", pageData != null && pageData.hasPrevious());
+        req.setAttribute("hasNextPage", pageData != null && pageData.hasNext());
     }
 }

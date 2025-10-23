@@ -1,4 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 <style>
@@ -103,6 +106,16 @@
     .voucher-add-btn:hover{filter:brightness(.95)}
 
     .voucher-list{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+    .voucher-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .voucher-empty{padding:16px;border:1px dashed var(--line);border-radius:12px;text-align:center;color:var(--muted);background:#fff}
+    .voucher-size-control{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px}
+    .voucher-size-control select{border:1px solid var(--line);border-radius:10px;padding:6px 10px;background:#fff;color:var(--text)}
+    .voucher-pagination{display:flex;align-items:center;justify-content:space-between;margin-top:16px;border:1px solid var(--line);border-radius:12px;padding:10px 16px;background:#fff}
+    .voucher-pagination .info{font-size:13px;color:var(--muted)}
+    .voucher-pagination .controls{display:flex;align-items:center;gap:8px}
+    .voucher-pagination .pager-btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--text);text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:.18s}
+    .voucher-pagination .pager-btn:hover{border-color:#cbd5f5;color:var(--primary)}
+    .voucher-pagination .pager-btn.disabled{opacity:.5;pointer-events:none}
     .voucher-item{
         display:flex;align-items:center;justify-content:space-between;
         border:1px solid var(--line);border-radius:12px;padding:12px 16px;background:#fff;
@@ -180,21 +193,21 @@
             </div>
 
             <div class="config-tabs" role="tablist">
-                <button class="config-tab active" data-target="schedule" type="button">
+                <button class="config-tab${activeTab eq 'schedule' ? ' active' : ''}" data-target="schedule" type="button">
                     <i class="ri-calendar-line"></i> Schedule
                 </button>
-                <button class="config-tab" data-target="vouchers" type="button">
+                <button class="config-tab${activeTab eq 'vouchers' ? ' active' : ''}" data-target="vouchers" type="button">
                     <i class="ri-gift-line"></i> Vouchers
                 </button>
-                <button class="config-tab" data-target="email" type="button">
+                <button class="config-tab${activeTab eq 'email' ? ' active' : ''}" data-target="email" type="button">
                     <i class="ri-mail-send-line"></i> Email
                 </button>
-                <button class="config-tab" data-target="rules" type="button">
+                <button class="config-tab${activeTab eq 'rules' ? ' active' : ''}" data-target="rules" type="button">
                     <i class="ri-shield-check-line"></i> Rules
                 </button>
             </div>
 
-            <div class="tab-panel active" data-panel="schedule">
+            <div class="tab-panel${activeTab eq 'schedule' ? ' active' : ''}" data-panel="schedule">
                 <div class="setting-section">
                     <h2>Business Hours</h2>
                     <div class="schedule-list">
@@ -337,89 +350,162 @@
                 </div>
             </div>
 
-            <div class="tab-panel" data-panel="vouchers">
+            <div class="tab-panel${activeTab eq 'vouchers' ? ' active' : ''}" data-panel="vouchers">
                 <div class="setting-section">
                     <h2>Add New Voucher</h2>
-                    <div class="voucher-form">
+                    <form class="voucher-form" method="post" action="${pageContext.request.contextPath}/admin/vouchers">
+                        <input type="hidden" name="action" value="create"/>
                         <label>
                             Voucher Code
-                            <input class="config-input" type="text" placeholder="WELCOME20"/>
+                            <input class="config-input" name="code" type="text" placeholder="WELCOME20" required/>
                         </label>
                         <label>
-                            Discount Amount
-                            <input class="config-input" type="number" min="0" placeholder="20"/>
+                            Discount Value
+                            <input class="config-input" name="discountValue" type="number" min="0" step="0.01" placeholder="20" required/>
                         </label>
                         <label>
                             Type
-                            <select class="config-select">
-                                <option>Percentage</option>
-                                <option>Fixed Amount</option>
-                                <option>Free Service</option>
+                            <select class="config-select" name="discountType">
+                                <option value="PERCENTAGE">Percentage</option>
+                                <option value="FIXED">Fixed Amount</option>
+                                <option value="FREE_SERVICE">Free Service</option>
                             </select>
                         </label>
                         <label>
                             Expiry Date
-                            <input class="config-input" type="date"/>
+                            <input class="config-input" name="expiryDate" type="date"/>
                         </label>
-                        <button type="button" class="voucher-add-btn">
+                        <label>
+                            Max Uses
+                            <input class="config-input" name="maxUses" type="number" min="1" placeholder="Unlimited when empty"/>
+                        </label>
+                        <button type="submit" class="voucher-add-btn">
                             <i class="ri-add-line"></i> Add Voucher
                         </button>
-                    </div>
+                    </form>
                 </div>
 
                 <div class="setting-section">
-                    <h2>Existing Vouchers</h2>
-                    <div class="voucher-list">
-                        <div class="voucher-item">
-                            <div class="voucher-meta">
-                                <span class="voucher-code">WELCOME20</span>
-                                <div class="voucher-info">20% off<span>Expires: 2024-12-31</span></div>
-                            </div>
-                            <div class="voucher-actions">
-                                <label class="toggle">
-                                    <input type="checkbox" checked/>
-                                    <span class="toggle-track"></span>
-                                </label>
-                                <button type="button" class="icon-btn" title="Delete">
-                                    <i class="ri-delete-bin-line"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="voucher-item">
-                            <div class="voucher-meta">
-                                <span class="voucher-code">NEWCLIENT10</span>
-                                <div class="voucher-info">$10 off<span>Expires: 2024-11-30</span></div>
-                            </div>
-                            <div class="voucher-actions">
-                                <label class="toggle">
-                                    <input type="checkbox" checked/>
-                                    <span class="toggle-track"></span>
-                                </label>
-                                <button type="button" class="icon-btn" title="Delete">
-                                    <i class="ri-delete-bin-line"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="voucher-item">
-                            <div class="voucher-meta">
-                                <span class="voucher-code">LOYAL15</span>
-                                <div class="voucher-info">15% off<span>Expires: 2024-10-31</span></div>
-                            </div>
-                            <div class="voucher-actions">
-                                <label class="toggle">
-                                    <input type="checkbox"/>
-                                    <span class="toggle-track"></span>
-                                </label>
-                                <button type="button" class="icon-btn" title="Delete">
-                                    <i class="ri-delete-bin-line"></i>
-                                </button>
-                            </div>
-                        </div>
+                    <div class="voucher-header">
+                        <h2>Existing Vouchers</h2>
+                        <form class="voucher-size-control" method="get" action="${pageContext.request.contextPath}/admin/config">
+                            <input type="hidden" name="tab" value="vouchers"/>
+                            <label>
+                                Show
+                                <select name="voucherSize" onchange="this.form.submit()">
+                                    <option value="5" <c:if test="${voucherPageSize == 5}">selected</c:if>>5</option>
+                                    <option value="10" <c:if test="${voucherPageSize == 10}">selected</c:if>>10</option>
+                                    <option value="20" <c:if test="${voucherPageSize == 20}">selected</c:if>>20</option>
+                                </select>
+                                per page
+                            </label>
+                        </form>
                     </div>
+                    <c:if test="${empty vouchers}">
+                        <div class="voucher-empty">No vouchers available.</div>
+                    </c:if>
+                    <c:forEach var="voucher" items="${vouchers}">
+                        <div class="voucher-item">
+                            <div class="voucher-meta">
+                                <span class="voucher-code"><c:out value="${voucher.code}"/></span>
+                                <div class="voucher-info">
+                                    <span>
+                                        <c:choose>
+                                            <c:when test="${voucher.discountType == 'PERCENTAGE'}">
+                                                <c:out value="${voucher.discountValue}"/>% off
+                                            </c:when>
+                                            <c:when test="${voucher.discountType == 'FIXED'}">
+                                                $<fmt:formatNumber value="${voucher.discountValue}" type="number" minFractionDigits="2"/> off
+                                            </c:when>
+                                            <c:otherwise>Free service</c:otherwise>
+                                        </c:choose>
+                                    </span>
+                                    <span>
+                                        Expires:
+                                        <c:choose>
+                                            <c:when test="${voucher.expiryDate != null}">
+                                                <c:out value="${fn:substring(voucher.expiryDate, 0, 10)}"/>
+                                            </c:when>
+                                            <c:otherwise>None</c:otherwise>
+                                        </c:choose>
+                                    </span>
+                                    <span>
+                                        Uses:
+                                        <c:out value="${voucher.timesUsed != null ? voucher.timesUsed : 0}"/> /
+                                        <c:choose>
+                                            <c:when test="${voucher.maxUses != null}">
+                                                <c:out value="${voucher.maxUses}"/>
+                                            </c:when>
+                                            <c:otherwise>&#8734;</c:otherwise>
+                                        </c:choose>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="voucher-actions">
+                                <form method="post" action="${pageContext.request.contextPath}/admin/vouchers">
+                                    <input type="hidden" name="action" value="update-status"/>
+                                    <input type="hidden" name="voucherId" value="${voucher.voucherId}"/>
+                                    <input type="hidden" name="targetStatus" value="${not voucher.active}"/>
+                                    <input type="hidden" name="voucherPage" value="${voucherCurrentPage}"/>
+                                    <input type="hidden" name="voucherSize" value="${voucherPageSize}"/>
+                                    <label class="toggle" title="${voucher.active ? 'Deactivate voucher' : 'Activate voucher'}">
+                                        <input type="checkbox" onchange="this.form.submit()" <c:if test="${voucher.active}">checked</c:if> />
+                                        <span class="toggle-track"></span>
+                                    </label>
+                                </form>
+                                <form method="post" action="${pageContext.request.contextPath}/admin/vouchers" onsubmit="return confirm('Delete this voucher?');">
+                                    <input type="hidden" name="action" value="delete"/>
+                                    <input type="hidden" name="voucherId" value="${voucher.voucherId}"/>
+                                <input type="hidden" name="voucherPage" value="${voucherCurrentPage}"/>
+                                <input type="hidden" name="voucherSize" value="${voucherPageSize}"/>
+                                    <button type="submit" class="icon-btn" title="Delete">
+                                        <i class="ri-delete-bin-line"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </c:forEach>
+
+                    <c:if test="${voucherTotalItems > 0}">
+                        <c:url var="voucherPrevUrl" value="/admin/config">
+                            <c:param name="tab" value="vouchers"/>
+                            <c:param name="voucherSize" value="${voucherPageSize}"/>
+                            <c:param name="voucherPage" value="${voucherCurrentPage - 1}"/>
+                        </c:url>
+                        <c:url var="voucherNextUrl" value="/admin/config">
+                            <c:param name="tab" value="vouchers"/>
+                            <c:param name="voucherSize" value="${voucherPageSize}"/>
+                            <c:param name="voucherPage" value="${voucherCurrentPage + 1}"/>
+                        </c:url>
+                        <div class="voucher-pagination">
+                            <div class="info">
+                                Showing <c:out value="${voucherPageStart}" /> - <c:out value="${voucherPageEnd}" /> of <c:out value="${voucherTotalItems}" />
+                            </div>
+                            <div class="controls">
+                                <c:choose>
+                                    <c:when test="${voucherHasPrev}">
+                                        <a class="pager-btn" href="${voucherPrevUrl}"><i class="ri-arrow-left-line"></i> Prev</a>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="pager-btn disabled"><i class="ri-arrow-left-line"></i> Prev</span>
+                                    </c:otherwise>
+                                </c:choose>
+                                <span class="info">Page <c:out value="${voucherCurrentPage}" /> of <c:out value="${voucherTotalPages}" /></span>
+                                <c:choose>
+                                    <c:when test="${voucherHasNext}">
+                                        <a class="pager-btn" href="${voucherNextUrl}">Next <i class="ri-arrow-right-line"></i></a>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="pager-btn disabled">Next <i class="ri-arrow-right-line"></i></span>
+                                    </c:otherwise>
+                                </c:choose>
+                            </div>
+                        </div>
+                    </c:if>
                 </div>
             </div>
 
-            <div class="tab-panel" data-panel="email">
+            <div class="tab-panel${activeTab eq 'email' ? ' active' : ''}" data-panel="email">
                 <div class="setting-section">
                     <h2>Email Notifications</h2>
                     <div class="setting-row">
@@ -471,7 +557,7 @@
                 </div>
             </div>
 
-            <div class="tab-panel" data-panel="rules">
+            <div class="tab-panel${activeTab eq 'rules' ? ' active' : ''}" data-panel="rules">
                 <div class="setting-section">
                     <h2>Booking Rules</h2>
                     <div class="number-inputs">

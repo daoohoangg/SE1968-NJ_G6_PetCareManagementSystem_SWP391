@@ -103,6 +103,61 @@
         padding:12px 16px;
         box-shadow:0 8px 20px rgba(15,23,42,.05);
     }
+    .page-size-select{
+        border:1px solid var(--line);
+        border-radius:12px;
+        padding:8px 12px;
+        font-size:14px;
+        background:#fff;
+        color:var(--text);
+    }
+    .page-size-control{
+        display:flex;
+        align-items:center;
+        gap:6px;
+        color:var(--muted);
+        font-size:13px;
+    }
+    .pagination-bar{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-top:18px;
+        background:var(--surface);
+        border:1px solid var(--line);
+        border-radius:14px;
+        padding:12px 18px;
+        box-shadow:0 6px 14px rgba(15,23,42,.05);
+    }
+    .pagination-info{
+        font-size:13px;
+        color:var(--muted);
+    }
+    .pagination-controls{
+        display:flex;
+        align-items:center;
+        gap:8px;
+    }
+    .pager-btn{
+        border:1px solid var(--line);
+        background:#fff;
+        color:var(--text);
+        border-radius:10px;
+        padding:6px 14px;
+        font-size:13px;
+        font-weight:600;
+        text-decoration:none;
+        display:inline-flex;
+        align-items:center;
+        gap:6px;
+        transition:.18s;
+    }
+    .pager-btn:hover{border-color:#cbd5f5;color:var(--primary)}
+    .pager-btn.disabled{
+        opacity:.5;
+        pointer-events:none;
+        cursor:default;
+    }
     .search-field{
         flex:1;
         display:flex;
@@ -154,6 +209,12 @@
         padding:18px 20px;
         border-top:1px solid var(--line);
         vertical-align:middle;
+    }
+    .empty-row{
+        text-align:center;
+        padding:24px 16px;
+        color:var(--muted);
+        font-size:14px;
     }
     .user-cell{
         display:flex;
@@ -401,16 +462,28 @@
 
             <form class="filters" method="get" action="${pageContext.request.contextPath}/admin/accounts">
                 <input type="hidden" name="action" value="search" />
+                <c:set var="keywordValue" value="${not empty filterKeyword ? filterKeyword : param.keyword}" />
+                <c:set var="roleValue" value="${not empty filterRoleRaw ? filterRoleRaw : (empty param.role ? 'all' : param.role)}" />
                 <div class="search-field">
                     <i class="ri-search-line"></i>
-                    <input name="keyword" type="text" placeholder="Search accounts..." value="${fn:escapeXml(param.keyword)}" />
+                    <input name="keyword" type="text" placeholder="Search accounts..." value="${fn:escapeXml(keywordValue)}" />
                 </div>
                 <select name="role" class="role-filter">
-                    <option value="all" ${param.role == null || param.role == 'all' ? 'selected' : ''}>All Roles</option>
-                    <option value="ADMIN" ${param.role == 'ADMIN' ? 'selected' : ''}>Admin</option>
-                    <option value="STAFF" ${param.role == 'STAFF' ? 'selected' : ''}>Staff</option>
-                    <option value="CUSTOMER" ${param.role == 'CUSTOMER' ? 'selected' : ''}>Customer</option>
+                    <option value="all" <c:if test="${empty roleValue || roleValue == 'all'}">selected</c:if>>All Roles</option>
+                    <option value="ADMIN" <c:if test="${roleValue == 'ADMIN'}">selected</c:if>>Admin</option>
+                    <option value="STAFF" <c:if test="${roleValue == 'STAFF'}">selected</c:if>>Staff</option>
+                    <option value="CUSTOMER" <c:if test="${roleValue == 'CUSTOMER'}">selected</c:if>>Customer</option>
                 </select>
+                <label class="page-size-control">
+                    Show
+                    <select name="size" class="page-size-select" onchange="this.form.submit()">
+                        <option value="5" <c:if test="${pageSize == 5}">selected</c:if>>5</option>
+                        <option value="10" <c:if test="${pageSize == 10}">selected</c:if>>10</option>
+                        <option value="20" <c:if test="${pageSize == 20}">selected</c:if>>20</option>
+                        <option value="50" <c:if test="${pageSize == 50}">selected</c:if>>50</option>
+                    </select>
+                    per page
+                </label>
                 <button class="add-account-btn" type="submit" style="margin-left:8px">Search</button>
             </form>
 
@@ -426,6 +499,11 @@
                 </tr>
                 </thead>
                 <tbody>
+                <c:if test="${empty accounts}">
+                    <tr>
+                        <td class="empty-row" colspan="6">No accounts found.</td>
+                    </tr>
+                </c:if>
                 <c:forEach var="acc" items="${requestScope.accounts}">
                     <tr>
                         <td>
@@ -482,6 +560,59 @@
                 </c:forEach>
                 </tbody>
             </table>
+            <c:if test="${totalItems > 0}">
+                <c:set var="accountActionName" value="${not empty accountAction ? accountAction : 'list'}" />
+                <c:url var="prevUrl" value="/admin/accounts">
+                    <c:param name="action" value="${accountActionName}" />
+                    <c:if test="${not empty filterKeyword}">
+                        <c:param name="keyword" value="${filterKeyword}" />
+                    </c:if>
+                    <c:if test="${not empty filterRoleRaw && filterRoleRaw != 'all'}">
+                        <c:param name="role" value="${filterRoleRaw}" />
+                    </c:if>
+                    <c:param name="size" value="${pageSize}" />
+                    <c:param name="page" value="${currentPage - 1}" />
+                </c:url>
+                <c:url var="nextUrl" value="/admin/accounts">
+                    <c:param name="action" value="${accountActionName}" />
+                    <c:if test="${not empty filterKeyword}">
+                        <c:param name="keyword" value="${filterKeyword}" />
+                    </c:if>
+                    <c:if test="${not empty filterRoleRaw && filterRoleRaw != 'all'}">
+                        <c:param name="role" value="${filterRoleRaw}" />
+                    </c:if>
+                    <c:param name="size" value="${pageSize}" />
+                    <c:param name="page" value="${currentPage + 1}" />
+                </c:url>
+                <div class="pagination-bar">
+                    <div class="pagination-info">
+                        Showing <c:out value="${pageStart}" /> - <c:out value="${pageEnd}" /> of <c:out value="${totalItems}" />
+                    </div>
+                    <div class="pagination-controls">
+                        <c:choose>
+                            <c:when test="${hasPrevPage}">
+                                <a class="pager-btn" href="${prevUrl}">
+                                    <i class="ri-arrow-left-line"></i> Prev
+                                </a>
+                            </c:when>
+                            <c:otherwise>
+                                <span class="pager-btn disabled"><i class="ri-arrow-left-line"></i> Prev</span>
+                            </c:otherwise>
+                        </c:choose>
+                        <span class="pagination-info">Page <c:out value="${currentPage}" /> of <c:out value="${totalPages}" /></span>
+                        <c:choose>
+                            <c:when test="${hasNextPage}">
+                                <a class="pager-btn" href="${nextUrl}">
+                                    Next <i class="ri-arrow-right-line"></i>
+                                </a>
+                            </c:when>
+                            <c:otherwise>
+                                <span class="pager-btn disabled">Next <i class="ri-arrow-right-line"></i></span>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+                </div>
+            </c:if>
         </div>
         </div>
     </section>

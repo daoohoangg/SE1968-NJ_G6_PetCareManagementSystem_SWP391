@@ -1,10 +1,13 @@
 package com.petcaresystem.dao;
 
+import com.petcaresystem.dto.PagedResult;
+import com.petcaresystem.dto.account.AccountStats;
 import com.petcaresystem.enities.Account;
 import com.petcaresystem.utils.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.hibernate.Transaction;
+import java.util.Collections;
 import java.util.List;
 
 public class AccountDAO {
@@ -92,6 +95,108 @@ public class AccountDAO {
         }
     }
 
+    public PagedResult<Account> findAccounts(String keyword, String role, int page, int pageSize) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.max(pageSize, 1);
+        String normalizedKeyword = normalizeKeyword(keyword);
+        String normalizedRole = normalizeRole(role);
+
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            StringBuilder where = new StringBuilder(" WHERE 1=1");
+            if (normalizedKeyword != null) {
+                where.append(" AND (lower(a.fullName) like :kw OR lower(a.email) like :kw OR lower(a.username) like :kw)");
+            }
+            if (normalizedRole != null) {
+                where.append(" AND a.role = :roleFilter");
+            }
+
+            Query<Long> countQuery = session.createQuery(
+                    "SELECT COUNT(a.accountId) FROM Account a" + where,
+                    Long.class
+            );
+            Query<Account> dataQuery = session.createQuery(
+                    "FROM Account a" + where + " ORDER BY a.accountId DESC",
+                    Account.class
+            );
+
+            if (normalizedKeyword != null) {
+                String kw = "%" + normalizedKeyword + "%";
+                countQuery.setParameter("kw", kw);
+                dataQuery.setParameter("kw", kw);
+            }
+            if (normalizedRole != null) {
+                com.petcaresystem.enities.enu.AccountRoleEnum enumRole =
+                        com.petcaresystem.enities.enu.AccountRoleEnum.valueOf(normalizedRole);
+                countQuery.setParameter("roleFilter", enumRole);
+                dataQuery.setParameter("roleFilter", enumRole);
+            }
+
+            dataQuery.setFirstResult((safePage - 1) * safeSize);
+            dataQuery.setMaxResults(safeSize);
+
+            List<Account> results = dataQuery.list();
+            long total = countQuery.uniqueResultOptional().orElse(0L);
+            return new PagedResult<>(results, total, safePage, safeSize);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new PagedResult<>(Collections.emptyList(), 0L, safePage, safeSize);
+        }
+    }
+
+    public AccountStats computeStats(String keyword, String role) {
+        String normalizedKeyword = normalizeKeyword(keyword);
+        String normalizedRole = normalizeRole(role);
+
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            StringBuilder hql = new StringBuilder(
+                    "SELECT " +
+                            "COUNT(a.accountId), " +
+                            "SUM(CASE WHEN a.isActive = true THEN 1 ELSE 0 END), " +
+                            "SUM(CASE WHEN a.role = :adminRole THEN 1 ELSE 0 END), " +
+                            "SUM(CASE WHEN a.role = :staffRole THEN 1 ELSE 0 END), " +
+                            "SUM(CASE WHEN a.role = :customerRole THEN 1 ELSE 0 END) " +
+                            "FROM Account a WHERE 1=1"
+            );
+
+            if (normalizedKeyword != null) {
+                hql.append(" AND (lower(a.fullName) like :kw OR lower(a.email) like :kw OR lower(a.username) like :kw)");
+            }
+            if (normalizedRole != null) {
+                hql.append(" AND a.role = :roleFilter");
+            }
+
+            Query<Object[]> query = session.createQuery(hql.toString(), Object[].class);
+
+            if (normalizedKeyword != null) {
+                query.setParameter("kw", "%" + normalizedKeyword + "%");
+            }
+
+            com.petcaresystem.enities.enu.AccountRoleEnum adminRole = com.petcaresystem.enities.enu.AccountRoleEnum.ADMIN;
+            com.petcaresystem.enities.enu.AccountRoleEnum staffRole = com.petcaresystem.enities.enu.AccountRoleEnum.STAFF;
+            com.petcaresystem.enities.enu.AccountRoleEnum customerRole = com.petcaresystem.enities.enu.AccountRoleEnum.CUSTOMER;
+            query.setParameter("adminRole", adminRole);
+            query.setParameter("staffRole", staffRole);
+            query.setParameter("customerRole", customerRole);
+
+            if (normalizedRole != null) {
+                query.setParameter("roleFilter",
+                        com.petcaresystem.enities.enu.AccountRoleEnum.valueOf(normalizedRole));
+            }
+
+            Object[] row = query.uniqueResult();
+            long total = row != null && row[0] != null ? ((Number) row[0]).longValue() : 0L;
+            long active = row != null && row[1] != null ? ((Number) row[1]).longValue() : 0L;
+            long admin = row != null && row[2] != null ? ((Number) row[2]).longValue() : 0L;
+            long staff = row != null && row[3] != null ? ((Number) row[3]).longValue() : 0L;
+            long customer = row != null && row[4] != null ? ((Number) row[4]).longValue() : 0L;
+
+            return new AccountStats(total, active, admin, staff, customer);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new AccountStats(0, 0, 0, 0, 0);
+        }
+    }
+
     public List<Account> searchAccounts(String keyword, String role) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             StringBuilder hql = new StringBuilder("FROM Account a WHERE 1=1 ");
@@ -171,6 +276,20 @@ public class AccountDAO {
         return deleteById((long) accountId);
     }
 
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null) return null;
+        String trimmed = keyword.trim().toLowerCase();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeRole(String role) {
+        if (role == null) return null;
+        String trimmed = role.trim();
+        if (trimmed.isEmpty()) return null;
+        if ("all".equalsIgnoreCase(trimmed)) return null;
+        return trimmed.toUpperCase();
+    }
 
     public static void main(String[] args) {
         AccountDAO accountDAO = new AccountDAO();
