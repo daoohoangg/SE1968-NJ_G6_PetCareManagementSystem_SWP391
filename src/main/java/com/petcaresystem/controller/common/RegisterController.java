@@ -21,7 +21,6 @@ public class RegisterController extends HttpServlet {
             throws ServletException, IOException {
         request.getRequestDispatcher("/common/register.jsp").forward(request, response);
     }
-
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

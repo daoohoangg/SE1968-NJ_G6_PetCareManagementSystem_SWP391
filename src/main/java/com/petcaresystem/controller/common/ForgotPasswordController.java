@@ -18,7 +18,6 @@ public class ForgotPasswordController extends HttpServlet {
             throws ServletException, IOException {
         request.getRequestDispatcher("/common/forgotpassword.jsp").forward(request, response);
     }
-
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

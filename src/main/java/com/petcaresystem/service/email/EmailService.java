@@ -50,7 +50,6 @@ public class EmailService {
                 return new PasswordAuthentication(FROM_EMAIL,APP_PASSWORD);
            }
         };
-
        Session session = Session.getInstance(props, auth);
 
         try {
