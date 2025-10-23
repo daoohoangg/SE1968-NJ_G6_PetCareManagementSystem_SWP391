@@ -2,6 +2,7 @@ package com.petcaresystem.service.admin.impl;
 
 import com.petcaresystem.dao.VoucherDAO;
 import com.petcaresystem.dto.OperationResult;
+import com.petcaresystem.dto.PagedResult;
 import com.petcaresystem.enities.Voucher;
 import com.petcaresystem.service.admin.IVoucherManageService;
 
@@ -30,6 +31,11 @@ public class VoucherManageServiceImpl implements IVoucherManageService {
     public List<Voucher> getAllVouchers() {
         List<Voucher> vouchers = voucherDAO.findAll();
         return vouchers != null ? vouchers : new ArrayList<>();
+    }
+
+    @Override
+    public PagedResult<Voucher> getVoucherPage(int page, int pageSize) {
+        return voucherDAO.findPage(page, pageSize);
     }
 
     @Override

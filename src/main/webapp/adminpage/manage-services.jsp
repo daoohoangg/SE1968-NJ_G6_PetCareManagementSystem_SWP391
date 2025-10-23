@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ taglib prefix="c"   uri="jakarta.tags.core" %>
-<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
-<%@ taglib prefix="fn"  uri="jakarta.tags.functions" %>
+<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -47,6 +47,51 @@
         .search input,.search select{
             border:none;outline:none;background:transparent;color:var(--text);font-size:14px
         }
+        .page-size-select{
+            border:1px solid var(--line);
+            border-radius:10px;
+            padding:6px 10px;
+            background:#fff;
+            color:var(--text);
+            font-size:13px;
+        }
+        .page-size-control{
+            display:flex;
+            align-items:center;
+            gap:6px;
+            color:var(--muted);
+            font-size:13px;
+        }
+        .pagination-bar{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-top:16px;
+            background:#fff;
+            border:1px solid var(--line);
+            border-radius:12px;
+            padding:10px 16px;
+            box-shadow:0 6px 12px rgba(15,23,42,.05);
+        }
+        .pagination-info{color:var(--muted);font-size:13px;}
+        .pagination-controls{display:flex;align-items:center;gap:8px;}
+        .pager-btn{
+            border:1px solid var(--line);
+            background:#fff;
+            border-radius:10px;
+            padding:6px 12px;
+            font-size:13px;
+            font-weight:600;
+            color:var(--text);
+            text-decoration:none;
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            transition:.18s;
+        }
+        .pager-btn:hover{border-color:#bfdbfe;color:#2563eb;}
+        .pager-btn.disabled{opacity:.5;pointer-events:none;}
+
 
         .card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(15,23,42,.04)}
         table{width:100%;border-collapse:separate;border-spacing:0}
@@ -55,6 +100,7 @@
         tbody tr:hover{background:#fafafa}
         .name strong{display:block;margin-bottom:4px}
         .desc{font-size:12px;color:#6b7280}
+        .empty-row{padding:22px 16px;text-align:center;color:#6b7280;font-size:14px}
 
         .tag{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid #d1d5db;color:#374151;background:#fff}
         .tag.grooming{border-color:#bfdbfe;color:#1d4ed8}
@@ -328,7 +374,7 @@
         <form class="search" method="get" action="${pageContext.request.contextPath}/admin/service">
             <input type="hidden" name="action" value="search"/>
             <i class="ri-search-line"></i>
-            <input type="text" name="keyword" placeholder="Search services..." value="${fn:escapeXml(keyword)}"/>
+            <input type="text" name="keyword" placeholder="Search services..." value="${fn:escapeXml(filterKeyword)}"/>
 
             <select name="categoryId">
                 <option value="">All categories</option>
@@ -339,8 +385,8 @@
 
             <select name="isActive">
                 <option value="">All</option>
-                <option value="true"  <c:if test="${selectedActive == 'true'}">selected</c:if>>Active</option>
-                <option value="false" <c:if test="${selectedActive == 'false'}">selected</c:if>>Inactive</option>
+                <option value="true"  <c:if test="${selectedActiveValue == true}">selected</c:if>>Active</option>
+                <option value="false" <c:if test="${selectedActiveValue == false}">selected</c:if>>Inactive</option>
             </select>
 
             <select name="sortBy">
@@ -356,6 +402,17 @@
                 <option value="DESC" <c:if test="${sortOrder == 'DESC'}">selected</c:if>>Desc</option>
                 <option value="ASC"  <c:if test="${sortOrder == 'ASC'}">selected</c:if>>Asc</option>
             </select>
+
+            <label class="page-size-control">
+                Show
+                <select name="size" class="page-size-select" onchange="this.form.submit()">
+                    <option value="5"  <c:if test="${pageSize == 5}">selected</c:if>>5</option>
+                    <option value="10" <c:if test="${pageSize == 10}">selected</c:if>>10</option>
+                    <option value="20" <c:if test="${pageSize == 20}">selected</c:if>>20</option>
+                    <option value="50" <c:if test="${pageSize == 50}">selected</c:if>>50</option>
+                </select>
+                per page
+            </label>
 
             <button class="icon-btn" type="submit" title="Apply filters"><i class="ri-filter-3-line"></i></button>
         </form>
@@ -379,7 +436,7 @@
                 <tbody>
                 <c:choose>
                     <c:when test="${empty rows}">
-                        <tr><td colspan="6" style="padding:28px;text-align:center;color:#6b7280">No services found.</td></tr>
+                        <tr><td class="empty-row" colspan="6">No services found.</td></tr>
                     </c:when>
                     <c:otherwise>
                         <c:forEach var="s" items="${rows}">
@@ -437,6 +494,73 @@
                 </c:choose>
                 </tbody>
             </table>
+            <c:if test="${totalItems > 0}">
+                <c:set var="serviceActionName" value="${not empty serviceAction ? serviceAction : 'list'}" />
+                <c:url var="prevUrl" value="/admin/service">
+                    <c:param name="action" value="${serviceActionName}" />
+                    <c:if test="${not empty filterKeyword}">
+                        <c:param name="keyword" value="${filterKeyword}" />
+                    </c:if>
+                    <c:if test="${selectedCategoryId != null}">
+                        <c:param name="categoryId" value="${selectedCategoryId}" />
+                    </c:if>
+                    <c:if test="${selectedActiveValue != null}">
+                        <c:param name="isActive" value="${selectedActiveValue}" />
+                    </c:if>
+                    <c:if test="${not empty sortBy}">
+                        <c:param name="sortBy" value="${sortBy}" />
+                    </c:if>
+                    <c:if test="${not empty sortOrder}">
+                        <c:param name="sortOrder" value="${sortOrder}" />
+                    </c:if>
+                    <c:param name="size" value="${pageSize}" />
+                    <c:param name="page" value="${currentPage - 1}" />
+                </c:url>
+                <c:url var="nextUrl" value="/admin/service">
+                    <c:param name="action" value="${serviceActionName}" />
+                    <c:if test="${not empty filterKeyword}">
+                        <c:param name="keyword" value="${filterKeyword}" />
+                    </c:if>
+                    <c:if test="${selectedCategoryId != null}">
+                        <c:param name="categoryId" value="${selectedCategoryId}" />
+                    </c:if>
+                    <c:if test="${selectedActiveValue != null}">
+                        <c:param name="isActive" value="${selectedActiveValue}" />
+                    </c:if>
+                    <c:if test="${not empty sortBy}">
+                        <c:param name="sortBy" value="${sortBy}" />
+                    </c:if>
+                    <c:if test="${not empty sortOrder}">
+                        <c:param name="sortOrder" value="${sortOrder}" />
+                    </c:if>
+                    <c:param name="size" value="${pageSize}" />
+                    <c:param name="page" value="${currentPage + 1}" />
+                </c:url>
+                <div class="pagination-bar">
+                    <div class="pagination-info">
+                        Showing <c:out value="${pageStart}" /> - <c:out value="${pageEnd}" /> of <c:out value="${totalItems}" />
+                    </div>
+                    <div class="pagination-controls">
+                        <c:choose>
+                            <c:when test="${hasPrevPage}">
+                                <a class="pager-btn" href="${prevUrl}"><i class="ri-arrow-left-line"></i> Prev</a>
+                            </c:when>
+                            <c:otherwise>
+                                <span class="pager-btn disabled"><i class="ri-arrow-left-line"></i> Prev</span>
+                            </c:otherwise>
+                        </c:choose>
+                        <span class="pagination-info">Page <c:out value="${currentPage}" /> of <c:out value="${totalPages}" /></span>
+                        <c:choose>
+                            <c:when test="${hasNextPage}">
+                                <a class="pager-btn" href="${nextUrl}">Next <i class="ri-arrow-right-line"></i></a>
+                            </c:when>
+                            <c:otherwise>
+                                <span class="pager-btn disabled">Next <i class="ri-arrow-right-line"></i></span>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+                </div>
+            </c:if>
         </div>
     </main>
 </div>

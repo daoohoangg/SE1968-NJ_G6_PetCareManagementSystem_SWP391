@@ -1,6 +1,8 @@
 package com.petcaresystem.service.admin.impl;
 
 import com.petcaresystem.dao.AccountDAO;
+import com.petcaresystem.dto.PagedResult;
+import com.petcaresystem.dto.account.AccountStats;
 import com.petcaresystem.enities.Account;
 import com.petcaresystem.service.admin.IAccountManageService;
 
@@ -29,6 +31,16 @@ public class AccountManageServiceImpl implements IAccountManageService {
     @Override
     public List<Account> searchAccounts(String keyword, String role) {
         return accountDAO.searchAccounts(keyword, role);
+    }
+
+    @Override
+    public PagedResult<Account> getAccountsPage(String keyword, String role, int page, int pageSize) {
+        return accountDAO.findAccounts(keyword, role, page, pageSize);
+    }
+
+    @Override
+    public AccountStats getAccountStats(String keyword, String role) {
+        return accountDAO.computeStats(keyword, role);
     }
 
     @Override

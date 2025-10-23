@@ -29,14 +29,14 @@ public class VoucherController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.sendRedirect(req.getContextPath() + "/admin/config?tab=vouchers");
+        resp.sendRedirect(req.getContextPath() + "/admin/config" + buildRedirectSuffix(req));
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String action = trim(req.getParameter("action"));
         if (action == null) {
-            resp.sendRedirect(req.getContextPath() + "/admin/config?tab=vouchers");
+            resp.sendRedirect(req.getContextPath() + "/admin/config" + buildRedirectSuffix(req));
             return;
         }
 
@@ -56,7 +56,7 @@ public class VoucherController extends HttpServlet {
         }
 
         storeFlashMessage(req.getSession(), result);
-        resp.sendRedirect(req.getContextPath() + "/admin/config?tab=vouchers");
+        resp.sendRedirect(req.getContextPath() + "/admin/config" + buildRedirectSuffix(req));
     }
 
     private OperationResult handleCreate(HttpServletRequest req) {
@@ -141,6 +141,14 @@ public class VoucherController extends HttpServlet {
         return "true".equalsIgnoreCase(value) || "on".equalsIgnoreCase(value);
     }
 
+    private String buildRedirectSuffix(HttpServletRequest req) {
+        StringBuilder sb = new StringBuilder("?tab=vouchers");
+        String page = trim(req.getParameter("voucherPage"));
+        String size = trim(req.getParameter("voucherSize"));
+        if (page != null) { sb.append("&voucherPage=").append(page); }
+        if (size != null) { sb.append("&voucherSize=").append(size); }
+        return sb.toString();
+    }
     private static LocalDateTime parseExpiryDate(String value) {
         if (value == null) return null;
         try {

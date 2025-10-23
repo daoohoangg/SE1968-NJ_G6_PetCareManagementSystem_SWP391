@@ -11,8 +11,8 @@
 
     // ===== Nhận data có thể đã được set bởi servlet =====
     List<Appointment> appointments = (List<Appointment>) request.getAttribute("appointments");
-    List<Pet> pets                 = (List<Pet>) request.getAttribute("pets");
-    List<Service> services         = (List<Service>) request.getAttribute("services");
+    List<Pet> pets = (List<Pet>) request.getAttribute("pets");
+    List<Service> services = (List<Service>) request.getAttribute("services");
 
 
     if (services == null || services.isEmpty()) {
@@ -20,33 +20,42 @@
             ServiceDAO sdao = new ServiceDAO();
             services = sdao.getActiveServices();
             request.setAttribute("services", services);
-        } catch (Exception ignore) { services = Collections.emptyList(); }
+        } catch (Exception ignore) {
+            services = Collections.emptyList();
+        }
     }
     if (pets == null || pets.isEmpty()) {
-        try {
-            PetDAO pdao = new PetDAO();
-            pets = pdao.getPet();
+        com.petcaresystem.enities.Account acc =
+                (com.petcaresystem.enities.Account) session.getAttribute("account");
+        if (acc != null) {
+            com.petcaresystem.dao.PetDAO pdao = new com.petcaresystem.dao.PetDAO();
+            pets = pdao.findByCustomerId(acc.getAccountId());
             request.setAttribute("pets", pets);
-        } catch (Exception ignore) { pets = Collections.emptyList(); }
+        } else {
+            pets = java.util.Collections.emptyList();
+        }
     }
     if (appointments == null) appointments = Collections.emptyList();
 
-    String error     = (String) request.getAttribute("error");
-    String created   = request.getParameter("created");
+    if (appointments == null) appointments = Collections.emptyList();
+
+    String error = (String) request.getAttribute("error");
+    String created = request.getParameter("created");
     String cancelled = request.getParameter("cancelled");
 
     // ===== Sort services theo category.name rồi serviceName (null-safe) =====
     List<Service> sortedServices = new ArrayList<>(services);
     Collections.sort(sortedServices, new Comparator<Service>() {
-        @Override public int compare(Service a, Service b) {
-            String ca = (a != null && a.getCategory()!=null && a.getCategory().getName()!=null)
+        @Override
+        public int compare(Service a, Service b) {
+            String ca = (a != null && a.getCategory() != null && a.getCategory().getName() != null)
                     ? a.getCategory().getName() : "";
-            String cb = (b != null && b.getCategory()!=null && b.getCategory().getName()!=null)
+            String cb = (b != null && b.getCategory() != null && b.getCategory().getName() != null)
                     ? b.getCategory().getName() : "";
             int c = ca.compareToIgnoreCase(cb);
             if (c != 0) return c;
-            String sa = (a != null && a.getServiceName()!=null) ? a.getServiceName() : "";
-            String sb = (b != null && b.getServiceName()!=null) ? b.getServiceName() : "";
+            String sa = (a != null && a.getServiceName() != null) ? a.getServiceName() : "";
+            String sb = (b != null && b.getServiceName() != null) ? b.getServiceName() : "";
             return sa.compareToIgnoreCase(sb);
         }
     });
@@ -60,21 +69,57 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        body { background-color:#f5f7fb; font-family: 'Segoe UI', sans-serif; }
-        .page-container { max-width:1050px; margin:40px auto; }
-        .card { border:none; border-radius:14px; box-shadow:0 6px 16px rgba(0,0,0,0.08); }
-        .card-header { background-color:#e9f2ff; color:#0d6efd; font-weight:600; }
-        .form-label { font-weight:600; }
-        .required::after { content:"*"; color:#dc3545; margin-left:4px; }
-        .btn-primary { background-color:#0d6efd; border-color:#0d6efd; font-weight:600; }
-        .btn-primary:hover { background-color:#0b5ed7; }
-        .badge { letter-spacing:.3px; }
+        body {
+            background-color: #f5f7fb;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .page-container {
+            max-width: 1050px;
+            margin: 40px auto;
+        }
+
+        .card {
+            border: none;
+            border-radius: 14px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-header {
+            background-color: #e9f2ff;
+            color: #0d6efd;
+            font-weight: 600;
+        }
+
+        .form-label {
+            font-weight: 600;
+        }
+
+        .required::after {
+            content: "*";
+            color: #dc3545;
+            margin-left: 4px;
+        }
+
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+        }
+
+        .badge {
+            letter-spacing: .3px;
+        }
     </style>
 </head>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const el = document.getElementById('serviceIds');
         if (el) {
             new Choices(el, {
@@ -89,6 +134,37 @@
         }
     });
 </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const el = document.getElementById('serviceIds');
+        const totalText = document.getElementById('totalPriceText');
+        if (!el || !totalText) return;
+
+        const servicePrices = {};
+        el.querySelectorAll('option').forEach(opt => {
+            const text = opt.textContent || "";
+            const match = text.match(/\(([\d.]+)\s*đ\)/);
+            if (match) {
+
+                const price = parseFloat(match[1]);
+                servicePrices[opt.value] = price;
+            }
+        });
+
+        function updateTotal() {
+            let total = 0;
+            Array.from(el.selectedOptions).forEach(opt => {
+                if (servicePrices[opt.value]) total += servicePrices[opt.value];
+            });
+
+            totalText.textContent = "Tổng tiền dịch vụ: " + total.toFixed(2) + " đ";
+        }
+
+        el.addEventListener('change', updateTotal);
+    });
+</script>
+
+
 
 <body>
 
@@ -108,7 +184,8 @@
     <%
     } else if (error != null) {
     %>
-    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i><%= error %></div>
+    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i><%= error %>
+    </div>
     <%
         }
     %>
@@ -119,23 +196,44 @@
         <div class="card-body">
             <form method="post" action="<%= ctx %>/customer/appointments">
                 <div class="row g-3">
-                    <!-- PET -->
                     <div class="col-md-6">
                         <label class="form-label required">Thú cưng</label>
-                        <select name="petId" class="form-select" required>
-                            <option value="" hidden>Chọn thú cưng</option>
-                            <%
-                                for (Pet p : pets) {
-                                    if (p == null) continue;
-                            %>
-                            <option value="<%= p.getIdpet() %>">
-                                <%= p.getName() %><% if (p.getBreed()!=null && !p.getBreed().isEmpty()) { %> - <%= p.getBreed() %><% } %>
-                            </option>
-                            <%
+
+                        <%
+                            if (pets == null || pets.isEmpty()) {
+                                try {
+                                    com.petcaresystem.enities.Account acc =
+                                            (com.petcaresystem.enities.Account) session.getAttribute("account");
+                                    if (acc != null) {
+                                        com.petcaresystem.dao.PetDAO pdao = new com.petcaresystem.dao.PetDAO();
+                                        pets = pdao.findByCustomerId(acc.getAccountId());
+                                        request.setAttribute("pets", pets);
+                                    } else {
+                                        pets = java.util.Collections.emptyList();
+                                    }
+                                } catch (Exception e) {
+                                    pets = java.util.Collections.emptyList();
                                 }
-                            %>
+                            }
+                        %>
+
+                        <% if (pets == null || pets.isEmpty()) { %>
+                        <select class="form-select" disabled>
+                            <option>(Bạn chưa có thú cưng nào – vui lòng thêm trước)</option>
                         </select>
+                        <% } else { %>
+                        <select id="petId" name="petId" class="form-select" required>
+                            <option value="" hidden>Chọn thú cưng</option>
+                            <% for (com.petcaresystem.enities.Pet p : pets) {
+                                if (p == null) continue; %>
+                            <option value="<%= p.getIdpet() %>">
+                                <%= p.getName() %><%= (p.getBreed()!=null && !p.getBreed().isEmpty()) ? " - "+p.getBreed() : "" %>
+                            </option>
+                            <% } %>
+                        </select>
+                        <% } %>
                     </div>
+
 
                     <!-- SERVICES -->
                     <div class="col-md-6">
@@ -169,13 +267,17 @@
                                     <%= s.getServiceName() %> (<%= priceStr %> đ)
                                 </option>
                                 <%
-                                    if (i == sortedServices.size() - 1) { %></optgroup><% }
-                        } // end for
-                        } // end else
-                        %>
+                                    if (i == sortedServices.size() - 1) { %></optgroup>
+                            <%          }
+                            } // end for
+                            } // end else
+                            %>
                         </select>
-
+                        <small id="totalPriceText" class="text-muted d-block mt-1">
+                            Tổng tiền dịch vụ: 0 đ
+                        </small>
                     </div>
+
 
                     <!-- TIME -->
                     <div class="col-md-6">
@@ -235,13 +337,17 @@
                         for (int i = 0; i < appointments.size(); i++) {
                             Appointment a = appointments.get(i);
                             if (a == null) continue;
-                            String status = (a.getStatus()!=null) ? a.getStatus().name() : "PENDING";
+                            String status = (a.getStatus() != null) ? a.getStatus().name() : "PENDING";
                     %>
                     <tr>
-                        <td><%= i + 1 %></td>
-                        <td><%= a.getPet()!=null ? a.getPet().getName() : "(N/A)" %></td>
-                        <td><%= a.getAppointmentDate()!=null ? a.getAppointmentDate() : "" %></td>
-                        <td><%= a.getEndDate()!=null ? a.getEndDate() : "—" %></td>
+                        <td><%= i + 1 %>
+                        </td>
+                        <td><%= a.getPet() != null ? a.getPet().getName() : "(N/A)" %>
+                        </td>
+                        <td><%= a.getAppointmentDate() != null ? a.getAppointmentDate() : "" %>
+                        </td>
+                        <td><%= a.getEndDate() != null ? a.getEndDate() : "—" %>
+                        </td>
                         <td>
                             <%
                                 if ("CONFIRMED".equals(status)) {
