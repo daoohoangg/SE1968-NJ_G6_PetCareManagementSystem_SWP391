@@ -140,7 +140,7 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
                             <%
-                                if (loggedInAccount.getRole() != AccountRoleEnum.ADMIN) {
+                                if (loggedInAccount.getRole() == AccountRoleEnum.CUSTOMER) {
                             %>
                             <li><a class="dropdown-item" href="<%= request.getContextPath() %>/customer/profile?action=edit">Profile</a></li>
                             <%
