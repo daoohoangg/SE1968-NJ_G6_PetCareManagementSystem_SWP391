@@ -84,7 +84,7 @@
                         String appointmentsLink = request.getContextPath() + "/login";
                         String servicesLink = request.getContextPath() + "/login";
                         if (loggedInAccount != null && loggedInAccount.getRole() == AccountRoleEnum.CUSTOMER) {
-                            petsLink = request.getContextPath() + "/customer/pets";
+                            petsLink = request.getContextPath() + "/customer/pets.jsp";
                             appointmentsLink = request.getContextPath() + "/customer/appointments.jsp";
                             servicesLink = request.getContextPath() + "/services";
                         } else if (loggedInAccount != null) {
