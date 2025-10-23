@@ -127,10 +127,13 @@ public class AccountDAO {
         }
     }
 
-    public Account findById(int id) {
+    public Account findById(Long id) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             return s.get(Account.class, id);
         }
+    }
+    public Account findById(int id) {                // giữ tương thích cũ
+        return findById((long) id);
     }
 
     public boolean updateAccount(Account account) {
@@ -147,7 +150,7 @@ public class AccountDAO {
         }
     }
 
-    public boolean deleteById(int accountId) {
+    public boolean deleteById(Long accountId) {
         Transaction tx = null;
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             tx = s.beginTransaction();
@@ -163,6 +166,9 @@ public class AccountDAO {
             e.printStackTrace();
             return false;
         }
+    }
+    public boolean deleteById(int accountId) {       // giữ tương thích cũ
+        return deleteById((long) accountId);
     }
 
 
