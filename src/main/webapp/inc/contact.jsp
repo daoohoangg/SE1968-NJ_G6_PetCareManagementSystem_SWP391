@@ -28,15 +28,20 @@
             padding: 60px 0;
             background-color: #f8f9fa;
         }
-        .contact-frame-card {
+        .contact-form-info-card {
             background-color: #ffffff;
             border-radius: 8px;
             box-shadow: 0 6px 20px rgba(0,0,0,0.08);
             border: none;
             overflow: hidden;
+            height: 100%;
         }
         .contact-info-block {
-            padding: 2rem;
+            padding: 2.5rem;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         .contact-info-block h3 {
             font-weight: 700;
@@ -58,9 +63,18 @@
         }
         .map-section iframe {
             width: 100%;
-            height: 450px;
+            height: 400px;
             border: 0;
             display: block;
+        }
+        .contact-form-block {
+            padding: 2.5rem;
+            height: 100%;
+        }
+        .contact-form-block h3 {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 25px;
         }
     </style>
 </head>
@@ -85,8 +99,10 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-10">
-                <div class="card contact-frame-card">
-                    <div class="contact-info-block">
+                <div class="card contact-form-info-card">
+                    <div class="row g-0">
+                        <div class="col-lg-6 border-end">
+                        <div class="contact-info-block">
                         <h3>Contact Information</h3>
                         <p>
                             <i class="fas fa-map-marker-alt"></i>
@@ -117,10 +133,44 @@
                                 </span>
                         </p>
                     </div>
-                    <div class="map-section">
+                    </div>
+                        <div class="col-lg-6">
+                            <div class="contact-form-block">
+                                <h3>Send Us a Message</h3>
+                                <p class="text-muted mb-4">
+                                    Have questions? Fill out the form and we will get back to you shortly.
+                                </p>
+                                <% String message = (String) request.getAttribute("message"); %>
+                                <% if (message != null && !message.isEmpty()) { %>
+                                <div class="alert alert-info" role="alert">
+                                    <%= message %>
+                                </div>
+                                <% } %>
+                                <form action="<%= request.getContextPath() %>/contact" method="POST">
+                                    <div class="mb-3">
+                                        <label for="contactName" class="form-label">Full Name</label>
+                                        <input type="text" class="form-control" id="contactName" name="name" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="contactEmail" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="contactEmail" name="email" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="contactSubject" class="form-label">Subject</label>
+                                        <input type="text" class="form-control" id="contactSubject" name="subject" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="contactMessage" class="form-label">Message</label>
+                                        <textarea class="form-control" id="contactMessage" name="message" rows="5" required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-lg w-100">Send Message</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="map-section mt-4">
                         <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d6263.728864103876!2d105.52635412656335!3d21.015255038767684!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135abc60e7d3f19%3A0x2be9d7d0b5abcbf4!2zVHLGsOG7nW5nIMSQ4bqhaSBo4buNYyBGUFQgSMOgIE7hu5lp!5e0!3m2!1svi!2s!4v1760922409624!5m2!1svi!2s" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                     </div>
-
                 </div>
             </div>
         </div>

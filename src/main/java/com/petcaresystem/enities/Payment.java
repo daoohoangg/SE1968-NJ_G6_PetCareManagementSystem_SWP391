@@ -63,6 +63,10 @@ public class Payment {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "receptionist_id")
+    private Receptionist receptionist;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

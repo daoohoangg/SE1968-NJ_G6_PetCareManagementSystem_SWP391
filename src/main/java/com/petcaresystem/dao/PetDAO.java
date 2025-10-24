@@ -76,15 +76,15 @@ public class PetDAO {
     }
 
     // ✅ Lấy danh sách Pet theo customerId
-    public List<Pet> findByCustomerId(Long customerId) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery(
-                            "from Pet p where p.customer.accountId = :cid order by p.idpet desc",
-                            Pet.class)
-                    .setParameter("cid", customerId)
-                    .getResultList();
+    public List<Pet> findByCustomerId(Long accountId) {
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            return s.createQuery(
+                    "FROM Pet p JOIN FETCH p.customer c WHERE p.customer.accountId = :cid ORDER BY p.name",
+                    Pet.class
+            ).setParameter("cid", accountId).getResultList();
         }
     }
+
 
     // ✅ Xóa thú cưng thuộc về đúng chủ
     public boolean deleteOwned(Long petId, Long customerId) {

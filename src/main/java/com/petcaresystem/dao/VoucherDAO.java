@@ -1,5 +1,6 @@
 package com.petcaresystem.dao;
 
+import com.petcaresystem.dto.PagedResult;
 import com.petcaresystem.enities.Voucher;
 import com.petcaresystem.utils.HibernateUtil;
 import org.hibernate.Session;
@@ -17,6 +18,31 @@ public class VoucherDAO {
         } catch (Exception e) {
             e.printStackTrace();
             return Collections.emptyList();
+        }
+    }
+
+    public PagedResult<Voucher> findPage(int page, int pageSize) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.max(pageSize, 1);
+
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Query<Long> countQuery = session.createQuery("SELECT COUNT(v.voucherId) FROM Voucher v", Long.class);
+            long total = countQuery.uniqueResultOptional().orElse(0L);
+            if (total == 0) {
+                return new PagedResult<>(Collections.emptyList(), 0, safePage, safeSize);
+            }
+
+            Query<Voucher> dataQuery = session.createQuery(
+                    "FROM Voucher v ORDER BY v.createdAt DESC",
+                    Voucher.class
+            );
+            dataQuery.setFirstResult((safePage - 1) * safeSize);
+            dataQuery.setMaxResults(safeSize);
+            List<Voucher> vouchers = dataQuery.list();
+            return new PagedResult<>(vouchers, total, safePage, safeSize);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new PagedResult<>(Collections.emptyList(), 0, safePage, safeSize);
         }
     }
 

@@ -46,8 +46,7 @@ public class Pet {
     @Column(name = "medical_notes", columnDefinition = "TEXT")
     private String medicalNotes;
 
-    // ✅ Liên kết ngược lại Customer
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id") // cột foreign key trỏ đến bảng customers
+    @JoinColumn(name = "customer_id")
     private Customer customer;
 }

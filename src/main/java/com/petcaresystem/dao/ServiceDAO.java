@@ -1,18 +1,16 @@
 package com.petcaresystem.dao;
 
+import com.petcaresystem.dto.PagedResult;
 import com.petcaresystem.enities.Service;
 import com.petcaresystem.utils.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class ServiceDAO {
 
@@ -196,5 +194,117 @@ public class ServiceDAO {
                     ).setParameter("cid", categoryId)
                     .list();
         }
+    }
+
+    public PagedResult<Service> findServices(String keyword, Integer categoryId, Boolean isActive,
+                                             String sortBy, String sortOrder, int page, int pageSize) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.max(pageSize, 1);
+        String normalizedKeyword = normalizeKeyword(keyword);
+
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String whereClause = buildWhereClause(normalizedKeyword, categoryId, isActive);
+            String orderClause = buildOrderClause(sortBy, sortOrder);
+
+            Query<Long> countQuery = session.createQuery(
+                    "SELECT COUNT(DISTINCT sv.serviceId) FROM Service sv LEFT JOIN sv.category c " + whereClause,
+                    Long.class
+            );
+            applyFilters(countQuery, normalizedKeyword, categoryId, isActive);
+            long total = countQuery.uniqueResultOptional().orElse(0L);
+            if (total == 0) {
+                return new PagedResult<>(Collections.emptyList(), 0, safePage, safeSize);
+            }
+
+            Query<Integer> idQuery = session.createQuery(
+                    "SELECT sv.serviceId FROM Service sv LEFT JOIN sv.category c " + whereClause + orderClause,
+                    Integer.class
+            );
+            applyFilters(idQuery, normalizedKeyword, categoryId, isActive);
+            idQuery.setFirstResult((safePage - 1) * safeSize);
+            idQuery.setMaxResults(safeSize);
+            List<Integer> ids = idQuery.list();
+            if (ids == null || ids.isEmpty()) {
+                return new PagedResult<>(Collections.emptyList(), total, safePage, safeSize);
+            }
+
+            Query<Service> dataQuery = session.createQuery(
+                    "SELECT DISTINCT sv FROM Service sv LEFT JOIN FETCH sv.category WHERE sv.serviceId IN (:ids)",
+                    Service.class
+            );
+            dataQuery.setParameterList("ids", ids);
+            List<Service> fetched = dataQuery.list();
+            if (fetched == null) {
+                fetched = Collections.emptyList();
+            }
+
+            Map<Integer, Service> serviceById = fetched.stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(
+                            Service::getServiceId,
+                            svc -> svc,
+                            (first, second) -> first,
+                            LinkedHashMap::new
+                    ));
+            List<Service> ordered = new ArrayList<>();
+            for (Integer id : ids) {
+                Service svc = serviceById.get(id);
+                if (svc != null) {
+                    ordered.add(svc);
+                }
+            }
+
+            return new PagedResult<>(ordered, total, safePage, safeSize);
+        } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, "Failed to paginate services", ex);
+            return new PagedResult<>(Collections.emptyList(), 0, safePage, safeSize);
+        }
+    }
+
+    private String buildWhereClause(String keyword, Integer categoryId, Boolean isActive) {
+        StringBuilder where = new StringBuilder("WHERE 1=1 ");
+        if (keyword != null) {
+            where.append("AND (lower(sv.serviceName) like :kw OR lower(sv.description) like :kw) ");
+        }
+        if (categoryId != null) {
+            where.append("AND c.categoryId = :cid ");
+        }
+        if (isActive != null) {
+            where.append("AND sv.isActive = :act ");
+        }
+        return where.toString();
+    }
+
+    private String buildOrderClause(String sortBy, String sortOrder) {
+        String column = switch (sortBy == null ? "serviceId" : sortBy) {
+            case "serviceName" -> "sv.serviceName";
+            case "price" -> "sv.price";
+            case "duration" -> "sv.durationMinutes";
+            case "category" -> "c.name";
+            case "updated" -> "sv.updatedAt";
+            default -> "sv.serviceId";
+        };
+        String direction = "DESC".equalsIgnoreCase(sortOrder) ? " DESC" : " ASC";
+        return " ORDER BY " + column + direction;
+    }
+
+    private void applyFilters(Query<?> query, String keyword, Integer categoryId, Boolean isActive) {
+        if (keyword != null) {
+            query.setParameter("kw", "%" + keyword + "%");
+        }
+        if (categoryId != null) {
+            query.setParameter("cid", categoryId);
+        }
+        if (isActive != null) {
+            query.setParameter("act", isActive);
+        }
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null) {
+            return null;
+        }
+        String trimmed = keyword.trim().toLowerCase();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

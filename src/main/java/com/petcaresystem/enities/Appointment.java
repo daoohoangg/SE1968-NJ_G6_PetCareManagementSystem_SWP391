@@ -58,6 +58,10 @@ public class Appointment {
     @JoinColumn(name = "staff_id", nullable = false)
     private Staff staff;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "receptionist_id")
+    private Receptionist receptionist;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "appointment_services",

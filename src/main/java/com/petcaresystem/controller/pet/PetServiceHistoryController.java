@@ -3,7 +3,6 @@ package com.petcaresystem.controller.pet;
 import com.petcaresystem.dao.PetServiceHistoryDAO;
 import com.petcaresystem.enities.PetServiceHistory;
 import com.petcaresystem.enities.Pet;
-import com.petcaresystem.enities.Staff;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -111,8 +110,8 @@ public class PetServiceHistoryController extends HttpServlet {
             
             if (staffId != null) {
                 //Staff staff = new Staff();
-               // staff.setAccountId(staffId);
-               // newHistory.setStaff(staff);
+                //staff.setAccountId(staffId);
+                //newHistory.setStaff(staff);
             }
 
             petServiceHistoryDAO.addHistory(newHistory);
