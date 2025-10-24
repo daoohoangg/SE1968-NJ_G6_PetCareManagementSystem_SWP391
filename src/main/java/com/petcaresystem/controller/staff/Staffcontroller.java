@@ -18,31 +18,30 @@ public class Staffcontroller extends HttpServlet {
         staffDAO = new StaffDAO();
     }
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+@Override
+protected void doGet(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
 
-        String action = request.getParameter("action");
-        if (action == null) {
-            action = "list";
-        }
-
-        switch (action) {
-            case "new":
-
-                break;
-            case "edit":
-
-                break;
-            case "delete":
-
-                break;
-            default:
-
-                break;
-        }
+    String action = request.getParameter("action");
+    if (action == null) {
+        action = "list";
     }
 
+    switch (action) {
+        case "new":
+
+            break;
+        case "edit":
+
+            break;
+        case "delete":
+
+            break;
+        default:
+
+            break;
+    }
+}
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -64,25 +63,4 @@ public class Staffcontroller extends HttpServlet {
             }
         }
 
-    }
-
-    private void listStaff(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-
-    }
-
-    private void insertStaff(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-
-    }
-
-    private void updateStaff(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-
-    }
-
-    private void deleteStaff(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-
-    }
-}
+    }}

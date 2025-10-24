@@ -1,5 +1,6 @@
 package com.petcaresystem.controller.common;
-
+import com.petcaresystem.dao.AccountDAO;
+import com.petcaresystem.enities.Account;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
@@ -7,13 +8,10 @@ import java.io.IOException;
 
 @WebServlet("/login")
 public class LoginController extends HttpServlet {
-
-    private final SimpleAuthService auth = new SimpleAuthService(); // demo
-
+    private final AccountDAO accountDAO = new AccountDAO();
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        // GET -> show form
         req.getRequestDispatcher("common/login.jsp").forward(req, resp);
     }
 
@@ -22,55 +20,61 @@ public class LoginController extends HttpServlet {
             throws ServletException, IOException {
 
         req.setCharacterEncoding("UTF-8");
-        String username = req.getParameter("username");
         String password = req.getParameter("password");
-        //add remember
         String remember = req.getParameter("remember");
-        SimpleAuthService.User u = auth.check(username, password);
-        if (u == null) {
-            req.setAttribute("error", "Sai username hoặc password");
-            req.getRequestDispatcher("common/login.jsp").forward(req, resp);
+        String loginType = req.getParameter("loginType");
+        Account account = null;
+        if ("email".equals(loginType)) {
+            String email = req.getParameter("email");
+            account = accountDAO.loginWithEmail(email, password);
+        } else {
+            String username = req.getParameter("username");
+            account = accountDAO.login(username, password);
+        }
+        String errorMessage = null;
+        String infoMessage = null;
+        if (account == null) {
+            errorMessage = "Sai thông tin đăng nhập!";
+        }
+        else if (!password.equals(account.getPassword())) {
+                errorMessage = "Sai thông tin đăng nhập!";
+        } else if (!account.getIsActive()) {
+            errorMessage = "Tài khoản của bạn đã bị khóa!";
+        } else if (!account.getIsVerified()) {
+            infoMessage = "Bạn đã đăng ký thành công! Vui lòng kiểm tra email để kích hoạt tài khoản trước khi đăng nhập.";
+        }
+        if (errorMessage != null || infoMessage != null) {
+            req.setAttribute("error", errorMessage);
+            req.setAttribute("info", infoMessage);
+
+            if ("email".equals(loginType)) {
+                req.setAttribute("mode", "email");
+            }
+            req.getRequestDispatcher("/common/login.jsp").forward(req, resp);
             return;
         }
-
         // set session
         HttpSession session = req.getSession(true);
-        session.setAttribute("user", u);              // có thể là entity Account
-        session.setAttribute("role", u.role());       // 'ADMIN' | 'STAFF' | 'USER'
+        session.setAttribute("account", account);
+        session.setAttribute("role", account.getRole().name());
         // xử lý Remember Me
         if ("on".equals(remember)) {
-            Cookie ckUser = new Cookie("username", username);
-            Cookie ckPass = new Cookie("password", password);
-            ckUser.setMaxAge(7 * 24 * 60 * 60);   // 7 ngày
-            ckPass.setMaxAge(7 * 24 * 60 * 60);
+            Cookie ckUser = new Cookie("username", account.getUsername());
+            ckUser.setMaxAge(7 * 24 * 60 * 60); // 7 ngày
             resp.addCookie(ckUser);
-            resp.addCookie(ckPass);
         } else {
-            // clear cookie nếu không chọn
             Cookie ckUser = new Cookie("username", "");
-            Cookie ckPass = new Cookie("password", "");
             ckUser.setMaxAge(0);
-            ckPass.setMaxAge(0);
             resp.addCookie(ckUser);
-            resp.addCookie(ckPass);
         }
         // điều hướng theo role
-        switch (u.role()) {
-            case "ADMIN" -> resp.sendRedirect(req.getContextPath() + "/admin/dashboard");
-            case "STAFF" -> resp.sendRedirect(req.getContextPath() + "/staff/home");
-            default      -> resp.sendRedirect(req.getContextPath() + "/user/home");
+        switch (account.getRole()) {
+            case ADMIN -> resp.sendRedirect(req.getContextPath() + "/admin/dashboard");
+            case STAFF -> resp.sendRedirect(req.getContextPath() + "/staff/home");
+            case CUSTOMER -> resp.sendRedirect(req.getContextPath() + "/home");
+            default -> resp.sendRedirect(req.getContextPath() + "/home");
         }
     }
 
-    // ===== Demo auth rất đơn giản (thay bằng DAO/Hibernate ở phần 3) =====
-    static class SimpleAuthService {
-        record User(int id, String username, String role) {}
-        User check(String user, String pass) {
-            if ("admin".equals(user) && "123".equals(pass)) return new User(1,"admin","ADMIN");
-            if ("alice".equals(user) && "123".equals(pass)) return new User(2,"alice","STAFF");
-            if ("bob".equals(user) && "123".equals(pass))   return new User(3,"bob","USER");
-            return null;
-        }
-    }
 }
 

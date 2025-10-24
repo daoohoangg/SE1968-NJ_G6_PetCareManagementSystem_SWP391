@@ -22,5 +22,19 @@
 
         <property name="hibernate.hbm2ddl.auto">update</property>
         <mapping class="com.petcaresystem.enities.Account"/>
+        <mapping class="com.petcaresystem.enities.Administration"/>
+        <mapping class="com.petcaresystem.enities.Appointment"/>
+        <mapping class="com.petcaresystem.enities.Customer"/>
+        <mapping class="com.petcaresystem.enities.Invoice"/>
+        <mapping class="com.petcaresystem.enities.Notification"/>
+        <mapping class="com.petcaresystem.enities.Payment"/>
+        <mapping class="com.petcaresystem.enities.Pet"/>
+        <mapping class="com.petcaresystem.enities.Service"/>
+        <mapping class="com.petcaresystem.enities.Staff"/>
+        <mapping class="com.petcaresystem.enities.PetServiceHistory"/>
+        <mapping class="com.petcaresystem.enities.Voucher"/>
+        <mapping class="com.petcaresystem.enities.ServiceCategory"/>
+        <mapping class="com.petcaresystem.enities.RuleSet"/>
+        <mapping class="com.petcaresystem.enities.Receptionist"/>
     </session-factory>
 </hibernate-configuration>

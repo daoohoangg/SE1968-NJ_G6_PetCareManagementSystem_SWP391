@@ -1,33 +1,52 @@
 package com.petcaresystem.enities;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
+import java.time.LocalDate;
+
 @Entity
+@Table(name = "pets")
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Pet {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int idpet;
+    @Column(name = "pet_id")
+    private Long idpet;
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "species", length = 50)
+    private String species;
+
+    @Column(name = "breed", length = 100)
     private String breed;
 
-    @Column(nullable = false)
-    private int age;
+    @Column(name = "gender", length = 10)
+    private String gender;
 
-    @Column(length = 100)
+    @Column(name = "age")
+    private Integer age;
+
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
+    @Column(name = "weight")
+    private Double weight;
+
+    @Column(name = "health_status", length = 255)
     private String healthStatus;
 
-    // Liên kết với Account (chủ sở hữu thú cưng)
-    @ManyToOne
-    @JoinColumn(name = "idaccount", nullable = false)
-    private Account owner;
-}
+    @Column(name = "medical_notes", columnDefinition = "TEXT")
+    private String medicalNotes;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
+}

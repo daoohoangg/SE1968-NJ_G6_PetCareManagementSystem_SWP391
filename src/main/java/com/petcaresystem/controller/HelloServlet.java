@@ -1,19 +1,18 @@
 package com.petcaresystem.controller;
 
 import java.io.*;
-import java.util.List;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 
-@WebServlet(name = "HomeServlet", urlPatterns = {"/home",""})
+@WebServlet(urlPatterns = {"/public/home","/public", ""})
 public class HelloServlet extends HttpServlet {
-
 
     @Override
     public void init() throws ServletException {
+        // Initialization logic here
     }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
