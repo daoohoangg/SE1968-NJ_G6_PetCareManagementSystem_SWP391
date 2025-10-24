@@ -1,13 +1,12 @@
 package com.petcaresystem.enities;
 
-import com.petcaresystem.enities.enu.AccountRoleEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import jakarta.persistence.*;
-import java.time.LocalDate;
+
 import java.util.ArrayList;
 import java.util.List;
 

@@ -1,6 +1,5 @@
 package com.petcaresystem.enities;
 
-import com.petcaresystem.enities.enu.AccountRoleEnum;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
