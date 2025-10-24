@@ -37,6 +37,21 @@ public class EmailService {
                 + "</html>";
         sendEmail(recipientEmail, subject, body);
     }
+    public static void sendContactFormEmail(String fromName, String fromEmail, String subject, String userMessage) {
+        String recipientEmail = FROM_EMAIL;
+        String emailSubject = "[PetCare Contact Form] " + subject + " (From: " + fromName + ")";
+        String body = "<html><body>"
+                + "<h2>Bạn nhận được tin nhắn mới từ Form Liên Hệ PetCare:</h2>"
+                + "<p><strong>Từ:</strong> " + fromName + "</p>"
+                + "<p><strong>Email người gửi:</strong> " + fromEmail + "</p>"
+                + "<p><strong>Chủ đề:</strong> " + subject + "</p>"
+                + "<h3>Nội dung:</h3>"
+                + "<div style='padding: 15px; background-color: #f4f4f4; border-radius: 5px;'>"
+                + "<p style='white-space: pre-wrap;'>" + userMessage + "</p>"
+                + "</div>"
+                + "</body></html>";
+        sendEmail(recipientEmail, emailSubject, body);
+    }
 
     private static void sendEmail(String to, String subject, String body) {
         Properties props = new Properties();
