@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/3154b5ad-f2c6-424a-bf50-1aba57ca173e/console.sql" value="3154b5ad-f2c6-424a-bf50-1aba57ca173e" />
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/3154b5ad-f2c6-424a-bf50-1aba57ca173e/console_3.sql" value="3154b5ad-f2c6-424a-bf50-1aba57ca173e" />
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/3154b5ad-f2c6-424a-bf50-1aba57ca173e/console_4.sql" value="3154b5ad-f2c6-424a-bf50-1aba57ca173e" />
+    <file url="file://$PROJECT_DIR$/truncate_data.sql" value="3154b5ad-f2c6-424a-bf50-1aba57ca173e" />
+  </component>
+</project>
