@@ -1,5 +1,6 @@
 -- Usage: run inside the target SQL Server database to clear all user data.
 -- Steps: disable foreign keys -> delete data -> reseed identity columns -> re-enable constraints.
+-- This script dynamically handles all tables including the new embeddable table structure (rule_week_days).
 
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
