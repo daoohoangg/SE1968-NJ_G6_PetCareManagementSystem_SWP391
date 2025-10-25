@@ -284,10 +284,7 @@
                         <label class="form-label required">Ngày & giờ bắt đầu</label>
                         <input type="datetime-local" name="startAt" class="form-control" required>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Kết thúc (tuỳ chọn)</label>
-                        <input type="datetime-local" name="endAt" class="form-control">
-                    </div>
+
 
                     <!-- NOTES -->
                     <div class="col-12">
@@ -301,7 +298,7 @@
                     <button type="submit" class="btn btn-primary px-4">
                         <i class="bi bi-send-fill me-2"></i>Gửi yêu cầu
                     </button>
-                    <a href="<%= ctx %>/home" class="text-secondary text-decoration-none">
+                    <a href="<%= ctx %>/home.jsp" class="text-secondary text-decoration-none">
                         <i class="bi bi-arrow-left"></i> Quay về trang chủ
                     </a>
                 </div>
