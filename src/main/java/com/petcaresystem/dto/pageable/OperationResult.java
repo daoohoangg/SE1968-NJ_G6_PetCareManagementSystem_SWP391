@@ -1,4 +1,4 @@
-package com.petcaresystem.dto;
+package com.petcaresystem.dto.pageable;
 
 public class OperationResult {
     private boolean success;

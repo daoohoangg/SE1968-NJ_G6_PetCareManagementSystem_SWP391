@@ -1,6 +1,6 @@
 package com.petcaresystem.controller.admin;
 
-import com.petcaresystem.dto.PagedResult;
+import com.petcaresystem.dto.pageable.PagedResult;
 import com.petcaresystem.enities.Service;
 import com.petcaresystem.enities.ServiceCategory;
 import com.petcaresystem.service.admin.IServiceManageService;

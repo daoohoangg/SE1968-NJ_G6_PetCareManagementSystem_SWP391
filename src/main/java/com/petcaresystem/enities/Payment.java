@@ -45,7 +45,8 @@ public class Payment {
     @Column(name = "reference_number", length = 100)
     private String referenceNumber;
 
-    @Column(name = "notes", columnDefinition = "TEXT")
+    @Lob
+    @Column(name = "notes")
     private String notes;
 
     @Column(name = "created_at", nullable = false, updatable = false)

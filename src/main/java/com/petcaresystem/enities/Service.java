@@ -22,7 +22,8 @@ public class Service {
     @Column(name = "service_name", nullable = false, length = 100)
     private String serviceName;
 
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Lob
+    @Column(name = "description")
     private String description;
 
     @Column(name = "price", nullable = false, precision = 10, scale = 2)

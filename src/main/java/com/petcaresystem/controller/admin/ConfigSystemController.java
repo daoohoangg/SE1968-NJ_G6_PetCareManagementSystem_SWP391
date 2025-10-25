@@ -1,6 +1,6 @@
 package com.petcaresystem.controller.admin;
 
-import com.petcaresystem.dto.PagedResult;
+import com.petcaresystem.dto.pageable.PagedResult;
 import com.petcaresystem.enities.Voucher;
 import com.petcaresystem.service.admin.IVoucherManageService;
 import com.petcaresystem.service.admin.impl.VoucherManageServiceImpl;

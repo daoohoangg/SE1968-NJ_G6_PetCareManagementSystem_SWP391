@@ -1,26 +1,27 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<c:if test="${empty currentPage}">
+
+<c:if test="${empty activePage}">
     <c:set var="requestUri" value="${pageContext.request.requestURI}" />
     <c:choose>
         <c:when test="${fn:contains(requestUri, '/admin/dashboard')}">
-            <c:set var="currentPage" value="dashboard" />
+            <c:set var="activePage" value="dashboard" />
         </c:when>
         <c:when test="${fn:contains(requestUri, '/admin/service')}">
-            <c:set var="currentPage" value="manage-services" />
+            <c:set var="activePage" value="manage-services" />
         </c:when>
         <c:when test="${fn:contains(requestUri, '/admin/config')}">
-            <c:set var="currentPage" value="configure-system" />
+            <c:set var="activePage" value="configure-system" />
         </c:when>
         <c:when test="${fn:contains(requestUri, '/admin/accounts')}">
-            <c:set var="currentPage" value="manage-accounts" />
+            <c:set var="activePage" value="manage-accounts" />
         </c:when>
         <c:when test="${fn:contains(requestUri, '/admin/ai')}">
-            <c:set var="currentPage" value="ai-features" />
+            <c:set var="activePage" value="ai-features" />
         </c:when>
         <c:when test="${fn:contains(requestUri, '/admin/reports')}">
-            <c:set var="currentPage" value="reports" />
+            <c:set var="activePage" value="reports" />
         </c:when>
     </c:choose>
 </c:if>
@@ -143,32 +144,32 @@
     </div>
     <nav class="menu">
         <a href="${pageContext.request.contextPath}/admin/dashboard"
-           class="menu-item ${currentPage == 'dashboard' ? 'active' : ''}">
+           class="menu-item ${activePage == 'dashboard' ? 'active' : ''}">
             <i class="ri-dashboard-line"></i>Dashboard
         </a>
 
         <a href="${pageContext.request.contextPath}/admin/service"
-           class="menu-item ${currentPage == 'manage-services' ? 'active' : ''}">
+           class="menu-item ${activePage == 'manage-services' ? 'active' : ''}">
             <i class="ri-scissors-line"></i>Manage Services
         </a>
 
         <a href="${pageContext.request.contextPath}/admin/config"
-           class="menu-item ${currentPage == 'configure-system' ? 'active' : ''}">
+           class="menu-item ${activePage == 'configure-system' ? 'active' : ''}">
             <i class="ri-settings-3-line"></i>Configure System
         </a>
 
         <a href="${pageContext.request.contextPath}/admin/accounts"
-           class="menu-item ${currentPage == 'manage-accounts' ? 'active' : ''}">
+           class="menu-item ${activePage == 'manage-accounts' ? 'active' : ''}">
             <i class="ri-user-settings-line"></i>Manage Accounts
         </a>
 
         <a href="${pageContext.request.contextPath}/admin/ai"
-           class="menu-item ${currentPage == 'ai-features' ? 'active' : ''}">
+           class="menu-item ${activePage == 'ai-features' ? 'active' : ''}">
             <i class="ri-robot-line"></i>AI Features
         </a>
 
         <a href="${pageContext.request.contextPath}/admin/reports"
-           class="menu-item ${currentPage == 'reports' ? 'active' : ''}">
+           class="menu-item ${activePage == 'reports' ? 'active' : ''}">
             <i class="ri-bar-chart-2-line"></i>Generate Reports
         </a>
     </nav>

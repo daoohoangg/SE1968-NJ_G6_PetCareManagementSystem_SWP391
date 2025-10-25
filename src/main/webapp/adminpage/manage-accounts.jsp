@@ -303,12 +303,14 @@
         justify-content:center;
         padding:20px;
         z-index:1300;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
     }
     .modal-backdrop.show{display:flex;}
     .modal-card{
         width:100%;
         max-width:420px;
-        background:#fff;
+        background:#fff !important;
         border-radius:18px;
         border:1px solid rgba(148,163,184,.18);
         box-shadow:0 30px 65px rgba(15,23,42,.25);
@@ -318,22 +320,35 @@
         gap:18px;
         animation:modalFade .22s ease-out;
         font-family:inherit;
+        opacity: 1 !important;
+        filter: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    .modal-card form{
+        background:#fff !important;
+        opacity: 1 !important;
     }
     .modal-header{
         display:flex;
         justify-content:space-between;
         align-items:flex-start;
         gap:14px;
+        background:#fff !important;
+        opacity: 1 !important;
     }
     .modal-header h2{
         margin:0;
         font-size:22px;
         font-weight:600;
+        opacity: 1 !important;
+        color:var(--text) !important;
     }
     .modal-header p{
         margin:6px 0 0;
         color:var(--muted);
         font-size:13px;
+        opacity: 1 !important;
     }
     .close-btn{
         background:none;
@@ -346,6 +361,8 @@
         display:flex;
         flex-direction:column;
         gap:14px;
+        background:#fff !important;
+        opacity: 1 !important;
     }
     .modal-field label{
         display:block;
@@ -353,6 +370,8 @@
         font-weight:600;
         color:var(--text);
         margin-bottom:6px;
+        opacity: 1 !important;
+        background:transparent !important;
     }
     .modal-field input,
     .modal-field select{
@@ -362,7 +381,8 @@
         padding:11px 12px;
         font-size:14px;
         color:var(--text);
-        background:#fff;
+        background:#fff !important;
+        opacity: 1 !important;
         transition:border-color .18s, box-shadow .18s;
     }
     .modal-field input:focus,
@@ -376,6 +396,8 @@
         justify-content:flex-end;
         gap:12px;
         margin-top:6px;
+        background:#fff !important;
+        opacity: 1 !important;
     }
     .btn-outline,
     .btn-primary{
@@ -420,7 +442,6 @@
 <jsp:include page="../inc/header.jsp" />
 <main class="content-wrapper">
     <section class="page accounts-page">
-        <% request.setAttribute("currentPage", "manage-accounts"); %>
         <jsp:include page="../inc/side-bar.jsp" />
         <div class="accounts-main">
             <div class="accounts-header">
@@ -432,6 +453,18 @@
                     <i class="ri-add-line"></i>Add Account
                 </button>
             </div>
+
+            <c:if test="${not empty error}">
+                <div class="alert alert-danger" style="margin: 20px 0; padding: 15px; background: #fee; border: 1px solid #fcc; border-radius: 5px; color: #c33;">
+                    <strong>Error:</strong> <c:out value="${error}"/>
+                </div>
+            </c:if>
+            
+            <c:if test="${not empty success}">
+                <div class="alert alert-success" style="margin: 20px 0; padding: 15px; background: #efe; border: 1px solid #cfc; border-radius: 5px; color: #363;">
+                    <strong>Success:</strong> <c:out value="${success}"/>
+                </div>
+            </c:if>
 
             <div class="stats-row">
                 <div class="stat-card">
@@ -537,31 +570,64 @@
                         <td><c:out value="${acc.createdAt}"/></td>
                         <td>
                             <div class="actions-cell">
-                                <a class="icon-btn" href="${pageContext.request.contextPath}/admin/accounts?action=edit&id=${acc.accountId}" title="Edit">
-                                    <i class="ri-pencil-line"></i>
-                                </a>
-                                <form method="post" action="${pageContext.request.contextPath}/admin/accounts" style="display:inline">
-                                    <input type="hidden" name="action" value="${acc.isActive ? 'lock' : 'unlock'}" />
-                                    <input type="hidden" name="id" value="${acc.accountId}" />
-                                    <button class="icon-btn" type="submit" title="${acc.isActive ? 'Lock' : 'Unlock'}">
-                                        <i class="${acc.isActive ? 'ri-lock-line' : 'ri-lock-unlock-line'}"></i>
-                                    </button>
-                                </form>
-                                <form method="post" action="${pageContext.request.contextPath}/admin/accounts" style="display:inline" onsubmit="return confirm('Delete this account?');">
-                                    <input type="hidden" name="action" value="delete" />
-                                    <input type="hidden" name="id" value="${acc.accountId}" />
-                                    <button class="icon-btn" type="submit" title="Delete">
-                                        <i class="ri-delete-bin-line"></i>
-                                    </button>
-                                </form>
+                                <!-- Edit button - disabled for admin accounts -->
+                                <c:choose>
+                                    <c:when test="${acc.role eq 'ADMIN'}">
+                                        <span class="icon-btn" style="opacity: 0.5; cursor: not-allowed;" title="Cannot edit admin accounts">
+                                            <i class="ri-pencil-line"></i>
+                                        </span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <a class="icon-btn" href="${pageContext.request.contextPath}/admin/accounts?action=edit&id=${acc.accountId}" title="Edit">
+                                            <i class="ri-pencil-line"></i>
+                                        </a>
+                                    </c:otherwise>
+                                </c:choose>
+                                
+                                <!-- Lock/Unlock button - disabled for admin accounts -->
+                                <c:choose>
+                                    <c:when test="${acc.role eq 'ADMIN'}">
+                                        <span class="icon-btn" style="opacity: 0.5; cursor: not-allowed;" title="Cannot lock admin accounts">
+                                            <i class="ri-lock-line"></i>
+                                        </span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <form method="post" action="${pageContext.request.contextPath}/admin/accounts" style="display:inline">
+                                            <input type="hidden" name="action" value="${acc.isActive ? 'lock' : 'unlock'}" />
+                                            <input type="hidden" name="id" value="${acc.accountId}" />
+                                            <button class="icon-btn" type="submit" title="${acc.isActive ? 'Lock' : 'Unlock'}">
+                                                <i class="${acc.isActive ? 'ri-lock-line' : 'ri-lock-unlock-line'}"></i>
+                                            </button>
+                                        </form>
+                                    </c:otherwise>
+                                </c:choose>
+                                
+                                <!-- Delete button - disabled for admin accounts -->
+                                <c:choose>
+                                    <c:when test="${acc.role eq 'ADMIN'}">
+                                        <span class="icon-btn" style="opacity: 0.5; cursor: not-allowed;" title="Cannot delete admin accounts">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <form method="post" action="${pageContext.request.contextPath}/admin/accounts" style="display:inline" onsubmit="return confirm('Delete this account?');">
+                                            <input type="hidden" name="action" value="delete" />
+                                            <input type="hidden" name="id" value="${acc.accountId}" />
+                                            <button class="icon-btn" type="submit" title="Delete">
+                                                <i class="ri-delete-bin-line"></i>
+                                            </button>
+                                        </form>
+                                    </c:otherwise>
+                                </c:choose>
                             </div>
                         </td>
                     </tr>
                 </c:forEach>
                 </tbody>
             </table>
+            <!-- Debug pagination: currentPage=${currentPage}, totalPages=${totalPages}, hasNextPage=${hasNextPage}, totalItems=${totalItems} -->
             <c:if test="${totalItems > 0}">
-                <c:set var="accountActionName" value="${not empty accountAction ? accountAction : 'list'}" />
+                <c:set var="accountActionName" value="${not empty accountAction ? accountAction : 'search'}" />
                 <c:url var="prevUrl" value="/admin/accounts">
                     <c:param name="action" value="${accountActionName}" />
                     <c:if test="${not empty filterKeyword}">

@@ -2,7 +2,7 @@ package com.petcaresystem.service.admin.impl;
 
 import com.petcaresystem.dao.ServiceDAO;
 import com.petcaresystem.dao.ServiceCategoryDAO;
-import com.petcaresystem.dto.PagedResult;
+import com.petcaresystem.dto.pageable.PagedResult;
 import com.petcaresystem.enities.Service;
 import com.petcaresystem.enities.ServiceCategory;
 import com.petcaresystem.service.admin.IServiceManageService;

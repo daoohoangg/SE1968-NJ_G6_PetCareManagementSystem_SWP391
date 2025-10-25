@@ -185,7 +185,7 @@
 <body>
 <jsp:include page="../inc/header.jsp" />
 <div class="layout">
-    <% request.setAttribute("currentPage", "manage-services"); %>
+    <% request.setAttribute("activePage", "manage-services"); %>
 
     <!-- Sidebar include (tự mang CSS của nó) -->
     <jsp:include page="../inc/side-bar.jsp" />

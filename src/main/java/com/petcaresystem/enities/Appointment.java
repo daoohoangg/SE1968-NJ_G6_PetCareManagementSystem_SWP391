@@ -33,7 +33,8 @@ public class Appointment {
     @Column(name = "status", nullable = false, length = 20)
     private AppointmentStatus status = AppointmentStatus.SCHEDULED;
 
-    @Column(name = "notes", columnDefinition = "TEXT")
+    @Lob
+    @Column(name = "notes")
     private String notes;
 
     @Column(name = "total_amount", precision = 10, scale = 2)

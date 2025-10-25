@@ -1,7 +1,7 @@
 package com.petcaresystem.service.admin;
 
-import com.petcaresystem.dto.OperationResult;
-import com.petcaresystem.dto.PagedResult;
+import com.petcaresystem.dto.pageable.OperationResult;
+import com.petcaresystem.dto.pageable.PagedResult;
 import com.petcaresystem.enities.Voucher;
 
 import java.util.List;
