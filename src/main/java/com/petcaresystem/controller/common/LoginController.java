@@ -34,14 +34,14 @@ public class LoginController extends HttpServlet {
         String errorMessage = null;
         String infoMessage = null;
         if (account == null) {
-            errorMessage = "Sai thông tin đăng nhập!";
+            errorMessage = "Incorrect login information!";
         }
         else if (!password.equals(account.getPassword())) {
-                errorMessage = "Sai thông tin đăng nhập!";
+                errorMessage = "Incorrect login information!";
         } else if (!account.getIsActive()) {
-            errorMessage = "Tài khoản của bạn đã bị khóa!";
+            errorMessage = "Your account has been locked!";
         } else if (!account.getIsVerified()) {
-            infoMessage = "Bạn đã đăng ký thành công! Vui lòng kiểm tra email để kích hoạt tài khoản trước khi đăng nhập.";
+            infoMessage = "You have successfully registered! Please check your email to activate your account before logging in.";
         }
         if (errorMessage != null || infoMessage != null) {
             req.setAttribute("error", errorMessage);
@@ -53,11 +53,9 @@ public class LoginController extends HttpServlet {
             req.getRequestDispatcher("/common/login.jsp").forward(req, resp);
             return;
         }
-        // set session
         HttpSession session = req.getSession(true);
         session.setAttribute("account", account);
         session.setAttribute("role", account.getRole().name());
-        // xử lý Remember Me
         if ("on".equals(remember)) {
             Cookie ckUser = new Cookie("username", account.getUsername());
             ckUser.setMaxAge(7 * 24 * 60 * 60); // 7 ngày
@@ -67,7 +65,6 @@ public class LoginController extends HttpServlet {
             ckUser.setMaxAge(0);
             resp.addCookie(ckUser);
         }
-        // điều hướng theo role
         switch (account.getRole()) {
             case ADMIN -> resp.sendRedirect(req.getContextPath() + "/admin/dashboard");
             case STAFF -> resp.sendRedirect(req.getContextPath() + "/staff/home");

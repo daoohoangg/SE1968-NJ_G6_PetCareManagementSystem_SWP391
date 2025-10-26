@@ -24,10 +24,10 @@ public class ContactController extends HttpServlet {
         String messageContent = request.getParameter("message");
         try {
             EmailService.sendContactFormEmail(name, email, subject, messageContent);
-            request.setAttribute("message", "Tin nhắn của bạn đã được gửi thành công!");
+            request.setAttribute("message", "Your message has been sent successfully!");
         } catch (Exception e) {
             e.printStackTrace();
-            request.setAttribute("message", "Đã xảy ra lỗi khi gửi tin nhắn. Vui lòng thử lại sau.");
+            request.setAttribute("message", "An error occurred while sending the message. Please try again later.");
         }
         request.getRequestDispatcher("/inc/contact.jsp").forward(request, response);
     }
