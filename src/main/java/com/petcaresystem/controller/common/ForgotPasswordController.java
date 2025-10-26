@@ -38,7 +38,7 @@ public class ForgotPasswordController extends HttpServlet {
                 }
             }
         }
-        request.setAttribute("message", "Một mật khẩu mới đã được gửi đến email của bạn.");
+        request.setAttribute("message", "A new password has been sent to your email.");
         request.getRequestDispatcher("/common/forgotpassword.jsp").forward(request, response);
     }
     private String generateRandomPassword(int length) {
