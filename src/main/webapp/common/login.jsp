@@ -36,11 +36,11 @@
         String status = request.getParameter("status");
         if ("registered".equals(status)) {
     %>
-    <div class="message-box info">Đăng ký thành công! Vui lòng kiểm tra email để kích hoạt tài khoản.</div>
+    <div class="message-box info">Registration successful! Please check your email to activate your account.</div>
     <%
     } else if ("verified_success".equals(status)) {
     %>
-    <div class="message-box success">Xác thực tài khoản thành công! Mời bạn đăng nhập.</div>
+    <div class="message-box success">Account verification successful! Please log in.</div>
     <%
         }
     %>
