@@ -5,8 +5,61 @@ import jakarta.mail.internet.MimeMessage;
 import java.util.Properties;
 
 public class EmailService {
-    private static final String FROM_EMAIL = "hahshe186536@fpt.edu.vn";
-    private static final String APP_PASSWORD = "qhbt asof xjdv xbpm";
+    // Email configuration - can be loaded from database or properties file
+    private static String fromEmail = "hahshe186536@fpt.edu.vn";
+    private static String appPassword = "qhbt asof xjdv xbpm";
+    private static String smtpHost = "smtp.gmail.com";
+    private static int smtpPort = 587;
+    private static boolean smtpAuth = true;
+    private static boolean startTlsEnable = true;
+
+    public static String getFromEmail() {
+        return fromEmail;
+    }
+
+    public static void setFromEmail(String email) {
+        fromEmail = email;
+    }
+
+    public static String getAppPassword() {
+        return appPassword;
+    }
+
+    public static void setAppPassword(String password) {
+        appPassword = password;
+    }
+
+    public static String getSmtpHost() {
+        return smtpHost;
+    }
+
+    public static void setSmtpHost(String host) {
+        smtpHost = host;
+    }
+
+    public static int getSmtpPort() {
+        return smtpPort;
+    }
+
+    public static void setSmtpPort(int port) {
+        smtpPort = port;
+    }
+
+    public static boolean isSmtpAuth() {
+        return smtpAuth;
+    }
+
+    public static void setSmtpAuth(boolean auth) {
+        smtpAuth = auth;
+    }
+
+    public static boolean isStartTlsEnable() {
+        return startTlsEnable;
+    }
+
+    public static void setStartTlsEnable(boolean enable) {
+        startTlsEnable = enable;
+    }
 
     public static void sendVerificationEmail(String recipientEmail, String token, String contextPath) {
         String subject = "[PetCare] Vui long xac thuc tai khoan cua ban";
@@ -37,17 +90,32 @@ public class EmailService {
                 + "</html>";
         sendEmail(recipientEmail, subject, body);
     }
+    public static void sendContactFormEmail(String fromName, String fromEmail, String subject, String userMessage) {
+        String recipientEmail = EmailService.fromEmail;
+        String emailSubject = "[PetCare Contact Form] " + subject + " (From: " + fromName + ")";
+        String body = "<html><body>"
+                + "<h2>Bạn nhận được tin nhắn mới từ Form Liên Hệ PetCare:</h2>"
+                + "<p><strong>Từ:</strong> " + fromName + "</p>"
+                + "<p><strong>Email người gửi:</strong> " + fromEmail + "</p>"
+                + "<p><strong>Chủ đề:</strong> " + subject + "</p>"
+                + "<h3>Nội dung:</h3>"
+                + "<div style='padding: 15px; background-color: #f4f4f4; border-radius: 5px;'>"
+                + "<p style='white-space: pre-wrap;'>" + userMessage + "</p>"
+                + "</div>"
+                + "</body></html>";
+        sendEmail(recipientEmail, emailSubject, body);
+    }
 
     private static void sendEmail(String to, String subject, String body) {
         Properties props = new Properties();
-        props.put("mail.smtp.host", "smtp.gmail.com");
-        props.put("mail.smtp.port", "587");
-        props.put("mail.smtp.auth", "true");
-       props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.host", smtpHost);
+        props.put("mail.smtp.port", String.valueOf(smtpPort));
+        props.put("mail.smtp.auth", String.valueOf(smtpAuth));
+        props.put("mail.smtp.starttls.enable", String.valueOf(startTlsEnable));
 
         Authenticator auth = new Authenticator() {
            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(FROM_EMAIL,APP_PASSWORD);
+                return new PasswordAuthentication(fromEmail, appPassword);
            }
         };
        Session session = Session.getInstance(props, auth);
@@ -55,7 +123,7 @@ public class EmailService {
         try {
            MimeMessage msg = new MimeMessage(session);
 
-          msg.setFrom(new InternetAddress(FROM_EMAIL));
+          msg.setFrom(new InternetAddress(fromEmail));
            msg.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
            msg.setSubject(subject, "UTF-8");
 

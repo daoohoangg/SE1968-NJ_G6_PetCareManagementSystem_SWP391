@@ -2,7 +2,7 @@ package com.petcaresystem.service.admin.impl;
 
 import com.petcaresystem.dao.ServiceDAO;
 import com.petcaresystem.dao.ServiceCategoryDAO;
-import com.petcaresystem.dto.PagedResult;
+import com.petcaresystem.dto.pageable.PagedResult;
 import com.petcaresystem.enities.Service;
 import com.petcaresystem.enities.ServiceCategory;
 import com.petcaresystem.service.admin.IServiceManageService;
@@ -36,6 +36,12 @@ public class ServiceManageServiceImpl implements IServiceManageService {
     public List<Service> searchServices(String keyword, Integer categoryId, Boolean isActive,
                                         String sortBy, String sortOrder) {
         return serviceDAO.searchServices(keyword, categoryId, isActive, sortBy, sortOrder);
+    }
+
+    @Override
+    public List<Service> fuzzySearchServices(String keyword, Integer categoryId, Boolean isActive,
+                                             String sortBy, String sortOrder) {
+        return serviceDAO.fuzzySearchServices(keyword, categoryId, isActive, sortBy, sortOrder);
     }
 
     @Override

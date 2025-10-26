@@ -2,7 +2,6 @@ package com.petcaresystem.enities;
 
 import com.petcaresystem.enities.embeddable.BookingPolicy;
 import com.petcaresystem.enities.embeddable.EmailRule;
-import com.petcaresystem.enities.embeddable.VoucherRule;
 import com.petcaresystem.enities.embeddable.WeeklySchedule;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
@@ -31,11 +30,6 @@ public class RuleSet {
     @Embedded
     @Valid
     private WeeklySchedule weeklySchedule;
-
-    // Voucher (đơn)
-    @Embedded
-    @Valid
-    private VoucherRule voucher;
 
     // Cấu hình email
     @Embedded

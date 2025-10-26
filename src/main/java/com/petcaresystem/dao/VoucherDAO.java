@@ -1,6 +1,6 @@
 package com.petcaresystem.dao;
 
-import com.petcaresystem.dto.PagedResult;
+import com.petcaresystem.dto.pageable.PagedResult;
 import com.petcaresystem.enities.Voucher;
 import com.petcaresystem.utils.HibernateUtil;
 import org.hibernate.Session;

@@ -43,7 +43,8 @@ public class Pet {
     @Column(name = "health_status", length = 255)
     private String healthStatus;
 
-    @Column(name = "medical_notes", columnDefinition = "TEXT")
+    @Lob
+    @Column(name = "medical_notes")
     private String medicalNotes;
 
     @ManyToOne(fetch = FetchType.LAZY)

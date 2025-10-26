@@ -47,6 +47,9 @@ public abstract class Account {
     @Column(name = "is_verified", nullable = false)
     private Boolean isVerified = false;
 
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted = false;
+
     @Column(name = "verification_token", length = 255)
     private String verificationToken;
 

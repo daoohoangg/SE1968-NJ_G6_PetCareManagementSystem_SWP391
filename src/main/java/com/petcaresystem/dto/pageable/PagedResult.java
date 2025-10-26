@@ -1,4 +1,4 @@
-package com.petcaresystem.dto;
+package com.petcaresystem.dto.pageable;
 
 import java.util.Collections;
 import java.util.List;

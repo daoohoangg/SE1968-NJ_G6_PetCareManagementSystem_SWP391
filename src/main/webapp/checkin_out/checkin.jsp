@@ -57,7 +57,7 @@
 <body>
 <jsp:include page="../inc/header.jsp" />
 <div class="layout">
-    <% request.setAttribute("currentPage", "checkin"); %>
+    <% request.setAttribute("activePage", "checkin"); %>
     <jsp:include page="../inc/side-bar.jsp" />
 
     <main class="content">

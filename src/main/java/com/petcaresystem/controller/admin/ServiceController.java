@@ -1,6 +1,6 @@
 package com.petcaresystem.controller.admin;
 
-import com.petcaresystem.dto.PagedResult;
+import com.petcaresystem.dto.pageable.PagedResult;
 import com.petcaresystem.enities.Service;
 import com.petcaresystem.enities.ServiceCategory;
 import com.petcaresystem.service.admin.IServiceManageService;
@@ -39,6 +39,9 @@ public class ServiceController extends HttpServlet {
             case "search":
                 searchServices(req, resp);
                 break;
+            case "fuzzy":
+                fuzzySearchServices(req, resp);
+                break;
             case "view":
                 viewService(req, resp);
                 break;
@@ -65,7 +68,17 @@ public class ServiceController extends HttpServlet {
         Boolean isActive = parseBool(req.getParameter("isActive"));
         String sortBy    = trim(req.getParameter("sortBy"));
         String sortOrder = trim(req.getParameter("sortOrder"));
-        renderServiceList(req, resp, keyword, categoryId, isActive, sortBy, sortOrder, "search");
+        renderFuzzyServiceList(req, resp, keyword, categoryId, isActive, sortBy, sortOrder, "search");
+    }
+
+    private void fuzzySearchServices(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        String keyword   = trim(req.getParameter("keyword"));
+        Integer categoryId = parseInt(req.getParameter("categoryId"));
+        Boolean isActive = parseBool(req.getParameter("isActive"));
+        String sortBy    = trim(req.getParameter("sortBy"));
+        String sortOrder = trim(req.getParameter("sortOrder"));
+        renderFuzzyServiceList(req, resp, keyword, categoryId, isActive, sortBy, sortOrder, "fuzzy");
     }
 
     private void renderServiceList(HttpServletRequest req, HttpServletResponse resp,
@@ -93,6 +106,47 @@ public class ServiceController extends HttpServlet {
         req.setAttribute("sortBy", effectiveSortBy);
         req.setAttribute("sortOrder", effectiveSortOrder);
         req.setAttribute("serviceAction", action);
+
+        req.getRequestDispatcher("/adminpage/manage-services.jsp").forward(req, resp);
+    }
+
+    private void renderFuzzyServiceList(HttpServletRequest req, HttpServletResponse resp,
+                                        String keyword, Integer categoryId, Boolean isActive,
+                                        String sortBy, String sortOrder, String action)
+            throws ServletException, IOException {
+        int page = parsePage(req.getParameter("page"));
+        int size = parseSize(req.getParameter("size"));
+
+        String effectiveKeyword = keyword != null ? keyword : trim(req.getParameter("keyword"));
+        Integer effectiveCategory = categoryId != null ? categoryId : parseInt(req.getParameter("categoryId"));
+        Boolean effectiveActive = isActive != null ? isActive : parseBool(req.getParameter("isActive"));
+        String effectiveSortBy = sortBy != null ? sortBy : trim(req.getParameter("sortBy"));
+        String effectiveSortOrder = sortOrder != null ? sortOrder : trim(req.getParameter("sortOrder"));
+
+        // Use fuzzy search instead of regular search
+        List<Service> fuzzyResults = serviceManageService.fuzzySearchServices(
+                effectiveKeyword, effectiveCategory, effectiveActive, effectiveSortBy, effectiveSortOrder
+        );
+
+        // Create a simple pagination for fuzzy results
+        int startIndex = (page - 1) * size;
+        int endIndex = Math.min(startIndex + size, fuzzyResults.size());
+        List<Service> pagedResults = fuzzyResults.subList(startIndex, endIndex);
+
+        // Create a mock PagedResult for compatibility
+        PagedResult<Service> servicesPage = new PagedResult<>(
+                pagedResults, fuzzyResults.size(), page, size
+        );
+        List<ServiceCategory> categories = serviceManageService.getAllCategories();
+
+        populateListAttributes(req, servicesPage, categories);
+        req.setAttribute("filterKeyword", effectiveKeyword);
+        req.setAttribute("selectedCategoryId", effectiveCategory);
+        req.setAttribute("selectedActiveValue", effectiveActive);
+        req.setAttribute("sortBy", effectiveSortBy);
+        req.setAttribute("sortOrder", effectiveSortOrder);
+        req.setAttribute("serviceAction", action);
+        req.setAttribute("isFuzzySearch", true);
 
         req.getRequestDispatcher("/adminpage/manage-services.jsp").forward(req, resp);
     }
