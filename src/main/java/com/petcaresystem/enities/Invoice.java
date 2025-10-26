@@ -54,7 +54,8 @@ public class Invoice {
     @Column(name = "status", nullable = false, length = 20)
     private InvoiceStatus status = InvoiceStatus.PENDING;
 
-    @Column(name = "notes", columnDefinition = "TEXT")
+    @Lob
+    @Column(name = "notes")
     private String notes;
 
     @Column(name = "created_at", nullable = false, updatable = false)

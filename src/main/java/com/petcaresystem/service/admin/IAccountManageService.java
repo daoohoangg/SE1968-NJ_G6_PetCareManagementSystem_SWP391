@@ -1,7 +1,7 @@
 package com.petcaresystem.service.admin;
 
-import com.petcaresystem.dto.OperationResult;
-import com.petcaresystem.dto.PagedResult;
+import com.petcaresystem.dto.pageable.OperationResult;
+import com.petcaresystem.dto.pageable.PagedResult;
 import com.petcaresystem.dto.account.AccountStats;
 import com.petcaresystem.enities.Account;
 
@@ -21,5 +21,7 @@ public interface IAccountManageService {
     boolean lockAccount(int accountId);
     boolean unlockAccount(int accountId);
     boolean hardDeleteAccount(int accountId);
+    boolean restoreAccount(int accountId);
+    List<Account> getAllAccountsIncludingDeleted();
 
 }

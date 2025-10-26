@@ -1,8 +1,8 @@
 package com.petcaresystem.dao;
 
-import com.petcaresystem.dto.PagedResult;
+import com.petcaresystem.dto.pageable.PagedResult;
 import com.petcaresystem.dto.account.AccountStats;
-import com.petcaresystem.enities.Account;
+import com.petcaresystem.enities.*;
 import com.petcaresystem.utils.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
@@ -12,19 +12,26 @@ import java.util.List;
 
 public class AccountDAO {
     public List<Account> getAccount() {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        List<Account> accounts = session.createQuery("from Account").list();
-        return accounts;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            List<Account> accounts = session.createQuery("from Account a where a.isDeleted = false", Account.class).list();
+            return accounts;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
     }
 
     public Account login(String username, String password) { //login bằng username
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        Query<Account> query = session.createQuery(
-                "FROM Account WHERE username = :username", Account.class);
-        query.setParameter("username", username);
-        Account account = query.uniqueResult();
-        session.close();
-        return account;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Query<Account> query = session.createQuery(
+                    "FROM Account WHERE username = :username AND isDeleted = false", Account.class);
+            query.setParameter("username", username);
+            Account account = query.uniqueResult();
+            return account;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
     public Account loginWithEmail(String email, String password) { //login bằng email
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
@@ -67,7 +74,7 @@ public class AccountDAO {
     }
     public Account getAccountByEmailOrUsername(String input) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            String hql = "FROM Account WHERE username = :input OR email = :input";
+            String hql = "FROM Account WHERE (username = :input OR email = :input) AND isDeleted = false";
             Query<Account> query = session.createQuery(hql, Account.class);
             query.setParameter("input", input);
             return query.uniqueResult();
@@ -79,7 +86,7 @@ public class AccountDAO {
 
     public Account findByUsername(String username) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            String hql = "FROM Account WHERE username = :username";
+            String hql = "FROM Account WHERE username = :username AND isDeleted = false";
             Query<Account> query = session.createQuery(hql, Account.class);
             query.setParameter("username", username);
             return query.uniqueResultOptional().orElse(null);
@@ -88,7 +95,7 @@ public class AccountDAO {
 
     public Account findByEmail(String email) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            String hql = "FROM Account WHERE email = :email";
+            String hql = "FROM Account WHERE email = :email AND isDeleted = false";
             Query<Account> query = session.createQuery(hql, Account.class);
             query.setParameter("email", email);
             return query.uniqueResultOptional().orElse(null);
@@ -96,13 +103,15 @@ public class AccountDAO {
     }
 
     public PagedResult<Account> findAccounts(String keyword, String role, int page, int pageSize) {
+        System.out.println("findAccounts called with keyword: " + keyword + ", role: " + role + ", page: " + page + ", size: " + pageSize);
         int safePage = Math.max(page, 1);
         int safeSize = Math.max(pageSize, 1);
         String normalizedKeyword = normalizeKeyword(keyword);
         String normalizedRole = normalizeRole(role);
 
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            StringBuilder where = new StringBuilder(" WHERE 1=1");
+            System.out.println("Session opened successfully");
+            StringBuilder where = new StringBuilder(" WHERE a.isDeleted = false");
             if (normalizedKeyword != null) {
                 where.append(" AND (lower(a.fullName) like :kw OR lower(a.email) like :kw OR lower(a.username) like :kw)");
             }
@@ -110,14 +119,13 @@ public class AccountDAO {
                 where.append(" AND a.role = :roleFilter");
             }
 
-            Query<Long> countQuery = session.createQuery(
-                    "SELECT COUNT(a.accountId) FROM Account a" + where,
-                    Long.class
-            );
-            Query<Account> dataQuery = session.createQuery(
-                    "FROM Account a" + where + " ORDER BY a.accountId DESC",
-                    Account.class
-            );
+            String countHql = "SELECT COUNT(a.accountId) FROM Account a" + where;
+            String dataHql = "FROM Account a" + where + " ORDER BY a.accountId DESC";
+            System.out.println("Count HQL: " + countHql);
+            System.out.println("Data HQL: " + dataHql);
+            
+            Query<Long> countQuery = session.createQuery(countHql, Long.class);
+            Query<Account> dataQuery = session.createQuery(dataHql, Account.class);
 
             if (normalizedKeyword != null) {
                 String kw = "%" + normalizedKeyword + "%";
@@ -134,8 +142,14 @@ public class AccountDAO {
             dataQuery.setFirstResult((safePage - 1) * safeSize);
             dataQuery.setMaxResults(safeSize);
 
-            List<Account> results = dataQuery.list();
+            System.out.println("Executing count query...");
             long total = countQuery.uniqueResultOptional().orElse(0L);
+            System.out.println("Count result: " + total);
+            
+            System.out.println("Executing data query...");
+            List<Account> results = dataQuery.list();
+            System.out.println("Data result size: " + results.size());
+            
             return new PagedResult<>(results, total, safePage, safeSize);
         } catch (Exception e) {
             e.printStackTrace();
@@ -155,7 +169,7 @@ public class AccountDAO {
                             "SUM(CASE WHEN a.role = :adminRole THEN 1 ELSE 0 END), " +
                             "SUM(CASE WHEN a.role = :staffRole THEN 1 ELSE 0 END), " +
                             "SUM(CASE WHEN a.role = :customerRole THEN 1 ELSE 0 END) " +
-                            "FROM Account a WHERE 1=1"
+                            "FROM Account a WHERE a.isDeleted = false"
             );
 
             if (normalizedKeyword != null) {
@@ -199,7 +213,7 @@ public class AccountDAO {
 
     public List<Account> searchAccounts(String keyword, String role) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            StringBuilder hql = new StringBuilder("FROM Account a WHERE 1=1 ");
+            StringBuilder hql = new StringBuilder("FROM Account a WHERE a.isDeleted = false ");
             if (keyword != null && !keyword.isBlank()) {
                 hql.append(" AND (lower(a.fullName) like :kw OR lower(a.email) like :kw OR lower(a.username) like :kw)");
             }
@@ -225,7 +239,7 @@ public class AccountDAO {
     }
     public Account findByVerificationToken(String token) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            String hql = "FROM Account WHERE verificationToken = :token";
+            String hql = "FROM Account WHERE verificationToken = :token AND isDeleted = false";
             Query<Account> query = session.createQuery(hql, Account.class);
             query.setParameter("token", token);
             return query.uniqueResultOptional().orElse(null);
@@ -233,47 +247,201 @@ public class AccountDAO {
     }
 
     public Account findById(Long id) {
+        System.out.println("AccountDAO.findById called with id: " + id);
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
-            return s.get(Account.class, id);
+            Account account = s.get(Account.class, id);
+            System.out.println("Raw account from DB: " + (account != null ? account.getUsername() + ", isDeleted: " + account.getIsDeleted() : "null"));
+            
+            // Only return account if it's not deleted
+            if (account != null && !account.getIsDeleted()) {
+                System.out.println("Returning account (not deleted)");
+                return account;
+            } else if (account != null) {
+                System.out.println("Account is deleted, returning null");
+            } else {
+                System.out.println("Account not found in DB");
+            }
+            return null;
         }
     }
     public Account findById(int id) {                // giữ tương thích cũ
         return findById((long) id);
     }
 
-    public boolean updateAccount(Account account) {
-        Transaction tx = null;
+    // Method to find account including deleted ones (for admin purposes)
+    public Account findByIdIncludingDeleted(Long id) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            return s.get(Account.class, id);
+        }
+    }
+
+    public boolean updateAccount(Account account) {
+        System.out.println("AccountDAO.updateAccount called for account: " + (account != null ? account.getUsername() : "null"));
+        Transaction tx = null;
+        Session s = null;
+        try {
+            s = HibernateUtil.getSessionFactory().openSession();
             tx = s.beginTransaction();
-            s.merge(account);
+            System.out.println("Session opened, transaction started");
+            
+            // Use HQL UPDATE to avoid unique constraint issues
+            String hql = "UPDATE Account SET " +
+                    "isActive = :isActive, " +
+                    "isDeleted = :isDeleted, " +
+                    "fullName = :fullName, " +
+                    "email = :email, " +
+                    "phone = :phone, " +
+                    "role = :role, " +
+                    "isVerified = :isVerified, " +
+                    "verificationToken = :verificationToken, " +
+                    "lastLogin = :lastLogin, " +
+                    "updatedAt = :updatedAt " +
+                    "WHERE accountId = :accountId";
+            
+            int updatedRows = s.createQuery(hql)
+                    .setParameter("isActive", account.getIsActive())
+                    .setParameter("isDeleted", account.getIsDeleted())
+                    .setParameter("fullName", account.getFullName())
+                    .setParameter("email", account.getEmail())
+                    .setParameter("phone", account.getPhone())
+                    .setParameter("role", account.getRole())
+                    .setParameter("isVerified", account.getIsVerified())
+                    .setParameter("verificationToken", account.getVerificationToken())
+                    .setParameter("lastLogin", account.getLastLogin())
+                    .setParameter("updatedAt", account.getUpdatedAt())
+                    .setParameter("accountId", account.getAccountId())
+                    .executeUpdate();
+            
+            System.out.println("Updated rows: " + updatedRows);
+            
             tx.commit();
-            return true;
+            System.out.println("Transaction committed successfully");
+            return updatedRows > 0;
         } catch (Exception e) {
-            if (tx != null) tx.rollback();
+            System.err.println("Exception in updateAccount: " + e.getMessage());
             e.printStackTrace();
+            
+            if (tx != null) {
+                try {
+                    tx.rollback();
+                    System.out.println("Transaction rolled back");
+                } catch (Exception rollbackEx) {
+                    System.err.println("Error during rollback: " + rollbackEx.getMessage());
+                }
+            }
             return false;
+        } finally {
+            if (s != null) {
+                try {
+                    s.close();
+                    System.out.println("Session closed");
+                } catch (Exception closeEx) {
+                    System.err.println("Error closing session: " + closeEx.getMessage());
+                }
+            }
         }
     }
 
     public boolean deleteById(Long accountId) {
+        System.out.println("AccountDAO.deleteById called with id: " + accountId);
         Transaction tx = null;
-        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+        Session s = null;
+        try {
+            s = HibernateUtil.getSessionFactory().openSession();
             tx = s.beginTransaction();
-            Account acc = s.get(Account.class, Long.valueOf(accountId));
+            
+            // Soft delete: just mark the account as deleted
+            Account acc = s.get(Account.class, accountId);
             if (acc != null) {
-                s.remove(acc);
+                System.out.println("Soft deleting account: " + acc.getUsername());
+                acc.setIsDeleted(true);
+                s.merge(acc);
                 tx.commit();
+                System.out.println("Account soft deleted successfully");
                 return true;
+            } else {
+                System.out.println("Account not found");
+                tx.rollback();
+                return false;
             }
-            return false;
         } catch (Exception e) {
-            if (tx != null) tx.rollback();
+            if (tx != null) {
+                try {
+                    tx.rollback();
+                } catch (Exception rollbackEx) {
+                    System.err.println("Error during rollback: " + rollbackEx.getMessage());
+                }
+            }
+            System.out.println("Exception in deleteById: " + e.getMessage());
             e.printStackTrace();
             return false;
+        } finally {
+            if (s != null) {
+                try {
+                    s.close();
+                } catch (Exception closeEx) {
+                    System.err.println("Error closing session: " + closeEx.getMessage());
+                }
+            }
         }
     }
     public boolean deleteById(int accountId) {       // giữ tương thích cũ
         return deleteById((long) accountId);
+    }
+
+    // Method to restore a soft-deleted account
+    public boolean restoreAccount(Long accountId) {
+        System.out.println("AccountDAO.restoreAccount called with id: " + accountId);
+        Transaction tx = null;
+        Session s = null;
+        try {
+            s = HibernateUtil.getSessionFactory().openSession();
+            tx = s.beginTransaction();
+            
+            Account acc = s.get(Account.class, accountId);
+            if (acc != null) {
+                System.out.println("Restoring account: " + acc.getUsername());
+                acc.setIsDeleted(false);
+                s.merge(acc);
+                tx.commit();
+                System.out.println("Account restored successfully");
+                return true;
+            } else {
+                System.out.println("Account not found");
+                tx.rollback();
+                return false;
+            }
+        } catch (Exception e) {
+            if (tx != null) {
+                try {
+                    tx.rollback();
+                } catch (Exception rollbackEx) {
+                    System.err.println("Error during rollback: " + rollbackEx.getMessage());
+                }
+            }
+            System.out.println("Exception in restoreAccount: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (s != null) {
+                try {
+                    s.close();
+                } catch (Exception closeEx) {
+                    System.err.println("Error closing session: " + closeEx.getMessage());
+                }
+            }
+        }
+    }
+
+    // Method to get all accounts including deleted ones (for admin purposes)
+    public List<Account> getAllAccountsIncludingDeleted() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            List<Account> accounts = session.createQuery("from Account", Account.class).list();
+            return accounts;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
     }
 
 

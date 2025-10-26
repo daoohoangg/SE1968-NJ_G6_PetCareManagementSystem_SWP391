@@ -33,10 +33,6 @@ public class EmailRule implements Serializable {
     @Column(name = "reminder_hours")
     private Integer reminderHours;
 
-    @Size(max = 2000)
-    @Column(name = "email_template", length = 2000)
-    private String emailTemplate;
-
     @AssertTrue(message = "Khi bật reminderNotify, reminderHours phải trong 1..23")
     public boolean isReminderValid() {
         if (!reminderNotify) return true;
