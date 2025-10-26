@@ -6,4 +6,14 @@
     <welcome-file-list>
         <welcome-file>public/home</welcome-file>
     </welcome-file-list>
+    
+    <!-- Invoice Management Servlet -->
+    <servlet>
+        <servlet-name>InvoiceManagementController</servlet-name>
+        <servlet-class>com.petcaresystem.controller.invoice.InvoiceController</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>InvoiceManagementController</servlet-name>
+        <url-pattern>/invoices</url-pattern>
+    </servlet-mapping>
 </web-app>

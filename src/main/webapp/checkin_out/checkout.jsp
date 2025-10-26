@@ -51,7 +51,27 @@
 
         .empty{padding:40px;text-align:center;color:#6b7280;border:1px dashed #ddd;border-radius:8px;margin:20px 0}
 
-        @media (max-width:900px){.content{padding:22px}}
+        /* Filter Form */
+        .filter-form{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:20px;display:flex;gap:12px;align-items:end;flex-wrap:wrap}
+        .form-group{flex:1;min-width:200px}
+        .form-group label{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
+        .form-group input{width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px}
+        .form-group input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+        .btn-filter{padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px}
+        .btn-filter:hover{filter:brightness(.95)}
+        .btn-reset{padding:8px 16px;background:#6b7280;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px}
+        .btn-reset:hover{filter:brightness(.95)}
+
+        /* Pagination */
+        .pagination-wrapper{display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding:16px 20px;background:#fff;border:1px solid var(--line);border-radius:12px}
+        .pagination-info{color:var(--muted);font-size:14px}
+        .pagination{display:flex;gap:6px;list-style:none;margin:0;padding:0}
+        .pagination a,.pagination span{display:flex;align-items:center;justify-content:center;min-width:36px;height:36px;padding:0 12px;border:1px solid var(--line);border-radius:8px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500}
+        .pagination a:hover{background:var(--bg);border-color:var(--primary)}
+        .pagination .active{background:var(--primary);color:#fff;border-color:var(--primary)}
+        .pagination .disabled{color:#d1d5db;cursor:not-allowed;pointer-events:none}
+
+        @media (max-width:900px){.content{padding:22px}.filter-form{flex-direction:column}.pagination-wrapper{flex-direction:column;gap:12px}}
     </style>
 </head>
 <body>
@@ -77,35 +97,59 @@
             <c:remove var="error" scope="session"/>
         </c:if>
 
+        <!-- Filter Form -->
+        <form method="get" action="${pageContext.request.contextPath}/reception/checkout" class="filter-form">
+            <div class="form-group">
+                <label for="customerName">Customer Name</label>
+                <input type="text" id="customerName" name="customerName" value="${customerName}" placeholder="Search by customer name...">
+            </div>
+            <div class="form-group">
+                <label for="petName">Pet Name</label>
+                <input type="text" id="petName" name="petName" value="${petName}" placeholder="Search by pet name...">
+            </div>
+            <div style="display:flex;gap:8px">
+                <button type="submit" class="btn-filter"><i class="ri-search-line"></i> Filter</button>
+                <a href="${pageContext.request.contextPath}/reception/checkout" class="btn-reset" style="text-decoration:none;display:flex;align-items:center"><i class="ri-refresh-line"></i> Reset</a>
+            </div>
+        </form>
+
         <div class="card">
             <table>
                 <thead>
                 <tr>
-                    <th>Booking ID</th>
+                    <th>Appointment ID</th>
                     <th>Customer Name</th>
                     <th>Pet Name</th>
-                    <th>Booking Date</th>
+                    <th>Check-in Time</th>
+                    <th>Services</th>
+                    <th>Total Amount</th>
                     <th>Status</th>
                     <th style="width:140px">Actions</th>
                 </tr>
                 </thead>
                 <tbody>
                 <c:choose>
-                    <c:when test="${empty bookings}">
-                        <tr><td colspan="6" class="empty">No checked-in bookings found.</td></tr>
+                    <c:when test="${empty appointments}">
+                        <tr><td colspan="8" class="empty">No checked-in appointments found.</td></tr>
                     </c:when>
                     <c:otherwise>
-                        <c:forEach var="b" items="${bookings}">
+                        <c:forEach var="apt" items="${appointments}">
                             <tr>
-                                <td><strong>#${b.bookingId}</strong></td>
-                                <td>${b.customerName}</td>
-                                <td>${b.petName}</td>
-                                <td><fmt:formatDate value="${b.bookingDate}" pattern="dd/MM/yyyy HH:mm"/></td>
-                                <td><span class="status checked-in">Checked-In</span></td>
+                                <td><strong>#${apt.appointmentId}</strong></td>
+                                <td>${apt.customer.fullName}</td>
+                                <td>${apt.pet.name}</td>
+                                <td>${apt.formattedUpdatedAt}</td>
+                                <td>
+                                    <c:forEach var="svc" items="${apt.services}" varStatus="status">
+                                        ${svc.serviceName}<c:if test="${!status.last}">, </c:if>
+                                    </c:forEach>
+                                </td>
+                                <td><fmt:formatNumber value="${apt.totalAmount}" type="currency" currencySymbol="$"/></td>
+                                <td><span class="status checked-in">${apt.status}</span></td>
                                 <td>
                                     <form method="post" action="${pageContext.request.contextPath}/reception/checkout" style="display:inline">
-                                        <input type="hidden" name="bookingId" value="${b.bookingId}"/>
-                                        <button type="submit" class="btn-checkout" onclick="return confirm('Confirm check-out for ${b.customerName}?');">
+                                        <input type="hidden" name="appointmentId" value="${apt.appointmentId}"/>
+                                        <button type="submit" class="btn-checkout" onclick="return confirm('Confirm check-out for ${apt.customer.fullName}? This will generate an invoice.');">
                                             <i class="ri-logout-box-line"></i> Check Out
                                         </button>
                                     </form>
@@ -117,6 +161,43 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination -->
+        <c:if test="${totalPages > 1}">
+            <div class="pagination-wrapper">
+                <div class="pagination-info">
+                    Showing ${(currentPage - 1) * 10 + 1} to ${currentPage * 10 > totalRecords ? totalRecords : currentPage * 10} of ${totalRecords} results
+                </div>
+                <ul class="pagination">
+                    <c:if test="${currentPage > 1}">
+                        <li><a href="?page=${currentPage - 1}&customerName=${customerName}&petName=${petName}"><i class="ri-arrow-left-s-line"></i></a></li>
+                    </c:if>
+                    <c:if test="${currentPage <= 1}">
+                        <li><span class="disabled"><i class="ri-arrow-left-s-line"></i></span></li>
+                    </c:if>
+
+                    <c:forEach begin="${currentPage > 2 ? currentPage - 2 : 1}" 
+                               end="${currentPage + 2 < totalPages ? currentPage + 2 : totalPages}" 
+                               var="i">
+                        <c:choose>
+                            <c:when test="${i == currentPage}">
+                                <li><span class="active">${i}</span></li>
+                            </c:when>
+                            <c:otherwise>
+                                <li><a href="?page=${i}&customerName=${customerName}&petName=${petName}">${i}</a></li>
+                            </c:otherwise>
+                        </c:choose>
+                    </c:forEach>
+
+                    <c:if test="${currentPage < totalPages}">
+                        <li><a href="?page=${currentPage + 1}&customerName=${customerName}&petName=${petName}"><i class="ri-arrow-right-s-line"></i></a></li>
+                    </c:if>
+                    <c:if test="${currentPage >= totalPages}">
+                        <li><span class="disabled"><i class="ri-arrow-right-s-line"></i></span></li>
+                    </c:if>
+                </ul>
+            </div>
+        </c:if>
     </main>
 </div>
 

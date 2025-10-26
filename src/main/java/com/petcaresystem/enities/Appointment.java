@@ -26,6 +26,8 @@ public class Appointment {
     @Column(name = "appointment_date", nullable = false)
     private LocalDateTime appointmentDate;
 
+
+
     @Column(name = "end_date")
     private LocalDateTime endDate;
 
@@ -55,7 +57,7 @@ public class Appointment {
     private Pet pet;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "staff_id", nullable = false)
+    @JoinColumn(name = "staff_id")
     private Staff staff;
 
     @ManyToMany(fetch = FetchType.LAZY)
@@ -104,7 +106,7 @@ public class Appointment {
     }
 
     public void complete() {
-        if (this.status == AppointmentStatus.CONFIRMED || this.status == AppointmentStatus.IN_PROGRESS) {
+        if (this.status == AppointmentStatus.CONFIRMED || this.status == AppointmentStatus.IN_PROGRESS || this.status == AppointmentStatus.CHECKED_IN) {
             this.status = AppointmentStatus.COMPLETED;
         }
     }
@@ -116,7 +118,7 @@ public class Appointment {
     }
 
     public void startService() {
-        if (this.status == AppointmentStatus.CONFIRMED) {
+        if (this.status == AppointmentStatus.CONFIRMED || this.status == AppointmentStatus.CHECKED_IN) {
             this.status = AppointmentStatus.IN_PROGRESS;
         }
     }
@@ -125,6 +127,28 @@ public class Appointment {
         if (this.status == AppointmentStatus.SCHEDULED || this.status == AppointmentStatus.CONFIRMED) {
             this.status = AppointmentStatus.NO_SHOW;
         }
+    }
+
+    public void checkIn() {
+        if (this.status == AppointmentStatus.SCHEDULED) {
+            this.status = AppointmentStatus.CONFIRMED;
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
+    public void checkOut() {
+        if (this.status == AppointmentStatus.CONFIRMED || this.status == AppointmentStatus.IN_PROGRESS) {
+            this.status = AppointmentStatus.COMPLETED;
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
+    public boolean canCheckIn() {
+        return this.status == AppointmentStatus.SCHEDULED;
+    }
+
+    public boolean canCheckOut() {
+        return this.status == AppointmentStatus.CONFIRMED || this.status == AppointmentStatus.IN_PROGRESS;
     }
 
     public boolean canBeCancelled() {
@@ -140,4 +164,25 @@ public class Appointment {
         invoice.setAppointment(this);
     }
 
+
+
+    @Transient
+    private String formattedDate;
+
+    @Transient
+    private String formattedUpdatedAt;
+
+    public String getFormattedDate() {
+        return formattedDate;
+    }
+    public void setFormattedDate(String formattedDate) {
+        this.formattedDate = formattedDate;
+    }
+
+    public String getFormattedUpdatedAt() {
+        return formattedUpdatedAt;
+    }
+    public void setFormattedUpdatedAt(String formattedUpdatedAt) {
+        this.formattedUpdatedAt = formattedUpdatedAt;
+    }
 }

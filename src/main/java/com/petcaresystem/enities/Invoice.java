@@ -161,4 +161,33 @@ public class Invoice {
     public boolean canBeModified() {
         return this.status == InvoiceStatus.PENDING || this.status == InvoiceStatus.SENT;
     }
+    
+    // Helper methods for JSP display
+    public String getFormattedIssueDate() {
+        if (issueDate == null) return "";
+        return issueDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+    
+    public String getFormattedDueDate() {
+        if (dueDate == null) return "";
+        return dueDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+    }
+    
+    public String getFormattedTotal() {
+        return String.format("$%,.2f", totalAmount);
+    }
+    
+    public String getFormattedAmountDue() {
+        return String.format("$%,.2f", amountDue);
+    }
+    
+    public String getStatusBadgeClass() {
+        switch (status) {
+            case PAID: return "success";
+            case PARTIALLY_PAID: return "warning";
+            case OVERDUE: return "danger";
+            case CANCELLED: return "secondary";
+            default: return "primary";
+        }
+    }
 }

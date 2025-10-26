@@ -120,6 +120,18 @@
                 <li class="nav-item">
                     <a class="nav-link" href="<%= request.getContextPath() %>/admin/users">Manage Users</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%= request.getContextPath() %>/reception/checkin">Check-In</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%= request.getContextPath() %>/reception/checkout">Check-Out</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%= request.getContextPath() %>/petServiceHistory">Pet Data</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%= request.getContextPath() %>/invoices">Invoices</a>
+                </li>
                 <%
                         }
                     }
