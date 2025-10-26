@@ -23,7 +23,7 @@ public class VerificationController extends HttpServlet {
 
         if (account != null && !account.getIsVerified()) {
             account.setIsVerified(true);
-            account.setVerificationToken(null); // Invalidate the token
+            account.setVerificationToken(null);
             accountDAO.updateAccount(account);
 
             response.sendRedirect(request.getContextPath() + "/login?status=verified_success");

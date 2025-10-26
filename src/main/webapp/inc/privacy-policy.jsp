@@ -75,35 +75,35 @@
 </div>
 <main class="privacy-page-main">
     <div class="privacy-content-card">
-        <h1>Privacy Policy</h1>
+        <h1>Chính sách Bảo mật</h1>
         <hr>
 
-        <h2>1. Purpose and Scope of Information Collection</h2>
+        <h2>1. Mục đích và Phạm vi Thu thập Thông tin</h2>
         <p>
-            PetCare collects customer information to provide better care services and offer attractive promotions and discounts for loyal customers.
+            PetCare thu thập thông tin khách hàng nhằm cung cấp dịch vụ chăm sóc tốt hơn và đưa ra các chương trình khuyến mãi, ưu đãi hấp dẫn dành cho khách hàng thân thiết.
         </p>
         <p>
-            PetCare only collects basic information such as name, phone number, email, address, and information about the pets you are raising.
-        </p>
-
-        <h2>2. Scope of Information Use</h2>
-        <p>
-            Customer information is only used internally by PetCare for customer care and service support purposes.
+            PetCare chỉ thu thập các thông tin cơ bản như tên, số điện thoại, email, địa chỉ và thông tin về các thú cưng bạn đang nuôi.
         </p>
 
-        <h2>3. Information Storage Time</h2>
+        <h2>2. Phạm vi Sử dụng Thông tin</h2>
         <p>
-            Customer information will be stored indefinitely from the time the customer contacts PetCare.
+            Thông tin khách hàng chỉ được sử dụng nội bộ tại PetCare cho mục đích chăm sóc khách hàng và hỗ trợ dịch vụ.
         </p>
 
-        <h2>4. Address of the Information Collection and Management Unit</h2>
+        <h2>3. Thời gian Lưu trữ Thông tin</h2>
         <p>
-            Address: FPT University, Hoa Lac Hi-Tech Park, Km29, Thang Long Avenue, Thach That, Hanoi.
+            Thông tin khách hàng sẽ được lưu trữ vô thời hạn kể từ thời điểm khách hàng liên hệ với PetCare.
         </p>
 
-        <h2>5. Commitment to Protecting Customer's Personal Information</h2>
+        <h2>4. Địa chỉ của Đơn vị Thu thập và Quản lý Thông tin</h2>
         <p>
-            PetCare is committed to securing your personal information and will not share it with any third party for commercial purposes without your consent.
+            Địa chỉ: Đại học FPT, Khu Công nghệ cao Hòa Lạc, Km29, Đại lộ Thăng Long, H. Thạch Thất, Hà Nội.
+        </p>
+
+        <h2>5. Cam kết Bảo mật Thông tin Cá nhân của Khách hàng</h2>
+        <p>
+            PetCare cam kết bảo mật thông tin cá nhân của bạn và sẽ không chia sẻ cho bất kỳ bên thứ ba nào vì mục đích thương mại mà không có sự đồng ý của bạn.
         </p>
     </div>
 
