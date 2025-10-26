@@ -192,6 +192,16 @@
                 <p>Configure rules, schedules, vouchers, and email notifications</p>
             </div>
 
+            <!-- Flash Messages -->
+            <c:if test="${not empty sessionScope.success}">
+                <div style="margin:8px 0;color:#065f46;background:#d1fae5;border:1px solid #a7f3d0;padding:10px;border-radius:8px">${sessionScope.success}</div>
+                <c:remove var="success" scope="session"/>
+            </c:if>
+            <c:if test="${not empty sessionScope.error}">
+                <div style="margin:8px 0;color:#991b1b;background:#fee2e2;border:1px solid #fecaca;padding:10px;border-radius:8px">${sessionScope.error}</div>
+                <c:remove var="error" scope="session"/>
+            </c:if>
+
             <div class="config-tabs" role="tablist">
                 <button class="config-tab${activeTab eq 'schedule' ? ' active' : ''}" data-target="schedule" type="button">
                     <i class="ri-calendar-line"></i> Schedule
@@ -208,146 +218,65 @@
             </div>
 
             <div class="tab-panel${activeTab eq 'schedule' ? ' active' : ''}" data-panel="schedule">
-                <div class="setting-section">
-                    <h2>Business Hours</h2>
-                    <div class="schedule-list">
-                        <div class="schedule-row">
-                            <div class="schedule-left">
-                                <label class="toggle">
-                                    <input type="checkbox" checked/>
-                                    <span class="toggle-track"></span>
-                                </label>
-                                <div>
-                                    <div class="day-name">Monday</div>
-                                    <div class="day-status">Open</div>
+                <form method="post" action="${pageContext.request.contextPath}/admin/config">
+                    <input type="hidden" name="action" value="update-schedule"/>
+                    <input type="hidden" name="tab" value="schedule"/>
+                    
+                    <div class="setting-section">
+                        <h2>Business Hours</h2>
+                        <div class="schedule-list">
+                            <c:forEach var="day" items="${['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']}">
+                                <c:set var="dayName" value="${day}"/>
+                                <c:set var="dayLower" value="${fn:toLowerCase(day)}"/>
+                                <c:set var="dayData" value="${scheduleData != null ? scheduleData.get(day) : null}"/>
+                                <c:set var="isOpen" value="${dayData != null ? dayData.open : false}"/>
+                                <c:set var="openTime" value="${dayData != null && dayData.openTime != null ? dayData.openTime : '08:00'}"/>
+                                <c:set var="closeTime" value="${dayData != null && dayData.closeTime != null ? dayData.closeTime : '18:00'}"/>
+                                
+                                <div class="schedule-row${!isOpen ? ' closed' : ''}">
+                                    <div class="schedule-left">
+                                        <label class="toggle">
+                                            <input type="checkbox" name="${dayLower}Open" value="on" 
+                                                   <c:if test="${isOpen}">checked</c:if> 
+                                                   onchange="toggleDaySchedule(this, '${dayLower}')"/>
+                                            <span class="toggle-track"></span>
+                                        </label>
+                                        <div>
+                                            <div class="day-name">${dayName}</div>
+                                            <div class="day-status">
+                                                <c:choose>
+                                                    <c:when test="${isOpen}">Open</c:when>
+                                                    <c:otherwise>Closed</c:otherwise>
+                                                </c:choose>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="schedule-times" id="times-${dayLower}">
+                                        <c:choose>
+                                            <c:when test="${isOpen}">
+                                                <label class="time-field">From
+                                                    <input class="config-input" type="time" name="${dayLower}OpenTime" value="${openTime}"/>
+                                                </label>
+                                                <label class="time-field">To
+                                                    <input class="config-input" type="time" name="${dayLower}CloseTime" value="${closeTime}"/>
+                                                </label>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="day-status">Closed</span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="schedule-times">
-                                <label class="time-field">From
-                                    <input class="config-input" type="time" value="08:00"/>
-                                </label>
-                                <label class="time-field">To
-                                    <input class="config-input" type="time" value="18:00"/>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="schedule-row">
-                            <div class="schedule-left">
-                                <label class="toggle">
-                                    <input type="checkbox" checked/>
-                                    <span class="toggle-track"></span>
-                                </label>
-                                <div>
-                                    <div class="day-name">Tuesday</div>
-                                    <div class="day-status">Open</div>
-                                </div>
-                            </div>
-                            <div class="schedule-times">
-                                <label class="time-field">From
-                                    <input class="config-input" type="time" value="08:00"/>
-                                </label>
-                                <label class="time-field">To
-                                    <input class="config-input" type="time" value="18:00"/>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="schedule-row">
-                            <div class="schedule-left">
-                                <label class="toggle">
-                                    <input type="checkbox" checked/>
-                                    <span class="toggle-track"></span>
-                                </label>
-                                <div>
-                                    <div class="day-name">Wednesday</div>
-                                    <div class="day-status">Open</div>
-                                </div>
-                            </div>
-                            <div class="schedule-times">
-                                <label class="time-field">From
-                                    <input class="config-input" type="time" value="08:00"/>
-                                </label>
-                                <label class="time-field">To
-                                    <input class="config-input" type="time" value="18:00"/>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="schedule-row">
-                            <div class="schedule-left">
-                                <label class="toggle">
-                                    <input type="checkbox" checked/>
-                                    <span class="toggle-track"></span>
-                                </label>
-                                <div>
-                                    <div class="day-name">Thursday</div>
-                                    <div class="day-status">Open</div>
-                                </div>
-                            </div>
-                            <div class="schedule-times">
-                                <label class="time-field">From
-                                    <input class="config-input" type="time" value="08:00"/>
-                                </label>
-                                <label class="time-field">To
-                                    <input class="config-input" type="time" value="18:00"/>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="schedule-row">
-                            <div class="schedule-left">
-                                <label class="toggle">
-                                    <input type="checkbox" checked/>
-                                    <span class="toggle-track"></span>
-                                </label>
-                                <div>
-                                    <div class="day-name">Friday</div>
-                                    <div class="day-status">Open</div>
-                                </div>
-                            </div>
-                            <div class="schedule-times">
-                                <label class="time-field">From
-                                    <input class="config-input" type="time" value="08:00"/>
-                                </label>
-                                <label class="time-field">To
-                                    <input class="config-input" type="time" value="18:00"/>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="schedule-row">
-                            <div class="schedule-left">
-                                <label class="toggle">
-                                    <input type="checkbox" checked/>
-                                    <span class="toggle-track"></span>
-                                </label>
-                                <div>
-                                    <div class="day-name">Saturday</div>
-                                    <div class="day-status">Open</div>
-                                </div>
-                            </div>
-                            <div class="schedule-times">
-                                <label class="time-field">From
-                                    <input class="config-input" type="time" value="09:00"/>
-                                </label>
-                                <label class="time-field">To
-                                    <input class="config-input" type="time" value="17:00"/>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="schedule-row closed">
-                            <div class="schedule-left">
-                                <label class="toggle">
-                                    <input type="checkbox" disabled/>
-                                    <span class="toggle-track"></span>
-                                </label>
-                                <div>
-                                    <div class="day-name">Sunday</div>
-                                    <div class="day-status">Closed</div>
-                                </div>
-                            </div>
-                            <div class="schedule-times">
-                                <span class="day-status">Closed</span>
-                            </div>
+                            </c:forEach>
                         </div>
                     </div>
-                </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="save-btn">
+                            <i class="ri-checkbox-circle-line"></i> Save Business Hours
+                        </button>
+                    </div>
+                </form>
             </div>
 
             <div class="tab-panel${activeTab eq 'vouchers' ? ' active' : ''}" data-panel="vouchers">
@@ -506,55 +435,108 @@
             </div>
 
             <div class="tab-panel${activeTab eq 'email' ? ' active' : ''}" data-panel="email">
-                <div class="setting-section">
-                    <h2>Email Notifications</h2>
-                    <div class="setting-row">
-                        <div class="setting-info">
-                            <div class="setting-title">Appointment Confirmation</div>
-                            <div class="setting-desc">Send confirmation emails for new appointments</div>
+                <!-- Email Notifications Configuration -->
+                <form method="post" action="${pageContext.request.contextPath}/admin/config">
+                    <input type="hidden" name="action" value="update-email"/>
+                    <input type="hidden" name="tab" value="email"/>
+                    
+                    <div class="setting-section">
+                        <h2>Email Notifications</h2>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-title">Appointment Confirmation</div>
+                                <div class="setting-desc">Send confirmation emails for new appointments</div>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" name="appointmentConfirmation" 
+                                       <c:if test="${emailRule != null && emailRule.appointmentConfirmation}">checked</c:if>/>
+                                <span class="toggle-track"></span>
+                            </label>
                         </div>
-                        <label class="toggle">
-                            <input type="checkbox" checked/>
-                            <span class="toggle-track"></span>
-                        </label>
-                    </div>
-                    <div class="setting-row">
-                        <div class="setting-info">
-                            <div class="setting-title">Reminder Notifications</div>
-                            <div class="setting-desc">Send appointment reminders to customers</div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-title">Reminder Notifications</div>
+                                <div class="setting-desc">Send appointment reminders to customers</div>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" name="reminderNotify" 
+                                       <c:if test="${emailRule != null && emailRule.reminderNotify}">checked</c:if>/>
+                                <span class="toggle-track"></span>
+                            </label>
                         </div>
-                        <label class="toggle">
-                            <input type="checkbox" checked/>
-                            <span class="toggle-track"></span>
-                        </label>
-                    </div>
-                    <div class="setting-row">
-                        <div class="setting-info">
-                            <div class="setting-title">Promotional Emails</div>
-                            <div class="setting-desc">Send marketing and promotional emails</div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-title">Promotional Emails</div>
+                                <div class="setting-desc">Send marketing and promotional emails</div>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" name="promotionalEmail" 
+                                       <c:if test="${emailRule != null && emailRule.promotionalEmail}">checked</c:if>/>
+                                <span class="toggle-track"></span>
+                            </label>
                         </div>
-                        <label class="toggle">
-                            <input type="checkbox"/>
-                            <span class="toggle-track"></span>
-                        </label>
                     </div>
-                </div>
 
-                <div class="setting-section">
-                    <h2>Reminder Settings</h2>
-                    <div class="number-inputs">
-                        <label>
-                            Reminder Hours Before Appointment
-                            <input class="config-input" type="number" value="24"/>
-                        </label>
+                    <div class="setting-section">
+                        <h2>Reminder Settings</h2>
+                        <div class="number-inputs">
+                            <label>
+                                Reminder Hours Before Appointment
+                                <input class="config-input" type="number" name="reminderHours" min="1" max="23" 
+                                       value="${emailRule != null && emailRule.reminderHours != null ? emailRule.reminderHours : 24}"/>
+                            </label>
+                        </div>
                     </div>
-                </div>
 
-                <div class="setting-section">
-                    <h2>Email Template</h2>
-                    <textarea class="config-textarea">Dear {customerName}, your appointment for {serviceName} is scheduled for {date} at {time}.</textarea>
-                    <p class="setting-desc" style="margin-top:8px">Use {customerName}, {serviceName}, {date}, {time} as placeholders</p>
-                </div>
+                    <div class="form-actions">
+                        <button type="submit" class="save-btn">
+                            <i class="ri-checkbox-circle-line"></i> Save Email Settings
+                        </button>
+                    </div>
+                </form>
+
+                <!-- SMTP Configuration -->
+                <form method="post" action="${pageContext.request.contextPath}/admin/config" style="margin-top: 32px;">
+                    <input type="hidden" name="action" value="update-smtp"/>
+                    <input type="hidden" name="tab" value="email"/>
+                    
+                    <div class="setting-section">
+                        <h2>SMTP Configuration</h2>
+                        <div class="number-inputs">
+                            <label class="full">
+                                SMTP Host
+                                <input class="config-input" type="text" name="smtpHost" 
+                                       value="${smtpHost != null ? smtpHost : 'smtp.gmail.com'}" required/>
+                            </label>
+                            <label>
+                                SMTP Port
+                                <input class="config-input" type="number" name="smtpPort" 
+                                       value="${smtpPort != null ? smtpPort : 587}" required/>
+                            </label>
+                            <label class="full">
+                                From Email
+                                <input class="config-input" type="email" name="fromEmail" 
+                                       value="${fromEmail != null ? fromEmail : ''}" required/>
+                            </label>
+                            <label class="full">
+                                App Password
+                                <input class="config-input" type="password" name="appPassword" 
+                                       value="${appPassword != null ? appPassword : ''}" 
+                                       placeholder="Leave blank to keep current" autocomplete="new-password"/>
+                            </label>
+                        </div>
+                        <p class="setting-desc" style="margin-top:8px">
+                            <i class="ri-information-line"></i> Gmail users: Use an App Password, not your regular password. 
+                            <a href="https://support.google.com/accounts/answer/185833" target="_blank">Learn more</a>
+                        </p>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="save-btn">
+                            <i class="ri-settings-3-line"></i> Save SMTP Settings
+                        </button>
+                    </div>
+                </form>
             </div>
 
             <div class="tab-panel${activeTab eq 'rules' ? ' active' : ''}" data-panel="rules">
@@ -595,12 +577,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="form-actions">
-                <button type="button" class="save-btn">
-                    <i class="ri-checkbox-circle-line"></i> Save All Settings
-                </button>
-            </div>
             </div>
         </div>
     </section>
@@ -619,6 +595,36 @@
             });
         });
     })();
+
+    // Toggle day schedule functionality
+    function toggleDaySchedule(checkbox, dayName) {
+        const scheduleRow = checkbox.closest('.schedule-row');
+        const timesContainer = document.getElementById('times-' + dayName);
+        const dayStatus = scheduleRow.querySelector('.day-status');
+        
+        if (checkbox.checked) {
+            // Show time inputs
+            scheduleRow.classList.remove('closed');
+            dayStatus.textContent = 'Open';
+            
+            // Create time inputs if they don't exist
+            if (!timesContainer.querySelector('input[type="time"]')) {
+                timesContainer.innerHTML = `
+                    <label class="time-field">From
+                        <input class="config-input" type="time" name="${dayName}OpenTime" value="08:00"/>
+                    </label>
+                    <label class="time-field">To
+                        <input class="config-input" type="time" name="${dayName}CloseTime" value="18:00"/>
+                    </label>
+                `;
+            }
+        } else {
+            // Hide time inputs
+            scheduleRow.classList.add('closed');
+            dayStatus.textContent = 'Closed';
+            timesContainer.innerHTML = '<span class="day-status">Closed</span>';
+        }
+    }
 </script>
 <jsp:include page="../inc/chatbox.jsp" />
 <jsp:include page="../inc/footer.jsp" />

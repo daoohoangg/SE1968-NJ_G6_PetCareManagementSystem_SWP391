@@ -374,7 +374,7 @@
         <form class="search" method="get" action="${pageContext.request.contextPath}/admin/service">
             <input type="hidden" name="action" value="search"/>
             <i class="ri-search-line"></i>
-            <input type="text" name="keyword" placeholder="Search services..." value="${fn:escapeXml(filterKeyword)}"/>
+            <input type="text" name="keyword" placeholder="Search services (tìm kiếm tương đối)..." value="${fn:escapeXml(filterKeyword)}"/>
 
             <select name="categoryId">
                 <option value="">All categories</option>
@@ -416,6 +416,16 @@
 
             <button class="icon-btn" type="submit" title="Apply filters"><i class="ri-filter-3-line"></i></button>
         </form>
+
+
+        <!-- Search Result Indicator -->
+        <c:if test="${not empty filterKeyword}">
+            <div style="margin: 8px 0; padding: 8px 12px; background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; font-size: 13px;">
+                <i class="ri-search-line" style="color: #0ea5e9;"></i>
+                <strong>Search Results</strong> for "${fn:escapeXml(filterKeyword)}"
+                <span style="color: #6b7280;">(${totalItems} result<c:if test="${totalItems != 1}">s</c:if>)</span>
+            </div>
+        </c:if>
 
         <!-- Data binding -->
         <c:set var="rows"

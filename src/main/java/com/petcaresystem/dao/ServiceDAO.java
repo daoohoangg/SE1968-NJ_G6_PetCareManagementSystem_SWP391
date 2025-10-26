@@ -202,15 +202,67 @@ public class ServiceDAO {
         int safeSize = Math.max(pageSize, 1);
         String normalizedKeyword = normalizeKeyword(keyword);
 
+        // Nếu có keyword, sử dụng fuzzy search
+        if (normalizedKeyword != null && !normalizedKeyword.isEmpty()) {
+            try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+                // Lấy tất cả services trước
+                List<Service> allServices = getAllServices();
+                
+                // Lọc theo category và active status
+                List<Service> filteredServices = allServices.stream()
+                    .filter(service -> {
+                        if (categoryId != null && (service.getCategory() == null || 
+                            service.getCategory().getCategoryId() != categoryId)) {
+                            return false;
+                        }
+                        if (isActive != null && service.isActive() != isActive) {
+                            return false;
+                        }
+                        return true;
+                    })
+                    .collect(Collectors.toList());
+
+                // Tính điểm relevance
+                List<ServiceWithScore> scoredServices = filteredServices.stream()
+                    .map(service -> new ServiceWithScore(service, calculateRelevanceScore(service, normalizedKeyword)))
+                    .filter(serviceWithScore -> serviceWithScore.score > 0)
+                    .collect(Collectors.toList());
+
+                // Sắp xếp theo điểm (giảm dần) và sau đó theo tiêu chí sắp xếp gốc
+                scoredServices.sort((a, b) -> {
+                    int scoreComparison = Double.compare(b.score, a.score);
+                    if (scoreComparison != 0) return scoreComparison;
+                    
+                    // Sắp xếp phụ theo tiêu chí gốc
+                    return compareServices(a.service, b.service, sortBy, sortOrder);
+                });
+
+                // Phân trang
+                int startIndex = (safePage - 1) * safeSize;
+                int endIndex = Math.min(startIndex + safeSize, scoredServices.size());
+                
+                List<Service> pagedResults = scoredServices.subList(startIndex, endIndex)
+                    .stream()
+                    .map(ServiceWithScore::getService)
+                    .collect(Collectors.toList());
+
+                return new PagedResult<>(pagedResults, scoredServices.size(), safePage, safeSize);
+            } catch (Exception ex) {
+                LOGGER.log(Level.SEVERE, "Failed to perform fuzzy search pagination", ex);
+                return new PagedResult<>(Collections.emptyList(), 0, safePage, safeSize);
+            }
+        }
+
+        // Nếu không có keyword, sử dụng tìm kiếm thường
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            String whereClause = buildWhereClause(normalizedKeyword, categoryId, isActive);
+            String whereClause = buildWhereClause(null, categoryId, isActive);
             String orderClause = buildOrderClause(sortBy, sortOrder);
 
             Query<Long> countQuery = session.createQuery(
                     "SELECT COUNT(DISTINCT sv.serviceId) FROM Service sv LEFT JOIN sv.category c " + whereClause,
                     Long.class
             );
-            applyFilters(countQuery, normalizedKeyword, categoryId, isActive);
+            applyFilters(countQuery, null, categoryId, isActive);
             long total = countQuery.uniqueResultOptional().orElse(0L);
             if (total == 0) {
                 return new PagedResult<>(Collections.emptyList(), 0, safePage, safeSize);
@@ -220,7 +272,7 @@ public class ServiceDAO {
                     "SELECT sv.serviceId FROM Service sv LEFT JOIN sv.category c " + whereClause + orderClause,
                     Integer.class
             );
-            applyFilters(idQuery, normalizedKeyword, categoryId, isActive);
+            applyFilters(idQuery, null, categoryId, isActive);
             idQuery.setFirstResult((safePage - 1) * safeSize);
             idQuery.setMaxResults(safeSize);
             List<Integer> ids = idQuery.list();
@@ -263,7 +315,7 @@ public class ServiceDAO {
 
     private String buildWhereClause(String keyword, Integer categoryId, Boolean isActive) {
         StringBuilder where = new StringBuilder("WHERE 1=1 ");
-        if (keyword != null) {
+        if (keyword != null && !keyword.isEmpty()) {
             where.append("AND (lower(sv.serviceName) like :kw OR lower(sv.description) like :kw) ");
         }
         if (categoryId != null) {
@@ -289,7 +341,7 @@ public class ServiceDAO {
     }
 
     private void applyFilters(Query<?> query, String keyword, Integer categoryId, Boolean isActive) {
-        if (keyword != null) {
+        if (keyword != null && !keyword.isEmpty()) {
             query.setParameter("kw", "%" + keyword + "%");
         }
         if (categoryId != null) {
@@ -306,5 +358,212 @@ public class ServiceDAO {
         }
         String trimmed = keyword.trim().toLowerCase();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    /**
+     * Fuzzy search for services with relevance scoring
+     * Uses multiple search strategies for better matching
+     */
+    public List<Service> fuzzySearchServices(String keyword, Integer categoryId, Boolean isActive,
+                                             String sortBy, String sortOrder) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return searchServices(keyword, categoryId, isActive, sortBy, sortOrder);
+        }
+
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            // Get all services first
+            List<Service> allServices = getAllServices();
+            
+            // Filter by category and active status
+            List<Service> filteredServices = allServices.stream()
+                .filter(service -> {
+                    if (categoryId != null && (service.getCategory() == null || 
+                        service.getCategory().getCategoryId() != categoryId)) {
+                        return false;
+                    }
+                    if (isActive != null && service.isActive() != isActive) {
+                        return false;
+                    }
+                    return true;
+                })
+                .collect(Collectors.toList());
+
+            // Calculate relevance scores
+            List<ServiceWithScore> scoredServices = filteredServices.stream()
+                .map(service -> new ServiceWithScore(service, calculateRelevanceScore(service, keyword)))
+                .filter(serviceWithScore -> serviceWithScore.score > 0)
+                .collect(Collectors.toList());
+
+            // Sort by score (descending) and then by the original sort criteria
+            scoredServices.sort((a, b) -> {
+                int scoreComparison = Double.compare(b.score, a.score);
+                if (scoreComparison != 0) return scoreComparison;
+                
+                // Secondary sort by original criteria
+                return compareServices(a.service, b.service, sortBy, sortOrder);
+            });
+
+            return scoredServices.stream()
+                .map(ServiceWithScore::getService)
+                .collect(Collectors.toList());
+        } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, "Failed to perform fuzzy search", ex);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Calculate relevance score for a service based on keyword matching
+     */
+    private double calculateRelevanceScore(Service service, String keyword) {
+        String normalizedKeyword = keyword.toLowerCase().trim();
+        String serviceName = service.getServiceName() != null ? service.getServiceName().toLowerCase() : "";
+        String description = service.getDescription() != null ? service.getDescription().toLowerCase() : "";
+        
+        double score = 0.0;
+        
+        // Exact match in service name (highest priority)
+        if (serviceName.equals(normalizedKeyword)) {
+            score += 100.0;
+        }
+        // Service name starts with keyword
+        else if (serviceName.startsWith(normalizedKeyword)) {
+            score += 80.0;
+        }
+        // Service name contains keyword
+        else if (serviceName.contains(normalizedKeyword)) {
+            score += 60.0;
+        }
+        // Fuzzy match in service name using Levenshtein distance
+        else {
+            double nameSimilarity = calculateStringSimilarity(serviceName, normalizedKeyword);
+            if (nameSimilarity > 0.6) {
+                score += nameSimilarity * 50.0;
+            }
+        }
+        
+        // Description contains keyword (lower priority)
+        if (description.contains(normalizedKeyword)) {
+            score += 20.0;
+        }
+        
+        // Word-by-word matching
+        String[] keywordWords = normalizedKeyword.split("\\s+");
+        String[] serviceWords = serviceName.split("\\s+");
+        
+        for (String kw : keywordWords) {
+            for (String sw : serviceWords) {
+                if (sw.startsWith(kw)) {
+                    score += 15.0;
+                } else if (sw.contains(kw)) {
+                    score += 10.0;
+                } else {
+                    double wordSimilarity = calculateStringSimilarity(sw, kw);
+                    if (wordSimilarity > 0.7) {
+                        score += wordSimilarity * 8.0;
+                    }
+                }
+            }
+        }
+        
+        return score;
+    }
+
+    /**
+     * Calculate string similarity using Levenshtein distance
+     */
+    private double calculateStringSimilarity(String s1, String s2) {
+        if (s1 == null || s2 == null) return 0.0;
+        if (s1.equals(s2)) return 1.0;
+        
+        int maxLength = Math.max(s1.length(), s2.length());
+        if (maxLength == 0) return 1.0;
+        
+        int distance = levenshteinDistance(s1, s2);
+        return 1.0 - (double) distance / maxLength;
+    }
+
+    /**
+     * Calculate Levenshtein distance between two strings
+     */
+    private int levenshteinDistance(String s1, String s2) {
+        int[][] dp = new int[s1.length() + 1][s2.length() + 1];
+        
+        for (int i = 0; i <= s1.length(); i++) {
+            for (int j = 0; j <= s2.length(); j++) {
+                if (i == 0) {
+                    dp[i][j] = j;
+                } else if (j == 0) {
+                    dp[i][j] = i;
+                } else {
+                    dp[i][j] = Math.min(Math.min(
+                        dp[i - 1][j] + 1,
+                        dp[i][j - 1] + 1),
+                        dp[i - 1][j - 1] + (s1.charAt(i - 1) == s2.charAt(j - 1) ? 0 : 1)
+                    );
+                }
+            }
+        }
+        
+        return dp[s1.length()][s2.length()];
+    }
+
+    /**
+     * Compare services based on sort criteria
+     */
+    private int compareServices(Service a, Service b, String sortBy, String sortOrder) {
+        if (sortBy == null) sortBy = "serviceId";
+        boolean ascending = !"DESC".equalsIgnoreCase(sortOrder);
+        
+        int result = 0;
+        switch (sortBy) {
+            case "serviceName":
+                result = a.getServiceName().compareToIgnoreCase(b.getServiceName());
+                break;
+            case "price":
+                result = a.getPrice().compareTo(b.getPrice());
+                break;
+            case "duration":
+                Integer durationA = a.getDurationMinutes() != null ? a.getDurationMinutes() : 0;
+                Integer durationB = b.getDurationMinutes() != null ? b.getDurationMinutes() : 0;
+                result = durationA.compareTo(durationB);
+                break;
+            case "category":
+                String catA = a.getCategory() != null ? a.getCategory().getName() : "";
+                String catB = b.getCategory() != null ? b.getCategory().getName() : "";
+                result = catA.compareToIgnoreCase(catB);
+                break;
+            case "updated":
+                if (a.getUpdatedAt() != null && b.getUpdatedAt() != null) {
+                    result = a.getUpdatedAt().compareTo(b.getUpdatedAt());
+                }
+                break;
+            default: // serviceId
+                result = Integer.compare(a.getServiceId(), b.getServiceId());
+                break;
+        }
+        
+        return ascending ? result : -result;
+    }
+
+    /**
+     * Helper class to hold service with its relevance score
+     */
+    private static class ServiceWithScore {
+        private final Service service;
+        private final double score;
+
+        public ServiceWithScore(Service service, double score) {
+            this.service = service;
+            this.score = score;
+        }
+
+        public Service getService() {
+            return service;
+        }
+
+        public double getScore() {
+            return score;
+        }
     }
 }

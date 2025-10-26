@@ -15,6 +15,9 @@ public interface IServiceManageService {
     List<Service> searchServices(String keyword, Integer categoryId, Boolean isActive,
                                  String sortBy, String sortOrder);
 
+    List<Service> fuzzySearchServices(String keyword, Integer categoryId, Boolean isActive,
+                                      String sortBy, String sortOrder);
+
     PagedResult<Service> getServicesPage(String keyword, Integer categoryId, Boolean isActive,
                                          String sortBy, String sortOrder, int page, int pageSize);
 

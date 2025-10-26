@@ -39,6 +39,12 @@ public class ServiceManageServiceImpl implements IServiceManageService {
     }
 
     @Override
+    public List<Service> fuzzySearchServices(String keyword, Integer categoryId, Boolean isActive,
+                                             String sortBy, String sortOrder) {
+        return serviceDAO.fuzzySearchServices(keyword, categoryId, isActive, sortBy, sortOrder);
+    }
+
+    @Override
     public PagedResult<Service> getServicesPage(String keyword, Integer categoryId, Boolean isActive,
                                                 String sortBy, String sortOrder, int page, int pageSize) {
         return serviceDAO.findServices(keyword, categoryId, isActive, sortBy, sortOrder, page, pageSize);
