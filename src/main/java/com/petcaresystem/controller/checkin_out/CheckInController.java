@@ -34,7 +34,7 @@ public class CheckInController extends HttpServlet {
         // Lấy filter parameters
         String customerName = request.getParameter("customerName");
         String petName = request.getParameter("petName");
-        
+
         // Lấy page parameters
         int page = 1;
         int pageSize = 10;
@@ -51,17 +51,17 @@ public class CheckInController extends HttpServlet {
         // Lấy danh sách appointments có thể check-in với filter và paging
         List<Appointment> appointments = appointmentDAO.findCheckInEligibleWithFilter(
                 startOfDay, endOfDay, customerName, petName, page, pageSize);
-        
+
         // Đếm tổng số records
         long totalRecords = appointmentDAO.countCheckInEligible(startOfDay, endOfDay, customerName, petName);
         int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
-        
+
         // Format ngày giờ
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         for (Appointment a : appointments) {
             a.setFormattedDate(a.getAppointmentDate().format(formatter));
         }
-        
+
         // Set attributes
         request.setAttribute("appointments", appointments);
         request.setAttribute("currentPage", page);
@@ -79,7 +79,7 @@ public class CheckInController extends HttpServlet {
         try {
             Long appointmentId = Long.parseLong(request.getParameter("appointmentId"));
             boolean success = appointmentDAO.checkIn(appointmentId);
-            
+
             if (success) {
                 request.getSession().setAttribute("success", "Check-in completed successfully!");
             } else {
