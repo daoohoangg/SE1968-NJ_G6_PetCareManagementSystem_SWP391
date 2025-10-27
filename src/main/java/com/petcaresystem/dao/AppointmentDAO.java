@@ -108,4 +108,28 @@ public class AppointmentDAO {
             return false;
         }
     }
+
+    public List<Appointment> findCheckedInWithFilter(String customerName, String petName, int page, int pageSize) {
+        return null;
+    }
+
+    public long countCheckedIn(String customerName, String petName) {
+        return 0;
+    }
+
+    public boolean checkOut(Long appointmentId) {
+        return false;
+    }
+
+    public List<Appointment> findCheckInEligibleWithFilter(LocalDateTime startOfDay, LocalDateTime endOfDay, String customerName, String petName, int page, int pageSize) {
+        return null;
+    }
+
+    public long countCheckInEligible(LocalDateTime startOfDay, LocalDateTime endOfDay, String customerName, String petName) {
+        return 0;
+    }
+
+    public boolean checkIn(Long appointmentId) {
+        return false;
+    }
 }

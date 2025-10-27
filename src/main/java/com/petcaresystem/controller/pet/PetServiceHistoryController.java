@@ -5,6 +5,7 @@ import com.petcaresystem.dao.PetDAO;
 import com.petcaresystem.dao.StaffDAO;
 import com.petcaresystem.enities.PetServiceHistory;
 import com.petcaresystem.enities.Pet;
+import com.petcaresystem.enities.Staff;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
