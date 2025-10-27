@@ -61,7 +61,7 @@ public class AppointmentDAO {
             Appointment a = new Appointment();
             a.setCustomer(customer);
             a.setPet(pet);
-            a.setStaff(null);
+            a.setStaff(null); // hoặc chọn staff mặc định ở đây
             a.setAppointmentDate(start);
             a.setEndDate(end);
             a.setStatus(AppointmentStatus.SCHEDULED);
@@ -98,7 +98,7 @@ public class AppointmentDAO {
             }
             if (!a.canBeCancelled()) return false;
 
-            a.cancel();
+            a.cancel();           // dùng business method trong entity
             s.merge(a);
             tx.commit();
             return true;
