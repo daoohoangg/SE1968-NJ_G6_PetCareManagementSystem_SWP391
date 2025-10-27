@@ -26,7 +26,7 @@ public class CheckOutController extends HttpServlet {
         // Lấy filter parameters
         String customerName = request.getParameter("customerName");
         String petName = request.getParameter("petName");
-        
+
         // Lấy page parameters
         int page = 1;
         int pageSize = 10;
@@ -43,11 +43,11 @@ public class CheckOutController extends HttpServlet {
         // Lấy danh sách appointments đã check-in với filter và paging
         List<Appointment> appointments = appointmentDAO.findCheckedInWithFilter(
                 customerName, petName, page, pageSize);
-        
+
         // Đếm tổng số records
         long totalRecords = appointmentDAO.countCheckedIn(customerName, petName);
         int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
-        
+
         // Format ngày giờ
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         for (Appointment a : appointments) {
@@ -56,7 +56,7 @@ public class CheckOutController extends HttpServlet {
                 a.setFormattedUpdatedAt(a.getUpdatedAt().format(formatter));
             }
         }
-        
+
         // Set attributes
         request.setAttribute("appointments", appointments);
         request.setAttribute("currentPage", page);
@@ -75,7 +75,7 @@ public class CheckOutController extends HttpServlet {
         try {
             Long appointmentId = Long.parseLong(request.getParameter("appointmentId"));
             boolean success = appointmentDAO.checkOut(appointmentId);
-            
+
             if (success) {
                 request.getSession().setAttribute("success", "Check-out completed successfully! Invoice has been generated.");
             } else {
