@@ -23,6 +23,7 @@
         <property name="hibernate.hbm2ddl.auto">update</property>
         <mapping class="com.petcaresystem.enities.Account"/>
         <mapping class="com.petcaresystem.enities.Administration"/>
+        <mapping class="com.petcaresystem.enities.AiData"/>
         <mapping class="com.petcaresystem.enities.Appointment"/>
         <mapping class="com.petcaresystem.enities.Booking"/>
         <mapping class="com.petcaresystem.enities.Customer"/>
