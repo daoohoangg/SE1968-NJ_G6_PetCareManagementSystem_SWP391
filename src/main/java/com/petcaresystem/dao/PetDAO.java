@@ -16,6 +16,11 @@ public class PetDAO {
         }
     }
 
+    // ✅ Alias method cho getAllPets()
+    public List<Pet> getAllPets() {
+        return getPet();
+    }
+
     // ✅ Thêm thú cưng mới
     public void addPet(Pet pet) {
         Transaction tx = null;
