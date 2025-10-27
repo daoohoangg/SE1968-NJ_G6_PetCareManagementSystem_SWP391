@@ -14,14 +14,18 @@ public class AppointmentDAO {
     /** Danh sách lịch hẹn của 1 khách, mới nhất trước */
     public List<Appointment> findByCustomer(Long customerId) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
-            String hql = "from Appointment a " +
-                    "where a.customer.id = :cid " +
-                    "order by a.appointmentDate desc";
+            String hql =
+                    "select distinct a from Appointment a " +
+                            "left join fetch a.pet p " +
+                            "left join fetch a.services sv " +
+                            "where a.customer.id = :cid " +
+                            "order by a.appointmentDate desc";
             return s.createQuery(hql, Appointment.class)
                     .setParameter("cid", customerId)
                     .list();
         }
     }
+
 
     /** Upcoming (>= now) cho trang khách hàng */
     public List<Appointment> findUpcomingByCustomer(Long customerId) {
