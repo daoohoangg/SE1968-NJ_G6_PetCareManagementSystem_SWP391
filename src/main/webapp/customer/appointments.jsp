@@ -306,85 +306,113 @@
         </div>
     </div>
 
-    <!-- Danh sách lịch hẹn -->
+    <%-- ===== LỊCH HẸN CỦA TÔI ===== --%>
+        <%
+    java.time.format.DateTimeFormatter df =
+        java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+    List<com.petcaresystem.enities.Appointment> apps =
+        (List<com.petcaresystem.enities.Appointment>) request.getAttribute("appointments");
+    if (apps == null) apps = java.util.Collections.emptyList();
+%>
+
     <div class="card">
         <div class="card-header"><i class="bi bi-list-check me-2"></i>LỊCH HẸN CỦA TÔI</div>
         <div class="card-body">
-            <%
-                if (appointments.isEmpty()) {
-            %>
+            <% if (apps.isEmpty()) { %>
             <p class="text-muted mb-0">Hiện chưa có lịch hẹn nào được tạo.</p>
-            <%
-            } else {
-            %>
+            <% } else { %>
+
             <div class="table-responsive">
                 <table class="table align-middle table-hover">
                     <thead class="table-light">
                     <tr>
                         <th>#</th>
                         <th>Thú cưng</th>
+                        <th>Dịch vụ</th>
                         <th>Bắt đầu</th>
                         <th>Kết thúc</th>
+                        <th class="text-end">Tổng tiền</th>
                         <th>Trạng thái</th>
                         <th class="text-end">Thao tác</th>
                     </tr>
                     </thead>
                     <tbody>
                     <%
-                        for (int i = 0; i < appointments.size(); i++) {
-                            Appointment a = appointments.get(i);
-                            if (a == null) continue;
+                        for (int i = 0; i < apps.size(); i++) {
+                            com.petcaresystem.enities.Appointment a = apps.get(i);
+
+                            // Tên thú cưng
+                            String petName = (a.getPet() != null && a.getPet().getName() != null)
+                                    ? a.getPet().getName() : "(N/A)";
+
+                            // Danh sách dịch vụ "A, B, C"
+                            StringBuilder svNames = new StringBuilder();
+                            java.util.List<com.petcaresystem.enities.Service> svs = a.getServices();
+                            if (svs != null) {
+                                for (int j = 0; j < svs.size(); j++) {
+                                    com.petcaresystem.enities.Service sv = svs.get(j);
+                                    if (sv != null && sv.getServiceName() != null) {
+                                        if (svNames.length() > 0) svNames.append(", ");
+                                        svNames.append(sv.getServiceName());
+                                    }
+                                }
+                            }
+
+                            // Ngày giờ
+                            String startText = (a.getAppointmentDate() != null)
+                                    ? a.getAppointmentDate().format(df) : "";
+                            String endText = (a.getEndDate() != null)
+                                    ? a.getEndDate().format(df) : "—";
+
+                            // Tổng tiền
+                            String totalText = (a.getTotalAmount() != null)
+                                    ? a.getTotalAmount().toPlainString() + " đ" : "0 đ";
+
+                            // Trạng thái (Enum → .name())
                             String status = (a.getStatus() != null) ? a.getStatus().name() : "PENDING";
                     %>
                     <tr>
-                        <td><%= i + 1 %>
-                        </td>
-                        <td><%= a.getPet() != null ? a.getPet().getName() : "(N/A)" %>
-                        </td>
-                        <td><%= a.getAppointmentDate() != null ? a.getAppointmentDate() : "" %>
-                        </td>
-                        <td><%= a.getEndDate() != null ? a.getEndDate() : "—" %>
-                        </td>
+                        <td><%= i + 1 %></td>
+                        <td><%= petName %></td>
+                        <td><%= svNames.length() > 0 ? svNames.toString() : "—" %></td>
+                        <td><%= startText %></td>
+                        <td><%= endText %></td>
+                        <td class="text-end"><%= totalText %></td>
                         <td>
-                            <%
-                                if ("CONFIRMED".equals(status)) {
-                            %><span class="badge bg-primary">CONFIRMED</span><%
-                        } else if ("COMPLETED".equals(status)) {
-                        %><span class="badge bg-success">COMPLETED</span><%
-                        } else if ("CANCELLED".equals(status)) {
-                        %><span class="badge bg-secondary">CANCELLED</span><%
-                        } else {
-                        %><span class="badge bg-warning text-dark"><%= status %></span><%
-                            }
-                        %>
+                            <% if ("CONFIRMED".equals(status)) { %>
+                            <span class="badge bg-primary">CONFIRMED</span>
+                            <% } else if ("COMPLETED".equals(status)) { %>
+                            <span class="badge bg-success">COMPLETED</span>
+                            <% } else if ("CANCELLED".equals(status)) { %>
+                            <span class="badge bg-secondary">CANCELLED</span>
+                            <% } else if ("IN_PROGRESS".equals(status)) { %>
+                            <span class="badge bg-info text-dark">IN&nbsp;PROGRESS</span>
+                            <% } else if ("NO_SHOW".equals(status)) { %>
+                            <span class="badge bg-dark">NO SHOW</span>
+                            <% } else { %>
+                            <span class="badge bg-warning text-dark"><%= status %></span>
+                            <% } %>
                         </td>
                         <td class="text-end">
-                            <%
-                                if (!"CANCELLED".equals(status) && !"COMPLETED".equals(status)) {
-                            %>
+                            <% if (!"CANCELLED".equals(status) && !"COMPLETED".equals(status)) { %>
                             <a href="<%= ctx %>/customer/appointments?action=cancel&id=<%= a.getAppointmentId() %>"
                                class="btn btn-outline-danger btn-sm">
                                 <i class="bi bi-x-circle"></i> Huỷ
                             </a>
-                            <%
-                                }
-                            %>
+                            <% } %>
                         </td>
                     </tr>
-                    <%
-                        } // for
-                    %>
+                    <% } // for %>
                     </tbody>
                 </table>
             </div>
-            <%
-                } // else
-            %>
+
+            <% } // end else %>
         </div>
     </div>
 
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
