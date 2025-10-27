@@ -413,30 +413,13 @@
                         </div>
                     </div>
 
-                    <div class="chat-window">
-                        <div class="chat-message bot">
-                            <div class="chat-meta"><i class="ri-robot-line"></i><span>10:30 AM</span></div>
-                            <div class="chat-bubble">
-                                Hello! I'm your AI assistant powered by Gemini. I can help you with scheduling, service recommendations, and customer support. How can I assist you today?
-                            </div>
-                        </div>
-                        <div class="chat-message user">
-                            <div class="chat-meta"><span>10:31 AM</span></div>
-                            <div class="chat-bubble">
-                                What services would you recommend for a senior Golden Retriever?
-                            </div>
-                        </div>
-                        <div class="chat-message bot">
-                            <div class="chat-meta"><i class="ri-robot-line"></i><span>10:31 AM</span></div>
-                            <div class="chat-bubble">
-                                I'd suggest the Senior Pet Care Package with comprehensive health monitoring, plus a gentle grooming session tailored for older pets.
-                            </div>
-                        </div>
+                    <div class="chat-window" id="aiChatWindow">
+                        <!-- Messages will be added dynamically -->
                     </div>
 
                     <div class="chat-input-row">
-                        <input type="text" placeholder="Ask the AI assistant…" />
-                        <button class="send-btn" type="button" aria-label="Send message">
+                        <input type="text" id="aiChatInput" placeholder="Ask the AI assistant…" />
+                        <button class="send-btn" type="button" id="aiSendBtn" aria-label="Send message">
                             <i class="ri-send-plane-2-line"></i>
                         </button>
                     </div>
@@ -520,7 +503,7 @@
                         </ul>
                     </div>
 
-                    <button class="generate-btn" type="button">
+                    <button class="generate-btn" type="button" id="generateSuggestionsBtn">
                         <i class="ri-brain-line"></i> Generate New Suggestions
                     </button>
                 </div>
@@ -581,12 +564,181 @@
 
 <script>
     (function(){
+        // ===== Slider Logic =====
         const slider = document.getElementById('creativitySlider');
         const valueLabel = document.getElementById('creativityValue');
         if (slider && valueLabel) {
             const updateValue = () => valueLabel.textContent = slider.value + '%';
             slider.addEventListener('input', updateValue);
             updateValue();
+        }
+
+        // ===== Generate Suggestions =====
+        const generateBtn = document.getElementById('generateSuggestionsBtn');
+        if (generateBtn) {
+            generateBtn.addEventListener('click', async () => {
+                const originalText = generateBtn.innerHTML;
+                generateBtn.innerHTML = '<i class="ri-loader-4-line"></i> Đang tạo gợi ý...';
+                generateBtn.disabled = true;
+
+                try {
+                    const response = await fetch('<%= request.getContextPath() %>/admin/ai/generate-suggestions?customerId=1', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success && data.calendarSuggestions && data.serviceRecommendations) {
+                        // Update calendar suggestions
+                        updateCalendarSuggestions(data.calendarSuggestions);
+                        
+                        // Update service recommendations
+                        updateServiceRecommendations(data.serviceRecommendations);
+                        
+                        alert('Đã tạo gợi ý mới thành công!');
+                    } else {
+                        throw new Error(data.error || 'Không thể tạo gợi ý');
+                    }
+                } catch (error) {
+                    console.error('Generate error:', error);
+                    alert('Có lỗi xảy ra: ' + error.message);
+                } finally {
+                    generateBtn.innerHTML = originalText;
+                    generateBtn.disabled = false;
+                }
+            });
+        }
+
+        // Update calendar suggestions in UI
+        function updateCalendarSuggestions(suggestions) {
+            const listContainer = document.querySelector('.suggestion-list');
+            if (!listContainer) return;
+
+            listContainer.innerHTML = '';
+            suggestions.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'suggestion-item';
+                li.innerHTML = `
+                    <div class="suggestion-content">
+                        <strong>${escapeHtml(item.service)}</strong>
+                        <span>${item.date} at ${item.time}</span>
+                    </div>
+                    <span class="match-badge">${item.matchPercent}% match</span>
+                `;
+                listContainer.appendChild(li);
+            });
+        }
+
+        // Update service recommendations in UI
+        function updateServiceRecommendations(recommendations) {
+            const listContainer = document.querySelector('.recommend-list');
+            if (!listContainer) return;
+
+            listContainer.innerHTML = '';
+            recommendations.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'recommend-item';
+                li.innerHTML = `
+                    <div>
+                        <strong>${escapeHtml(item.serviceName)}</strong>
+                        <span style="display:block;font-size:12px;color:var(--muted);margin-top:4px;">${escapeHtml(item.description)}</span>
+                    </div>
+                    <span class="confidence-badge">${item.confidence}% confidence</span>
+                `;
+                listContainer.appendChild(li);
+            });
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ===== Chat Functionality =====
+        const chatWindow = document.getElementById('aiChatWindow');
+        const chatInput = document.getElementById('aiChatInput');
+        const sendBtn = document.getElementById('aiSendBtn');
+
+        // Add message to chat
+        function addChatMessage(text, isBot) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message ' + (isBot ? 'bot' : 'user');
+            
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            
+            if (isBot) {
+                messageDiv.innerHTML = `
+                    <div class="chat-meta"><i class="ri-robot-line"></i><span>${timeStr}</span></div>
+                    <div class="chat-bubble">${escapeHtml(text)}</div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="chat-meta"><span>${timeStr}</span></div>
+                    <div class="chat-bubble">${escapeHtml(text)}</div>
+                `;
+            }
+            
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        // Send message to AI
+        async function sendAIMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            addChatMessage(message, false);
+            chatInput.value = '';
+
+            // Show loading
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'chat-message bot';
+            loadingDiv.innerHTML = `
+                <div class="chat-meta"><i class="ri-robot-line"></i><span>...</span></div>
+                <div class="chat-bubble">Đang suy nghĩ...</div>
+            `;
+            chatWindow.appendChild(loadingDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            try {
+                const response = await fetch('<%= request.getContextPath() %>/ai/gemini', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: message })
+                });
+
+                loadingDiv.remove();
+
+                if (!response.ok) {
+                    addChatMessage('Xin lỗi, có lỗi xảy ra khi gửi tin nhắn.', true);
+                    return;
+                }
+
+                const data = await response.json();
+                const answer = data.answer || 'Không có phản hồi từ AI.';
+                addChatMessage(answer, true);
+            } catch (error) {
+                loadingDiv.remove();
+                addChatMessage('Xin lỗi, không thể kết nối đến AI service.', true);
+                console.error('Chat error:', error);
+            }
+        }
+
+        // Event listeners for chat
+        if (sendBtn && chatInput) {
+            sendBtn.addEventListener('click', sendAIMessage);
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendAIMessage();
+            });
+        }
+
+        // Initialize with welcome message
+        if (chatWindow) {
+            addChatMessage('Xin chào! Tôi là trợ lý AI được hỗ trợ bởi Gemini. Tôi có thể giúp bạn về lịch trình, gợi ý dịch vụ và hỗ trợ khách hàng. Tôi có thể giúp gì cho bạn hôm nay?', true);
         }
     })();
 </script>
