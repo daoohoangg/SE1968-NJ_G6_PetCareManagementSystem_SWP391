@@ -9,13 +9,19 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import com.petcaresystem.service.email.EmailService;
 import static com.petcaresystem.enities.enu.AccountRoleEnum.CUSTOMER;
 
 @WebServlet("/register")
 public class RegisterController extends HttpServlet {
     private AccountDAO accountDAO = new AccountDAO();
-
+    private static final Pattern UPPER_CASE_REGEX = Pattern.compile("[A-Z]");
+    private static final Pattern LOWER_CASE_REGEX = Pattern.compile("[a-z]");
+    private static final Pattern NUMBER_REGEX = Pattern.compile("[0-9]");
+    private static final Pattern FULL_NAME_REGEX = Pattern.compile("^[\\p{L}\\s]+$");
+    private static final Pattern USERNAME_SPACE_REGEX = Pattern.compile("\\s");
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -32,22 +38,50 @@ public class RegisterController extends HttpServlet {
         String password = request.getParameter("password");
         String confirmPassword = request.getParameter("confirmPassword");
         String errorMessage = null;
+
         if (fullName == null || fullName.isEmpty()) {
             errorMessage = "Full name is required!";
-        } else if (username == null || username.isEmpty()) {
+        }
+        else if (!FULL_NAME_REGEX.matcher(fullName).matches()) {
+            errorMessage = "Full name can only contain letters and spaces!";
+        }
+        else if (username == null || username.isEmpty()) {
             errorMessage = "Username is required!";
-        } else if (email == null || email.isEmpty()) {
+        }
+        else if (USERNAME_SPACE_REGEX.matcher(username).find()) {
+            errorMessage = "Username cannot contain spaces!";
+        }
+        else if (email == null || email.isEmpty()) {
             errorMessage = "Email is required!";
         } else if (phone == null || phone.isEmpty()) {
             errorMessage = "Phone number is required!";
-        } else if (password == null || password.isEmpty()) {
+        }
+        else if (!phone.matches("0\\d{9}")) {
+            errorMessage = "Phone must be a 10-digit number!";
+        }
+        else if (password == null || password.isEmpty()) {
             errorMessage = "Password is required!";
-        } else if (!password.equals(confirmPassword)) {
+        }
+        else if (password.length() < 6) {
+            errorMessage = "Password must be at least 6 characters long!";
+        }
+        else if (!LOWER_CASE_REGEX.matcher(password).find()) {
+            errorMessage = "Password must contain one lowercase letter!";
+        }
+        else if (!UPPER_CASE_REGEX.matcher(password).find()) {
+            errorMessage = "Password must contain one uppercase letter!";
+        }
+        else if (!NUMBER_REGEX.matcher(password).find()) {
+            errorMessage = "Password must contain one number!";
+        }
+        else if (!password.equals(confirmPassword)) {
             errorMessage = "Passwords do not match!";
         }
-
-        if (accountDAO.getAccountByEmailOrUsername(username) != null) {
-            errorMessage = "Username or Email already exists!";
+        if (errorMessage == null && accountDAO.findByUsername(username) != null) {
+            errorMessage = "Username already exists!";
+        }
+        if (errorMessage == null && accountDAO.findByEmail(email) != null) {
+            errorMessage = "Email already exists!";
         }
 
         if (errorMessage != null) {
@@ -78,7 +112,7 @@ public class RegisterController extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/login?status=registered");
 
         } else {
-            request.setAttribute("error", "Registration failed! Username might already exist.");
+            request.setAttribute("error", "Registration failed! Username or Email might already exist.");
             request.getRequestDispatcher("/common/register.jsp").forward(request, response);
         }
     }
