@@ -7,13 +7,32 @@ import com.petcaresystem.utils.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.hibernate.Transaction;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class AccountDAO {
     public List<Account> getAccount() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            List<Account> accounts = session.createQuery("from Account a where a.isDeleted = false", Account.class).list();
+            // Query all concrete account types since Account is abstract with JOINED inheritance
+            List<Account> accounts = new ArrayList<>();
+            
+            // Get Customer accounts
+            List<Customer> customers = session.createQuery("from Customer c where c.isDeleted = false", Customer.class).list();
+            accounts.addAll(customers);
+            
+            // Get Staff accounts
+            List<Staff> staff = session.createQuery("from Staff s where s.isDeleted = false", Staff.class).list();
+            accounts.addAll(staff);
+            
+            // Get Receptionist accounts
+            List<Receptionist> receptionists = session.createQuery("from Receptionist r where r.isDeleted = false", Receptionist.class).list();
+            accounts.addAll(receptionists);
+            
+            // Get Administration accounts
+            List<Administration> admins = session.createQuery("from Administration a where a.isDeleted = false", Administration.class).list();
+            accounts.addAll(admins);
+            
             return accounts;
         } catch (Exception e) {
             e.printStackTrace();
@@ -111,6 +130,8 @@ public class AccountDAO {
 
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             System.out.println("Session opened successfully");
+            
+            // Build WHERE clause for concrete classes
             StringBuilder where = new StringBuilder(" WHERE a.isDeleted = false");
             if (normalizedKeyword != null) {
                 where.append(" AND (lower(a.fullName) like :kw OR lower(a.email) like :kw OR lower(a.username) like :kw)");
@@ -119,38 +140,118 @@ public class AccountDAO {
                 where.append(" AND a.role = :roleFilter");
             }
 
-            String countHql = "SELECT COUNT(a.accountId) FROM Account a" + where;
-            String dataHql = "FROM Account a" + where + " ORDER BY a.accountId DESC";
-            System.out.println("Count HQL: " + countHql);
-            System.out.println("Data HQL: " + dataHql);
+            // Query all concrete account types
+            List<Account> allAccounts = new ArrayList<>();
+            long totalCount = 0;
+
+            // Get Customer accounts
+            String customerCountHql = "SELECT COUNT(c.accountId) FROM Customer c" + where;
+            String customerDataHql = "FROM Customer c" + where + " ORDER BY c.accountId DESC";
             
-            Query<Long> countQuery = session.createQuery(countHql, Long.class);
-            Query<Account> dataQuery = session.createQuery(dataHql, Account.class);
+            Query<Long> customerCountQuery = session.createQuery(customerCountHql, Long.class);
+            Query<Customer> customerDataQuery = session.createQuery(customerDataHql, Customer.class);
 
             if (normalizedKeyword != null) {
                 String kw = "%" + normalizedKeyword + "%";
-                countQuery.setParameter("kw", kw);
-                dataQuery.setParameter("kw", kw);
+                customerCountQuery.setParameter("kw", kw);
+                customerDataQuery.setParameter("kw", kw);
             }
             if (normalizedRole != null) {
                 com.petcaresystem.enities.enu.AccountRoleEnum enumRole =
                         com.petcaresystem.enities.enu.AccountRoleEnum.valueOf(normalizedRole);
-                countQuery.setParameter("roleFilter", enumRole);
-                dataQuery.setParameter("roleFilter", enumRole);
+                customerCountQuery.setParameter("roleFilter", enumRole);
+                customerDataQuery.setParameter("roleFilter", enumRole);
             }
-
-            dataQuery.setFirstResult((safePage - 1) * safeSize);
-            dataQuery.setMaxResults(safeSize);
-
-            System.out.println("Executing count query...");
-            long total = countQuery.uniqueResultOptional().orElse(0L);
-            System.out.println("Count result: " + total);
             
-            System.out.println("Executing data query...");
-            List<Account> results = dataQuery.list();
-            System.out.println("Data result size: " + results.size());
+            long customerCount = customerCountQuery.uniqueResultOptional().orElse(0L);
+            List<Customer> customers = customerDataQuery.list();
+            allAccounts.addAll(customers);
+            totalCount += customerCount;
+
+            // Get Staff accounts
+            String staffCountHql = "SELECT COUNT(s.accountId) FROM Staff s" + where;
+            String staffDataHql = "FROM Staff s" + where + " ORDER BY s.accountId DESC";
             
-            return new PagedResult<>(results, total, safePage, safeSize);
+            Query<Long> staffCountQuery = session.createQuery(staffCountHql, Long.class);
+            Query<Staff> staffDataQuery = session.createQuery(staffDataHql, Staff.class);
+            
+            if (normalizedKeyword != null) {
+                String kw = "%" + normalizedKeyword + "%";
+                staffCountQuery.setParameter("kw", kw);
+                staffDataQuery.setParameter("kw", kw);
+            }
+            if (normalizedRole != null) {
+                com.petcaresystem.enities.enu.AccountRoleEnum enumRole =
+                        com.petcaresystem.enities.enu.AccountRoleEnum.valueOf(normalizedRole);
+                staffCountQuery.setParameter("roleFilter", enumRole);
+                staffDataQuery.setParameter("roleFilter", enumRole);
+            }
+            
+            long staffCount = staffCountQuery.uniqueResultOptional().orElse(0L);
+            List<Staff> staff = staffDataQuery.list();
+            allAccounts.addAll(staff);
+            totalCount += staffCount;
+
+            // Get Receptionist accounts
+            String receptionistCountHql = "SELECT COUNT(r.accountId) FROM Receptionist r" + where;
+            String receptionistDataHql = "FROM Receptionist r" + where + " ORDER BY r.accountId DESC";
+            
+            Query<Long> receptionistCountQuery = session.createQuery(receptionistCountHql, Long.class);
+            Query<Receptionist> receptionistDataQuery = session.createQuery(receptionistDataHql, Receptionist.class);
+            
+            if (normalizedKeyword != null) {
+                String kw = "%" + normalizedKeyword + "%";
+                receptionistCountQuery.setParameter("kw", kw);
+                receptionistDataQuery.setParameter("kw", kw);
+            }
+            if (normalizedRole != null) {
+                com.petcaresystem.enities.enu.AccountRoleEnum enumRole =
+                        com.petcaresystem.enities.enu.AccountRoleEnum.valueOf(normalizedRole);
+                receptionistCountQuery.setParameter("roleFilter", enumRole);
+                receptionistDataQuery.setParameter("roleFilter", enumRole);
+            }
+            
+            long receptionistCount = receptionistCountQuery.uniqueResultOptional().orElse(0L);
+            List<Receptionist> receptionists = receptionistDataQuery.list();
+            allAccounts.addAll(receptionists);
+            totalCount += receptionistCount;
+
+            // Get Administration accounts
+            String adminCountHql = "SELECT COUNT(a.accountId) FROM Administration a" + where;
+            String adminDataHql = "FROM Administration a" + where + " ORDER BY a.accountId DESC";
+            
+            Query<Long> adminCountQuery = session.createQuery(adminCountHql, Long.class);
+            Query<Administration> adminDataQuery = session.createQuery(adminDataHql, Administration.class);
+            
+            if (normalizedKeyword != null) {
+                String kw = "%" + normalizedKeyword + "%";
+                adminCountQuery.setParameter("kw", kw);
+                adminDataQuery.setParameter("kw", kw);
+            }
+            if (normalizedRole != null) {
+                com.petcaresystem.enities.enu.AccountRoleEnum enumRole =
+                        com.petcaresystem.enities.enu.AccountRoleEnum.valueOf(normalizedRole);
+                adminCountQuery.setParameter("roleFilter", enumRole);
+                adminDataQuery.setParameter("roleFilter", enumRole);
+            }
+            
+            long adminCount = adminCountQuery.uniqueResultOptional().orElse(0L);
+            List<Administration> admins = adminDataQuery.list();
+            allAccounts.addAll(admins);
+            totalCount += adminCount;
+
+            // Sort all accounts by accountId DESC
+            allAccounts.sort((a, b) -> Long.compare(b.getAccountId(), a.getAccountId()));
+
+            // Apply pagination
+            int startIndex = (safePage - 1) * safeSize;
+            int endIndex = Math.min(startIndex + safeSize, allAccounts.size());
+            List<Account> pagedAccounts = allAccounts.subList(startIndex, endIndex);
+
+            System.out.println("Total accounts found: " + totalCount);
+            System.out.println("Paged accounts size: " + pagedAccounts.size());
+            
+            return new PagedResult<>(pagedAccounts, totalCount, safePage, safeSize);
         } catch (Exception e) {
             e.printStackTrace();
             return new PagedResult<>(Collections.emptyList(), 0L, safePage, safeSize);
@@ -162,47 +263,83 @@ public class AccountDAO {
         String normalizedRole = normalizeRole(role);
 
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            StringBuilder hql = new StringBuilder(
-                    "SELECT " +
-                            "COUNT(a.accountId), " +
-                            "SUM(CASE WHEN a.isActive = true THEN 1 ELSE 0 END), " +
-                            "SUM(CASE WHEN a.role = :adminRole THEN 1 ELSE 0 END), " +
-                            "SUM(CASE WHEN a.role = :staffRole THEN 1 ELSE 0 END), " +
-                            "SUM(CASE WHEN a.role = :customerRole THEN 1 ELSE 0 END) " +
-                            "FROM Account a WHERE a.isDeleted = false"
-            );
-
+            // Build WHERE clause for concrete classes
+            StringBuilder where = new StringBuilder(" WHERE a.isDeleted = false");
             if (normalizedKeyword != null) {
-                hql.append(" AND (lower(a.fullName) like :kw OR lower(a.email) like :kw OR lower(a.username) like :kw)");
+                where.append(" AND (lower(a.fullName) like :kw OR lower(a.email) like :kw OR lower(a.username) like :kw)");
             }
             if (normalizedRole != null) {
-                hql.append(" AND a.role = :roleFilter");
+                where.append(" AND a.role = :roleFilter");
             }
 
-            Query<Object[]> query = session.createQuery(hql.toString(), Object[].class);
+            long total = 0;
+            long active = 0;
+            long admin = 0;
+            long staff = 0;
+            long customer = 0;
 
+            // Count Customer accounts
+            String customerHql = "SELECT COUNT(c.accountId), SUM(CASE WHEN c.isActive = true THEN 1 ELSE 0 END) FROM Customer c" + where;
+            Query<Object[]> customerQuery = session.createQuery(customerHql, Object[].class);
             if (normalizedKeyword != null) {
-                query.setParameter("kw", "%" + normalizedKeyword + "%");
+                customerQuery.setParameter("kw", "%" + normalizedKeyword + "%");
             }
-
-            com.petcaresystem.enities.enu.AccountRoleEnum adminRole = com.petcaresystem.enities.enu.AccountRoleEnum.ADMIN;
-            com.petcaresystem.enities.enu.AccountRoleEnum staffRole = com.petcaresystem.enities.enu.AccountRoleEnum.STAFF;
-            com.petcaresystem.enities.enu.AccountRoleEnum customerRole = com.petcaresystem.enities.enu.AccountRoleEnum.CUSTOMER;
-            query.setParameter("adminRole", adminRole);
-            query.setParameter("staffRole", staffRole);
-            query.setParameter("customerRole", customerRole);
-
             if (normalizedRole != null) {
-                query.setParameter("roleFilter",
-                        com.petcaresystem.enities.enu.AccountRoleEnum.valueOf(normalizedRole));
+                customerQuery.setParameter("roleFilter", com.petcaresystem.enities.enu.AccountRoleEnum.valueOf(normalizedRole));
             }
+            Object[] customerRow = customerQuery.uniqueResult();
+            long customerCount = customerRow != null && customerRow[0] != null ? ((Number) customerRow[0]).longValue() : 0L;
+            long customerActive = customerRow != null && customerRow[1] != null ? ((Number) customerRow[1]).longValue() : 0L;
+            total += customerCount;
+            active += customerActive;
+            customer += customerCount;
 
-            Object[] row = query.uniqueResult();
-            long total = row != null && row[0] != null ? ((Number) row[0]).longValue() : 0L;
-            long active = row != null && row[1] != null ? ((Number) row[1]).longValue() : 0L;
-            long admin = row != null && row[2] != null ? ((Number) row[2]).longValue() : 0L;
-            long staff = row != null && row[3] != null ? ((Number) row[3]).longValue() : 0L;
-            long customer = row != null && row[4] != null ? ((Number) row[4]).longValue() : 0L;
+            // Count Staff accounts
+            String staffHql = "SELECT COUNT(s.accountId), SUM(CASE WHEN s.isActive = true THEN 1 ELSE 0 END) FROM Staff s" + where;
+            Query<Object[]> staffQuery = session.createQuery(staffHql, Object[].class);
+            if (normalizedKeyword != null) {
+                staffQuery.setParameter("kw", "%" + normalizedKeyword + "%");
+            }
+            if (normalizedRole != null) {
+                staffQuery.setParameter("roleFilter", com.petcaresystem.enities.enu.AccountRoleEnum.valueOf(normalizedRole));
+            }
+            Object[] staffRow = staffQuery.uniqueResult();
+            long staffCount = staffRow != null && staffRow[0] != null ? ((Number) staffRow[0]).longValue() : 0L;
+            long staffActive = staffRow != null && staffRow[1] != null ? ((Number) staffRow[1]).longValue() : 0L;
+            total += staffCount;
+            active += staffActive;
+            staff += staffCount;
+
+            // Count Receptionist accounts
+            String receptionistHql = "SELECT COUNT(r.accountId), SUM(CASE WHEN r.isActive = true THEN 1 ELSE 0 END) FROM Receptionist r" + where;
+            Query<Object[]> receptionistQuery = session.createQuery(receptionistHql, Object[].class);
+            if (normalizedKeyword != null) {
+                receptionistQuery.setParameter("kw", "%" + normalizedKeyword + "%");
+            }
+            if (normalizedRole != null) {
+                receptionistQuery.setParameter("roleFilter", com.petcaresystem.enities.enu.AccountRoleEnum.valueOf(normalizedRole));
+            }
+            Object[] receptionistRow = receptionistQuery.uniqueResult();
+            long receptionistCount = receptionistRow != null && receptionistRow[0] != null ? ((Number) receptionistRow[0]).longValue() : 0L;
+            long receptionistActive = receptionistRow != null && receptionistRow[1] != null ? ((Number) receptionistRow[1]).longValue() : 0L;
+            total += receptionistCount;
+            active += receptionistActive;
+
+            // Count Administration accounts
+            String adminHql = "SELECT COUNT(a.accountId), SUM(CASE WHEN a.isActive = true THEN 1 ELSE 0 END) FROM Administration a" + where;
+            Query<Object[]> adminQuery = session.createQuery(adminHql, Object[].class);
+            if (normalizedKeyword != null) {
+                adminQuery.setParameter("kw", "%" + normalizedKeyword + "%");
+            }
+            if (normalizedRole != null) {
+                adminQuery.setParameter("roleFilter", com.petcaresystem.enities.enu.AccountRoleEnum.valueOf(normalizedRole));
+            }
+            Object[] adminRow = adminQuery.uniqueResult();
+            long adminCount = adminRow != null && adminRow[0] != null ? ((Number) adminRow[0]).longValue() : 0L;
+            long adminActive = adminRow != null && adminRow[1] != null ? ((Number) adminRow[1]).longValue() : 0L;
+            total += adminCount;
+            active += adminActive;
+            admin += adminCount;
 
             return new AccountStats(total, active, admin, staff, customer);
         } catch (Exception e) {

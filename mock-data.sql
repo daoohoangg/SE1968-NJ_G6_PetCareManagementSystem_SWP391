@@ -9,20 +9,20 @@ INSERT INTO accounts (
     is_deleted, verification_token, last_login, created_at, updated_at, account_type
 ) VALUES
       -- Admin accounts
-      ('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'admin@petcare.com', 'Admin User', '555-000-0001', 'ADMIN', 1, 1, 0, NULL, '2025-10-25 08:00:00', '2025-01-01 00:00:00', '2025-10-25 08:00:00', 'ADMIN'),
+      ('admin', '123', 'admin@petcare.com', 'Admin User', '555-000-0001', 'ADMIN', 1, 1, 0, NULL, '2025-10-25 08:00:00', '2025-01-01 00:00:00', '2025-10-25 08:00:00', 'ADMIN'),
 
       -- Staff accounts
-      ('staff1', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'staff1@petcare.com', 'Dr. Sarah Johnson', '555-000-0002', 'STAFF', 1, 1, 0, NULL, '2025-10-25 07:30:00', '2025-01-01 00:00:00', '2025-10-25 07:30:00', 'STAFF'),
-      ('staff2', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'staff2@petcare.com', 'Dr. Michael Brown', '555-000-0003', 'STAFF', 1, 1, 0, NULL, '2025-10-25 08:15:00', '2025-01-01 00:00:00', '2025-10-25 08:15:00', 'STAFF'),
+      ('staff', '123', 'staff1@petcare.com', 'Dr. Sarah Johnson', '555-000-0002', 'STAFF', 1, 1, 0, NULL, '2025-10-25 07:30:00', '2025-01-01 00:00:00', '2025-10-25 07:30:00', 'STAFF'),
+      ('staff2', '123', 'staff2@petcare.com', 'Dr. Michael Brown', '555-000-0003', 'STAFF', 1, 1, 0, NULL, '2025-10-25 08:15:00', '2025-01-01 00:00:00', '2025-10-25 08:15:00', 'STAFF'),
 
       -- Receptionist accounts
-      ('recep1', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'recep1@petcare.com', 'Emma Wilson', '555-000-0004', 'RECEPTIONIST', 1, 1, 0, NULL, '2025-10-25 08:00:00', '2025-01-01 00:00:00', '2025-10-25 08:00:00', 'RECEPTIONIST'),
-      ('recep2', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'recep2@petcare.com', 'James Davis', '555-000-0005', 'RECEPTIONIST', 1, 1, 0, NULL, '2025-10-25 08:00:00', '2025-01-01 00:00:00', '2025-10-25 08:00:00', 'RECEPTIONIST'),
+      ('recep1', '123', 'recep1@petcare.com', 'Emma Wilson', '555-000-0004', 'RECEPTIONIST', 1, 1, 0, NULL, '2025-10-25 08:00:00', '2025-01-01 00:00:00', '2025-10-25 08:00:00', 'RECEPTIONIST'),
+      ('recep2', '123', 'recep2@petcare.com', 'James Davis', '555-000-0005', 'RECEPTIONIST', 1, 1, 0, NULL, '2025-10-25 08:00:00', '2025-01-01 00:00:00', '2025-10-25 08:00:00', 'RECEPTIONIST'),
 
       -- Customer accounts
-      ('customer1', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'customer1@example.com', 'John Smith', '555-000-0006', 'CUSTOMER', 1, 1, 0, NULL, '2025-10-24 18:00:00', '2025-01-01 00:00:00', '2025-10-24 18:00:00', 'CUSTOMER'),
-      ('customer2', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'customer2@example.com', 'Jane Doe', '555-000-0007', 'CUSTOMER', 1, 1, 0, NULL, '2025-10-24 19:30:00', '2025-01-01 00:00:00', '2025-10-24 19:30:00', 'CUSTOMER'),
-      ('customer3', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDi', 'customer3@example.com', 'Bob Johnson', '555-000-0008', 'CUSTOMER', 1, 1, 0, NULL, '2025-10-23 16:45:00', '2025-01-01 00:00:00', '2025-10-23 16:45:00', 'CUSTOMER');
+      ('cus', '123', 'customer1@example.com', 'John Smith', '555-000-0006', 'CUSTOMER', 1, 1, 0, NULL, '2025-10-24 18:00:00', '2025-01-01 00:00:00', '2025-10-24 18:00:00', 'CUSTOMER'),
+      ('customer2', '123', 'customer2@example.com', 'Jane Doe', '555-000-0007', 'CUSTOMER', 1, 1, 0, NULL, '2025-10-24 19:30:00', '2025-01-01 00:00:00', '2025-10-24 19:30:00', 'CUSTOMER'),
+      ('customer3', '123', 'customer3@example.com', 'Bob Johnson', '555-000-0008', 'CUSTOMER', 1, 1, 0, NULL, '2025-10-23 16:45:00', '2025-01-01 00:00:00', '2025-10-23 16:45:00', 'CUSTOMER');
 
 -- Insert Administrations
 INSERT INTO administration (account_id, employee_id, department, access_level) VALUES

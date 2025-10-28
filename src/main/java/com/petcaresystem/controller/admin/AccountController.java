@@ -64,7 +64,12 @@ public class AccountController extends HttpServlet {
     private void renderAccountList(HttpServletRequest req, HttpServletResponse resp,
                                    String keyword, String role, String action)
             throws ServletException, IOException {
-        System.out.println("renderAccountList called - Response committed: " + resp.isCommitted());
+        System.out.println("=== renderAccountList START ===");
+        System.out.println("Response committed: " + resp.isCommitted());
+        System.out.println("Action: " + action);
+        System.out.println("Keyword: " + keyword);
+        System.out.println("Role: " + role);
+        
         try {
             int page = parsePage(req.getParameter("page"));
             int size = parseSize(req.getParameter("size"));
@@ -80,8 +85,11 @@ public class AccountController extends HttpServlet {
             System.out.println("Getting accounts page...");
             PagedResult<Account> pagedAccounts = accountService.getAccountsPage(
                     effectiveKeyword, normalizedRole, page, size);
+            System.out.println("Paged accounts result: " + (pagedAccounts != null ? pagedAccounts.getItems().size() + " items" : "null"));
+            
             System.out.println("Getting account stats...");
             AccountStats stats = accountService.getAccountStats(effectiveKeyword, normalizedRole);
+            System.out.println("Stats result: " + (stats != null ? "total=" + stats.getTotal() : "null"));
 
             System.out.println("Populating attributes...");
             populateAccountsAttributes(req, pagedAccounts, stats);
@@ -92,6 +100,7 @@ public class AccountController extends HttpServlet {
 
             System.out.println("Forwarding to JSP - Response committed: " + resp.isCommitted());
             req.getRequestDispatcher("/adminpage/manage-accounts.jsp").forward(req, resp);
+            System.out.println("=== renderAccountList SUCCESS ===");
         } catch (Exception e) {
             System.err.println("Exception in renderAccountList: " + e.getMessage());
             e.printStackTrace();

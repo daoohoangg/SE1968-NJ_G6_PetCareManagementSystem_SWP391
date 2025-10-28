@@ -180,6 +180,62 @@
             0%{transform:translateY(18px);opacity:0}
             100%{transform:translateY(0);opacity:1}
         }
+        /* ===== Fix mờ modal: không opacity/blur, trắng đậm tuyệt đối ===== */
+
+        /* Overlay chỉ làm tối nền bằng màu, KHÔNG dùng opacity toàn cây */
+        .modal-backdrop{
+            background: rgba(17,24,39,.60) !important; /* tối nền phía sau */
+            opacity: 1 !important;                     /* quan trọng: không làm mờ con */
+            filter: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            z-index: 1200 !important;
+        }
+
+        /* Bản thân form phải trắng đậm và đứng trên overlay */
+        .modal-card,
+        .modal-card form,
+        .modal-header,
+        .modal-body,
+        .modal-actions{
+            background-color: #ffffff !important;
+            opacity: 1 !important;
+            filter: none !important;
+            mix-blend-mode: normal !important;
+        }
+
+        .modal-card{
+            position: relative;
+            z-index: 1201 !important; /* cao hơn overlay */
+            box-shadow: 0 28px 60px rgba(15,23,42,.35);
+            border: 1px solid rgba(148,163,184,.22);
+            isolation: isolate; /* chặn hiệu ứng ancestor “thấm” xuống */
+        }
+
+        /* Field bên trong cũng không được mờ */
+        .modal-field input,
+        .modal-field textarea,
+        .modal-field select,
+        .modal-close{
+            background-color: #ffffff !important;
+            opacity: 1 !important;
+            filter: none !important;
+        }
+
+        /* Trường hợp CSS khác làm mờ cả trang khi mở modal:
+           reset mọi blur/opacity ở khu vực nền (không đụng overlay/modal) */
+        body.modal-open .layout,
+        body.modal-open .content{
+            filter: none !important;
+            opacity: 1 !important;
+        }
+
+        /* An toàn: đừng để bất kỳ phần tử trong modal bị backdrop-filter */
+        #addServiceModal * , #editServiceModal * {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+
     </style>
 </head>
 <body>
