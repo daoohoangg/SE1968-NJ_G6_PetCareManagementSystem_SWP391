@@ -104,16 +104,16 @@
         <div class="col-lg-7">
             <h2>PETCARE SYSTEM</h2>
             <p>
-                Chào mừng bạn đến với PetCare, giải pháp tất cả trong một để quản lý thú cưng. Chúng tôi tận tâm cung cấp các dịch vụ tốt nhất cho chủ sở hữu thú cưng (chó, mèo) ngay tại Đại học FPT, Hà Nội.
+                Welcome to PetCare, the all-in-one solution for managing pets. We are dedicated to providing the best services for pet owners (dogs, cats) right at FPT University, Hanoi.
             </p>
             <p>
-                Hệ thống của chúng tôi cung cấp đầy đủ các dịch vụ từ <strong>Appointment Booking, Pet Management,</strong> đến <strong>Services</strong> Mục tiêu của chúng tôi là giữ cho thú cưng của bạn luôn khỏe mạnh, xinh đẹp và hạnh phúc!
+                Our system offers a full range of services from <strong>Appointment Booking, Pet Management,</strong> to <strong>Services.</strong> Our goal is to keep your pets healthy, beautiful, and happy!
             </p>
             <p>
-                PetCare có đội ngũ nhân viên thân thiện, nhiệt tình, có chuyên môn cao trong lĩnh vực <strong>chăm sóc thú cưng.</strong> Chúng tôi luôn học hỏi và nâng cao kỹ năng nghiệp vụ để phục vụ khách hàng ngày một tốt hơn.
+                PetCare has a friendly, enthusiastic team with high expertise in <strong>pet care.</strong> We are always learning and improving our skills to serve our customers better every day.
             </p>
             <p class="quote">
-                "PetCare - Giải pháp số cho dịch vụ chăm sóc thú cưng hiện đại."
+                "PetCare - The solution for modern pet care services."
             </p>
         </div>
         <div class="col-lg-5">

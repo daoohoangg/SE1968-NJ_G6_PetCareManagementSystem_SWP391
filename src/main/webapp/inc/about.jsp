@@ -47,14 +47,14 @@
 <div class="about-container">
     <h1>Pet Care Management System</h1>
     <p>
-        Hệ thống Quản lý Thú cưng (PCMS) là một nền tảng sáng tạo được thiết kế để đơn giản hóa và hiện đại hóa các hoạt động chăm sóc thú cưng.
+        The Pet Care Management System (PCMS) is an innovative platform designed to simplify and modernize pet care activities.
     </p>
     <p>
-        Mục tiêu của chúng tôi là kết nối chủ sở hữu thú cưng, người chăm sóc và nhà cung cấp dịch vụ thông qua một hệ thống dễ sử dụng, hỗ trợ
-        đặt lịch trực tuyến, mua sản phẩm và quản lý sức khỏe thú cưng.
+        Our goal is to connect pet owners, caregivers, and service providers through an easy-to-use system that supports
+        online scheduling, product purchasing, and pet health management.
     </p>
     <p>
-        Hệ thống đảm bảo sự tiện lợi, chính xác và độ tin cậy cao hơn — giúp bạn chăm sóc thú cưng của mình mọi lúc, mọi nơi.
+        The system ensures greater convenience, accuracy, and reliability — helping you care for your pets anytime, anywhere.
     </p>
     <div class="back-link">
         <a href="<%= request.getContextPath() %>/home">Back Home</a>

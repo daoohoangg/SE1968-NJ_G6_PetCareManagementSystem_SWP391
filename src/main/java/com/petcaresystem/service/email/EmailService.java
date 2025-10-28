@@ -5,7 +5,6 @@ import jakarta.mail.internet.MimeMessage;
 import java.util.Properties;
 
 public class EmailService {
-    // Email configuration - can be loaded from database or properties file
     private static String fromEmail = "hahshe186536@fpt.edu.vn";
     private static String appPassword = "qhbt asof xjdv xbpm";
     private static String smtpHost = "smtp.gmail.com";
@@ -62,30 +61,30 @@ public class EmailService {
     }
 
     public static void sendVerificationEmail(String recipientEmail, String token, String contextPath) {
-        String subject = "[PetCare] Vui long xac thuc tai khoan cua ban";
+        String subject = "[PetCare] Please verify your account.";
         String verificationLink = "http://localhost:8080" + contextPath + "/verify?token=" + token;
         String body = "<html>"
                + "<body>"
-               + "<h2>Chao mung ban den voi PetCare!</h2>"
-                + "<p>Vui long nhan vao duong link duoi day de kich hoat tai khoan cua ban:</p>"
+               + "<h2>Welcome to PetCare!</h2>"
+                + "<p>Please click the link below to activate your account:</p>"
                 + "<a href='" + verificationLink + "' style='padding: 10px 15px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;'>"
-                + "Kich Hoat Tai Khoan"
+                + "Activate Account"
                 + "</a>"
-                + "<p>Neu ban khong dang ky, vui long bo qua email nay.</p>"
+                + "<p>If you did not register, please ignore this email.</p>"
                 + "</body>"
                 + "</html>";
         sendEmail(recipientEmail, subject, body);
    }
     public static void sendNewPasswordEmail(String recipientEmail, String newPassword) {
-        String subject = "[PetCare] Mat khau moi cua ban";
+        String subject = "[PetCare] Your new password";
         String body = "<html>"
                 + "<body>"
-                + "<h2>Yeu cau dat lai mat khau PetCare</h2>"
-                + "<p>Mat khau moi cua ban la:</p>"
+                + "<h2>Password Reset Request for PetCare</h2>"
+                + "<p>Your new password is:</p>"
                 + "<h3 style='padding: 10px; background-color: #f0f0f0; border-radius: 5px;'>"
                + newPassword
                 + "</h3>"
-               + "<p>Vui long dang nhap va doi mat khau ngay lap tuc.</p>"
+               + "<p>Please log in and change your password immediately.</p>"
                 + "</body>"
                 + "</html>";
         sendEmail(recipientEmail, subject, body);
@@ -94,10 +93,10 @@ public class EmailService {
         String recipientEmail = EmailService.fromEmail;
         String emailSubject = "[PetCare Contact Form] " + subject + " (From: " + fromName + ")";
         String body = "<html><body>"
-                + "<h2>Bạn nhận được tin nhắn mới từ Form Liên Hệ PetCare:</h2>"
-                + "<p><strong>Từ:</strong> " + fromName + "</p>"
-                + "<p><strong>Email người gửi:</strong> " + fromEmail + "</p>"
-                + "<p><strong>Chủ đề:</strong> " + subject + "</p>"
+                + "<h2>You have received a new message from the PetCare Contact Form:</h2>"
+                + "<p><strong>From:</strong> " + fromName + "</p>"
+                + "<p><strong>Sender's Email:</strong> " + fromEmail + "</p>"
+                + "<p><strong>Subject:</strong> " + subject + "</p>"
                 + "<h3>Nội dung:</h3>"
                 + "<div style='padding: 15px; background-color: #f4f4f4; border-radius: 5px;'>"
                 + "<p style='white-space: pre-wrap;'>" + userMessage + "</p>"
