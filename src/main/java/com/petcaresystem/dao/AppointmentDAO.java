@@ -14,32 +14,18 @@ public class AppointmentDAO {
     /** Danh sách lịch hẹn của 1 khách, mới nhất trước (EAGER fetch Customer, Pet) */
     public List<Appointment> findByCustomer(Long customerId) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
-<<<<<<< HEAD
             String hql = "select a from Appointment a " +
                     "join fetch a.customer " +
                     "join fetch a.pet " +
                     "where a.customer.accountId = :cid " +
                     "order by a.appointmentDate desc";
-=======
-            String hql =
-                    "select distinct a from Appointment a " +
-                            "left join fetch a.pet p " +
-                            "left join fetch a.services sv " +
-                            "where a.customer.id = :cid " +
-                            "order by a.appointmentDate desc";
->>>>>>> 71d6a554889e534acce6ba23c90b465898671106
             return s.createQuery(hql, Appointment.class)
                     .setParameter("cid", customerId)
                     .list();
         }
     }
 
-<<<<<<< HEAD
     /** Upcoming (>= now) cho trang khách hàng (EAGER fetch Customer, Pet) */
-=======
-
-    /** Upcoming (>= now) cho trang khách hàng */
->>>>>>> 71d6a554889e534acce6ba23c90b465898671106
     public List<Appointment> findUpcomingByCustomer(Long customerId) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             String hql = "select a from Appointment a " +
