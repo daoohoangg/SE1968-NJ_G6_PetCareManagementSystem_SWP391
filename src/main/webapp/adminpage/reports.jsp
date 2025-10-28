@@ -404,8 +404,8 @@
                         <div class="card-header">
                             <h2>Detailed Financial Report</h2>
                             <div class="table-actions">
-                                <button class="action-btn primary" type="button"><i class="ri-bar-chart-2-line"></i>Generate Report</button>
-                                <button class="action-btn secondary" type="button"><i class="ri-printer-line"></i>Print</button>
+                                <button class="action-btn primary" type="button" id="generateReportBtn"><i class="ri-bar-chart-2-line"></i>Generate Report</button>
+                                <button class="action-btn secondary" type="button" id="printReportBtn"><i class="ri-printer-line"></i>Print</button>
                             </div>
                         </div>
                         <table>
@@ -517,6 +517,130 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Date range inputs
+        const startDateInput = document.querySelectorAll('.date-field input')[0];
+        const endDateInput = document.querySelectorAll('.date-field input')[1];
+        
+        // Generate Report button
+        const generateReportBtn = document.getElementById('generateReportBtn');
+        
+        // Set default dates if not set
+        if (startDateInput && startDateInput.value === '' || !startDateInput.value) {
+            const startDate = new Date();
+            startDate.setMonth(startDate.getMonth() - 1);
+            startDateInput.value = startDate.toISOString().split('T')[0];
+        }
+        
+        if (endDateInput && endDateInput.value === '' || !endDateInput.value) {
+            const endDate = new Date();
+            endDateInput.value = endDate.toISOString().split('T')[0];
+        }
+        
+                 // Generate report handler
+         if (generateReportBtn) {
+             generateReportBtn.addEventListener('click', async () => {
+                 const startDate = startDateInput.value;
+                 const endDate = endDateInput.value;
+                 
+                 if (!startDate || !endDate) {
+                     alert('Please select date range');
+                     return;
+                 }
+                 
+                 const originalText = generateReportBtn.innerHTML;
+                 generateReportBtn.innerHTML = '<i class="ri-loader-4-line"></i> Generating...';
+                 generateReportBtn.disabled = true;
+                 
+                 try {
+                     // Get stats first
+                     const statsResponse = await fetch('<%= request.getContextPath() %>/admin/reports/stats?' + 
+                         new URLSearchParams({ startDate, endDate }), {
+                         method: 'POST'
+                     });
+                     
+                     const statsData = await statsResponse.json();
+                     
+                     if (statsData.success && statsData.stats) {
+                         // Update stats cards
+                         updateStatsCards(statsData.stats);
+                     }
+                     
+                     // Get full report data for charts
+                     const generateResponse = await fetch('<%= request.getContextPath() %>/admin/reports/generate?' + 
+                         new URLSearchParams({ startDate, endDate }), {
+                         method: 'POST'
+                     });
+                     
+                     const generateData = await generateResponse.json();
+                     
+                     if (generateData.success && generateData.data) {
+                         // Update financial charts
+                         if (generateData.data.financial) {
+                             updateFinancialCharts(generateData.data.financial);
+                         }
+                         
+                         // Update operational charts
+                         if (generateData.data.operational) {
+                             updateOperationalCharts(generateData.data.operational);
+                         }
+                         
+                         console.log('Report generated and charts updated successfully');
+                     }
+                 } catch (error) {
+                     console.error('Generate report error:', error);
+                     alert('Error: ' + error.message);
+                 } finally {
+                     generateReportBtn.innerHTML = originalText;
+                     generateReportBtn.disabled = false;
+                 }
+             });
+         }
+        
+        // Print report handler
+        const printReportBtn = document.getElementById('printReportBtn');
+        if (printReportBtn) {
+            printReportBtn.addEventListener('click', () => {
+                window.print();
+            });
+        }
+        
+        // Update stats cards with new data
+        function updateStatsCards(stats) {
+            const statValueElements = document.querySelectorAll('.stat-value');
+            const statSubElements = document.querySelectorAll('.stat-sub');
+            
+            if (statValueElements.length >= 4 && statSubElements.length >= 4) {
+                // Total Revenue
+                statValueElements[0].textContent = '$' + Math.round(stats.totalRevenue).toLocaleString();
+                statSubElements[0].innerHTML = '<i class="ri-arrow-up-s-line"></i>' + stats.revenueGrowth;
+                
+                // Total Appointments
+                statValueElements[1].textContent = stats.totalAppointments;
+                statSubElements[1].innerHTML = '<i class="ri-check-line"></i><a href="#">' + stats.completionRate + '% completed</a>';
+                
+                // Avg Transaction
+                statValueElements[2].textContent = '$' + stats.avgTransaction.toFixed(1);
+                statSubElements[2].innerHTML = '<i class="ri-medal-line"></i><a href="#">Top: ' + stats.topService + '</a>';
+                
+                // Customer Rating
+                statValueElements[3].textContent = stats.customerRating + ' / 5.0';
+                statSubElements[3].innerHTML = '<i class="ri-time-line"></i>Avg duration: ' + stats.avgDuration + ' min';
+            }
+        }
+        
+        // Load stats on page load
+        loadStatsOnLoad();
+        
+        // Function to load stats when page loads
+        function loadStatsOnLoad() {
+            if (startDateInput.value && endDateInput.value) {
+                setTimeout(() => {
+                    if (generateReportBtn) {
+                        generateReportBtn.click();
+                    }
+                }, 500);
+            }
+        }
         const tabs = document.querySelectorAll('.reports-tab');
         const panels = document.querySelectorAll('.reports-panel');
 
@@ -630,54 +754,137 @@
             }
         });
 
-        createChart('customerAcquisitionChart', {
-            type: 'bar',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                datasets: [
-                    {
-                        label: 'New Customers',
-                        data: [24, 28, 34, 38, 42, 47],
-                        backgroundColor: '#2563eb',
-                        borderRadius: 12,
-                        barThickness: 24
-                    },
-                    {
-                        label: 'Returning Customers',
-                        data: [18, 20, 24, 29, 33, 38],
-                        backgroundColor: '#22c55e',
-                        borderRadius: 12,
-                        barThickness: 24
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom',
-                        labels: {
-                            usePointStyle: true,
-                            padding: 20
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: '#6b7280' }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(148,163,184,0.25)', borderDash: [6, 6] },
-                        ticks: { color: '#6b7280' }
-                    }
-                }
-            }
-        });
-    });
-</script>
+                 createChart('customerAcquisitionChart', {
+             type: 'bar',
+             data: {
+                 labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                 datasets: [
+                     {
+                         label: 'New Customers',
+                         data: [24, 28, 34, 38, 42, 47],
+                         backgroundColor: '#2563eb',
+                         borderRadius: 12,
+                         barThickness: 24
+                     },
+                     {
+                         label: 'Returning Customers',
+                         data: [18, 20, 24, 29, 33, 38],
+                         backgroundColor: '#22c55e',
+                         borderRadius: 12,
+                         barThickness: 24
+                     }
+                 ]
+             },
+             options: {
+                 responsive: true,
+                 maintainAspectRatio: false,
+                 plugins: {
+                     legend: {
+                         display: true,
+                         position: 'bottom',
+                         labels: {
+                             usePointStyle: true,
+                             padding: 20
+                         }
+                     }
+                 },
+                 scales: {
+                     x: {
+                         grid: { display: false },
+                         ticks: { color: '#6b7280' }
+                     },
+                     y: {
+                         beginAtZero: true,
+                         grid: { color: 'rgba(148,163,184,0.25)', borderDash: [6, 6] },
+                         ticks: { color: '#6b7280' }
+                     }
+                 }
+             }
+         });
+         
+         // ===== Export PDF/Excel Chip Buttons =====
+         const pdfChips = document.querySelectorAll('.chip');
+         pdfChips.forEach(chip => {
+             chip.addEventListener('click', function() {
+                 const text = this.textContent.toLowerCase();
+                 if (text.includes('pdf')) {
+                     exportToPDF();
+                 } else if (text.includes('excel')) {
+                     exportToExcel();
+                 } else if (text.includes('export')) {
+                     exportToExcel(); // Default export
+                 }
+             });
+         });
+         
+                   // Export to PDF function
+          function exportToPDF() {
+              alert('Exporting to PDF...\n\nIn production, this would generate a PDF report with all charts and data.');
+              // In real implementation: Call backend API to generate PDF
+              // Example: window.open('<%= request.getContextPath() %>/admin/reports/export?format=pdf', '_blank');
+          }
+          
+          // Export to Excel function
+          function exportToExcel() {
+              alert('Exporting to Excel...\n\nIn production, this would generate an Excel file with all report data.');
+              // In real implementation: Call backend API to generate Excel
+              // Example: window.open('<%= request.getContextPath() %>/admin/reports/export?format=excel', '_blank');
+          }
+         
+         // Function to update financial charts
+         function updateFinancialCharts(financialData) {
+             // Update revenue trend chart
+             const revenueChart = Chart.getChart('revenueTrendChart');
+             if (revenueChart && financialData.monthlyRevenue) {
+                 const labels = financialData.monthlyRevenue.map(m => m.month);
+                 const data = financialData.monthlyRevenue.map(m => m.revenue);
+                 
+                 revenueChart.data.labels = labels;
+                 revenueChart.data.datasets[0].data = data;
+                 revenueChart.update();
+             }
+             
+             // Update service pie chart
+             const pieChart = Chart.getChart('servicePieChart');
+             if (pieChart && financialData.serviceRevenue) {
+                 const labels = financialData.serviceRevenue.map(s => s.name + ' ' + s.percentage + '%');
+                 const data = financialData.serviceRevenue.map(s => s.percentage);
+                 const colors = ['#2563eb', '#22c55e', '#f59e0b', '#f97316', '#a855f7'];
+                 
+                 pieChart.data.labels = labels;
+                 pieChart.data.datasets[0].data = data;
+                 pieChart.data.datasets[0].backgroundColor = colors.slice(0, data.length);
+                 pieChart.update();
+             }
+         }
+         
+         // Function to update operational charts
+         function updateOperationalCharts(operationalData) {
+             // Update service volume chart
+             const serviceVolumeChart = Chart.getChart('serviceVolumeChart');
+             if (serviceVolumeChart && operationalData.serviceVolume) {
+                 const labels = operationalData.serviceVolume.map(s => s.month);
+                 const data = operationalData.serviceVolume.map(s => s.completed);
+                 
+                 serviceVolumeChart.data.labels = labels;
+                 serviceVolumeChart.data.datasets[0].data = data;
+                 serviceVolumeChart.update();
+             }
+             
+             // Update customer acquisition chart
+             const customerChart = Chart.getChart('customerAcquisitionChart');
+             if (customerChart && operationalData.customerAcquisition) {
+                 const labels = operationalData.customerAcquisition.map(c => c.month);
+                 const newCustomers = operationalData.customerAcquisition.map(c => c.newCustomers);
+                 const returningCustomers = operationalData.customerAcquisition.map(c => c.returningCustomers);
+                 
+                 customerChart.data.labels = labels;
+                 customerChart.data.datasets[0].data = newCustomers;
+                 customerChart.data.datasets[1].data = returningCustomers;
+                 customerChart.update();
+             }
+         }
+     });
+ </script>
 <jsp:include page="../inc/chatbox.jsp" />
 <jsp:include page="../inc/footer.jsp" />

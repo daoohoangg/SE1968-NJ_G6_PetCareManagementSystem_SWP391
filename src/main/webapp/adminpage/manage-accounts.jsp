@@ -437,6 +437,62 @@
         from{opacity:0;transform:translateY(10px);}
         to{opacity:1;transform:translateY(0);}
     }
+    /* ===== Fix mờ modal: không opacity/blur, trắng đậm tuyệt đối ===== */
+
+    /* Overlay chỉ làm tối nền bằng màu, KHÔNG dùng opacity toàn cây */
+    .modal-backdrop{
+        background: rgba(17,24,39,.60) !important; /* tối nền phía sau */
+        opacity: 1 !important;                     /* quan trọng: không làm mờ con */
+        filter: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        z-index: 1200 !important;
+    }
+
+    /* Bản thân form phải trắng đậm và đứng trên overlay */
+    .modal-card,
+    .modal-card form,
+    .modal-header,
+    .modal-body,
+    .modal-actions{
+        background-color: #ffffff !important;
+        opacity: 1 !important;
+        filter: none !important;
+        mix-blend-mode: normal !important;
+    }
+
+    .modal-card{
+        position: relative;
+        z-index: 1201 !important; /* cao hơn overlay */
+        box-shadow: 0 28px 60px rgba(15,23,42,.35);
+        border: 1px solid rgba(148,163,184,.22);
+        isolation: isolate; /* chặn hiệu ứng ancestor “thấm” xuống */
+    }
+
+    /* Field bên trong cũng không được mờ */
+    .modal-field input,
+    .modal-field textarea,
+    .modal-field select,
+    .modal-close{
+        background-color: #ffffff !important;
+        opacity: 1 !important;
+        filter: none !important;
+    }
+
+    /* Trường hợp CSS khác làm mờ cả trang khi mở modal:
+       reset mọi blur/opacity ở khu vực nền (không đụng overlay/modal) */
+    body.modal-open .layout,
+    body.modal-open .content{
+        filter: none !important;
+        opacity: 1 !important;
+    }
+
+    /* An toàn: đừng để bất kỳ phần tử trong modal bị backdrop-filter */
+    #addServiceModal * , #editServiceModal * {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
 </style>
 
 <jsp:include page="../inc/header.jsp" />
@@ -520,6 +576,17 @@
                 <button class="add-account-btn" type="submit" style="margin-left:8px">Search</button>
             </form>
 
+            <!-- Debug Information -->
+            <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px;">
+                <h4>Debug Information:</h4>
+                <p><strong>Accounts size:</strong> ${accounts != null ? accounts.size() : 'null'}</p>
+                <p><strong>Current Page:</strong> ${currentPage}</p>
+                <p><strong>Total Pages:</strong> ${totalPages}</p>
+                <p><strong>Total Items:</strong> ${totalItems}</p>
+                <p><strong>Filter Keyword:</strong> ${filterKeyword}</p>
+                <p><strong>Filter Role:</strong> ${filterRole}</p>
+            </div>
+
             <table class="accounts-table">
                 <thead>
                 <tr>
@@ -537,7 +604,7 @@
                         <td class="empty-row" colspan="6">No accounts found.</td>
                     </tr>
                 </c:if>
-                <c:forEach var="acc" items="${requestScope.accounts}">
+                <c:forEach var="acc" items="${accounts}">
                     <tr>
                         <td>
                             <div class="user-cell">
@@ -665,7 +732,72 @@
                                 <span class="pager-btn disabled"><i class="ri-arrow-left-line"></i> Prev</span>
                             </c:otherwise>
                         </c:choose>
-                        <span class="pagination-info">Page <c:out value="${currentPage}" /> of <c:out value="${totalPages}" /></span>
+                        
+                        <!-- Page numbers -->
+                        <c:set var="startPage" value="${currentPage > 3 ? currentPage - 2 : 1}" />
+                        <c:set var="endPage" value="${currentPage + 2 < totalPages ? currentPage + 2 : totalPages}" />
+                        
+                        <!-- First page -->
+                        <c:if test="${startPage > 1}">
+                            <c:url var="firstPageUrl" value="/admin/accounts">
+                                <c:param name="action" value="${accountActionName}" />
+                                <c:if test="${not empty filterKeyword}">
+                                    <c:param name="keyword" value="${filterKeyword}" />
+                                </c:if>
+                                <c:if test="${not empty filterRoleRaw && filterRoleRaw != 'all'}">
+                                    <c:param name="role" value="${filterRoleRaw}" />
+                                </c:if>
+                                <c:param name="size" value="${pageSize}" />
+                                <c:param name="page" value="1" />
+                            </c:url>
+                            <a class="pager-btn" href="${firstPageUrl}">1</a>
+                            <c:if test="${startPage > 2}">
+                                <span class="pager-btn disabled">...</span>
+                            </c:if>
+                        </c:if>
+                        
+                        <!-- Page numbers around current page -->
+                        <c:forEach var="pageNum" begin="${startPage}" end="${endPage}">
+                            <c:choose>
+                                <c:when test="${pageNum == currentPage}">
+                                    <span class="pager-btn" style="background: var(--primary); color: white; border-color: var(--primary);">${pageNum}</span>
+                                </c:when>
+                                <c:otherwise>
+                                    <c:url var="pageUrl" value="/admin/accounts">
+                                        <c:param name="action" value="${accountActionName}" />
+                                        <c:if test="${not empty filterKeyword}">
+                                            <c:param name="keyword" value="${filterKeyword}" />
+                                        </c:if>
+                                        <c:if test="${not empty filterRoleRaw && filterRoleRaw != 'all'}">
+                                            <c:param name="role" value="${filterRoleRaw}" />
+                                        </c:if>
+                                        <c:param name="size" value="${pageSize}" />
+                                        <c:param name="page" value="${pageNum}" />
+                                    </c:url>
+                                    <a class="pager-btn" href="${pageUrl}">${pageNum}</a>
+                                </c:otherwise>
+                            </c:choose>
+                        </c:forEach>
+                        
+                        <!-- Last page -->
+                        <c:if test="${endPage < totalPages}">
+                            <c:if test="${endPage < totalPages - 1}">
+                                <span class="pager-btn disabled">...</span>
+                            </c:if>
+                            <c:url var="lastPageUrl" value="/admin/accounts">
+                                <c:param name="action" value="${accountActionName}" />
+                                <c:if test="${not empty filterKeyword}">
+                                    <c:param name="keyword" value="${filterKeyword}" />
+                                </c:if>
+                                <c:if test="${not empty filterRoleRaw && filterRoleRaw != 'all'}">
+                                    <c:param name="role" value="${filterRoleRaw}" />
+                                </c:if>
+                                <c:param name="size" value="${pageSize}" />
+                                <c:param name="page" value="${totalPages}" />
+                            </c:url>
+                            <a class="pager-btn" href="${lastPageUrl}">${totalPages}</a>
+                        </c:if>
+                        
                         <c:choose>
                             <c:when test="${hasNextPage}">
                                 <a class="pager-btn" href="${nextUrl}">

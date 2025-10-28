@@ -51,7 +51,6 @@ public class Staff extends Account {
         this.hireDate = LocalDate.now();
     }
     
-    // Business logic methods
     public void markAvailable() {
         this.isAvailable = true;
     }

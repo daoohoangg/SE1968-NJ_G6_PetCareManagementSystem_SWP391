@@ -15,9 +15,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @WebServlet(name = "CustomerAppointments", urlPatterns = {"/customer/appointments"})
@@ -50,9 +48,7 @@ public class Appointments extends HttpServlet {
     }
 
     private void loadModel(HttpServletRequest req, Long customerId) {
-        // Quan trọng nhất: pets đúng customer để dropdown hiển thị
         req.setAttribute("pets",         petDAO.findByCustomerId(customerId));
-        // Phần còn lại giữ nguyên hành vi trang cũ (nếu JSP tự nạp services thì có thể bỏ dòng dưới)
         req.setAttribute("services",     serviceDAO.getActiveServices());
         req.setAttribute("appointments", appointmentDAO.findByCustomer(customerId));
     }
@@ -86,7 +82,7 @@ public class Appointments extends HttpServlet {
                     try {
                         long apptId = Long.parseLong(idStr);
                         appointmentDAO.cancelIfOwnedBy(apptId, customerId);
-                    } catch (NumberFormatException ignored) { /* tham số sai -> bỏ qua */ }
+                    } catch (NumberFormatException ignored) { }
                 }
                 resp.sendRedirect(req.getContextPath() + "/customer/appointments?cancelled=1");
                 return;
@@ -99,7 +95,7 @@ public class Appointments extends HttpServlet {
         }
     }
 
-    /* ===================== POST (Create) ===================== */
+    /* ===================== POST (Create Appointment) ===================== */
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
@@ -115,11 +111,11 @@ public class Appointments extends HttpServlet {
         }
 
         try {
-            // 1) Validate pet thuộc về customer
+            /* --- 1) Xác thực thú cưng thuộc customer --- */
             Long petId = Long.parseLong(req.getParameter("petId"));
             boolean ownsPet = petDAO.findByCustomerId(customerId)
                     .stream()
-                    .filter(p -> p != null)
+                    .filter(Objects::nonNull)
                     .map(Pet::getIdpet)
                     .anyMatch(id -> id.equals(petId));
             if (!ownsPet) {
@@ -129,36 +125,49 @@ public class Appointments extends HttpServlet {
                 return;
             }
 
-            // 2) Services (multi-select)
+            /* --- 2) Lấy danh sách dịch vụ --- */
             String[] serviceIdsParam = req.getParameterValues("serviceIds");
             List<Long> serviceIds = (serviceIdsParam == null)
                     ? Collections.emptyList()
-                    : Arrays.stream(serviceIdsParam).map(Long::parseLong).collect(Collectors.toList());
+                    : Arrays.stream(serviceIdsParam)
+                    .filter(Objects::nonNull)
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
 
-            // 3) Thời gian (input type="datetime-local" => ISO_LOCAL_DATE_TIME)
-            DateTimeFormatter fmt = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-            String startAt = req.getParameter("startAt");
-            String endAt   = req.getParameter("endAt");
-            LocalDateTime start = LocalDateTime.parse(startAt, fmt);
-            LocalDateTime end   = (endAt == null || endAt.isBlank()) ? null : LocalDateTime.parse(endAt, fmt);
-
-            // 4) Ghi chú
-            String notes = req.getParameter("notes");
-
-            // 5) Tạo lịch
-            boolean ok = appointmentDAO.create(customerId, petId, serviceIds, start, end, notes);
-            if (!ok) {
-                req.setAttribute("error", "Không tạo được lịch hẹn. Vui lòng thử lại.");
+            if (serviceIds.isEmpty()) {
+                req.setAttribute("error", "Bạn phải chọn ít nhất một dịch vụ.");
                 loadModel(req, customerId);
                 forward(req, resp);
                 return;
             }
 
-            // PRG
+            /* --- 3) Parse thời gian --- */
+            DateTimeFormatter fmt = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+            String startAtStr = req.getParameter("startAt");
+            LocalDateTime startAt = LocalDateTime.parse(startAtStr, fmt);
+
+            // endAt = null, DAO sẽ tự tính hoặc lưu nguyên startAt
+            LocalDateTime endAt = null;
+
+            /* --- 4) Ghi chú --- */
+            String notes = req.getParameter("notes");
+
+            /* --- 5) Lưu xuống DB --- */
+            boolean success = appointmentDAO.create(customerId, petId, serviceIds, startAt, endAt, notes);
+
+            if (!success) {
+                req.setAttribute("error", "Không thể tạo lịch hẹn. Vui lòng thử lại.");
+                loadModel(req, customerId);
+                forward(req, resp);
+                return;
+            }
+
+            /* --- 6) Thành công: redirect về trang chính --- */
             resp.sendRedirect(req.getContextPath() + "/customer/appointments?created=1");
 
         } catch (Exception e) {
-            req.setAttribute("error", "Dữ liệu không hợp lệ: " + e.getMessage());
+            e.printStackTrace();
+            req.setAttribute("error", "Dữ liệu không hợp lệ hoặc lỗi hệ thống: " + e.getMessage());
             loadModel(req, customerId);
             forward(req, resp);
         }
