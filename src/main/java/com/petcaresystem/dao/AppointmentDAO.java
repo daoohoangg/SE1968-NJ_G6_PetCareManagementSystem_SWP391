@@ -155,9 +155,9 @@ public class AppointmentDAO {
     }
 
     /** Lấy appointments có thể check-in với filter và paging */
-    public List<Appointment> findCheckInEligibleWithFilter(LocalDateTime startOfDay, LocalDateTime endOfDay, 
-                                                            String customerName, String petName, 
-                                                            int page, int pageSize) {
+    public List<Appointment> findCheckInEligibleWithFilter(LocalDateTime startOfDay, LocalDateTime endOfDay,
+                                                           String customerName, String petName,
+                                                           int page, int pageSize) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             // Step 1: Get appointment IDs with filter and paging
             StringBuilder hql = new StringBuilder("select a.appointmentId from Appointment a " +
@@ -165,38 +165,38 @@ public class AppointmentDAO {
                     "join a.pet p " +
                     "where a.appointmentDate >= :start and a.appointmentDate < :end " +
                     "and (a.status = :scheduled or a.status = :inProgress) ");
-            
+
             if (customerName != null && !customerName.trim().isEmpty()) {
                 hql.append("and lower(c.fullName) like :customerName ");
             }
             if (petName != null && !petName.trim().isEmpty()) {
                 hql.append("and lower(p.name) like :petName ");
             }
-            
+
             hql.append("order by a.appointmentDate asc");
-            
+
             var idQuery = s.createQuery(hql.toString(), Long.class)
                     .setParameter("start", startOfDay)
                     .setParameter("end", endOfDay)
                     .setParameter("scheduled", AppointmentStatus.SCHEDULED)
                     .setParameter("inProgress", AppointmentStatus.IN_PROGRESS);
-            
+
             if (customerName != null && !customerName.trim().isEmpty()) {
                 idQuery.setParameter("customerName", "%" + customerName.toLowerCase() + "%");
             }
             if (petName != null && !petName.trim().isEmpty()) {
                 idQuery.setParameter("petName", "%" + petName.toLowerCase() + "%");
             }
-            
+
             idQuery.setFirstResult((page - 1) * pageSize);
             idQuery.setMaxResults(pageSize);
-            
+
             List<Long> ids = idQuery.getResultList();
-            
+
             if (ids.isEmpty()) {
                 return new java.util.ArrayList<>();
             }
-            
+
             // Step 2: Fetch full appointments with eager loading
             String fetchHql = "select a from Appointment a " +
                     "join fetch a.customer " +
@@ -204,7 +204,7 @@ public class AppointmentDAO {
                     "left join fetch a.services " +
                     "where a.appointmentId in :ids " +
                     "order by a.appointmentDate asc";
-            
+
             return s.createQuery(fetchHql, Appointment.class)
                     .setParameter("ids", ids)
                     .getResultList();
@@ -212,7 +212,7 @@ public class AppointmentDAO {
     }
 
     /** Đếm số appointments có thể check-in với filter */
-    public long countCheckInEligible(LocalDateTime startOfDay, LocalDateTime endOfDay, 
+    public long countCheckInEligible(LocalDateTime startOfDay, LocalDateTime endOfDay,
                                      String customerName, String petName) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             StringBuilder hql = new StringBuilder("select count(distinct a.appointmentId) from Appointment a " +
@@ -220,27 +220,27 @@ public class AppointmentDAO {
                     "join a.pet p " +
                     "where a.appointmentDate >= :start and a.appointmentDate < :end " +
                     "and (a.status = :scheduled or a.status = :inProgress) ");
-            
+
             if (customerName != null && !customerName.trim().isEmpty()) {
                 hql.append("and lower(c.fullName) like :customerName ");
             }
             if (petName != null && !petName.trim().isEmpty()) {
                 hql.append("and lower(p.name) like :petName ");
             }
-            
+
             var query = s.createQuery(hql.toString(), Long.class)
                     .setParameter("start", startOfDay)
                     .setParameter("end", endOfDay)
                     .setParameter("scheduled", AppointmentStatus.SCHEDULED)
                     .setParameter("inProgress", AppointmentStatus.IN_PROGRESS);
-            
+
             if (customerName != null && !customerName.trim().isEmpty()) {
                 query.setParameter("customerName", "%" + customerName.toLowerCase() + "%");
             }
             if (petName != null && !petName.trim().isEmpty()) {
                 query.setParameter("petName", "%" + petName.toLowerCase() + "%");
             }
-            
+
             return query.getSingleResult();
         }
     }
@@ -262,44 +262,44 @@ public class AppointmentDAO {
     }
 
     /** Lấy appointments đã check-in với filter và paging */
-    public List<Appointment> findCheckedInWithFilter(String customerName, String petName, 
-                                                      int page, int pageSize) {
+    public List<Appointment> findCheckedInWithFilter(String customerName, String petName,
+                                                     int page, int pageSize) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             // Step 1: Get appointment IDs with filter and paging
             StringBuilder hql = new StringBuilder("select a.appointmentId from Appointment a " +
                     "join a.customer c " +
                     "join a.pet p " +
                     "where (a.status = :confirmed or a.status = :inProgress) ");
-            
+
             if (customerName != null && !customerName.trim().isEmpty()) {
                 hql.append("and lower(c.fullName) like :customerName ");
             }
             if (petName != null && !petName.trim().isEmpty()) {
                 hql.append("and lower(p.name) like :petName ");
             }
-            
+
             hql.append("order by a.updatedAt asc");
-            
+
             var idQuery = s.createQuery(hql.toString(), Long.class)
                     .setParameter("confirmed", AppointmentStatus.CONFIRMED)
                     .setParameter("inProgress", AppointmentStatus.IN_PROGRESS);
-            
+
             if (customerName != null && !customerName.trim().isEmpty()) {
                 idQuery.setParameter("customerName", "%" + customerName.toLowerCase() + "%");
             }
             if (petName != null && !petName.trim().isEmpty()) {
                 idQuery.setParameter("petName", "%" + petName.toLowerCase() + "%");
             }
-            
+
             idQuery.setFirstResult((page - 1) * pageSize);
             idQuery.setMaxResults(pageSize);
-            
+
             List<Long> ids = idQuery.getResultList();
-            
+
             if (ids.isEmpty()) {
                 return new java.util.ArrayList<>();
             }
-            
+
             // Step 2: Fetch full appointments with eager loading
             String fetchHql = "select a from Appointment a " +
                     "join fetch a.customer " +
@@ -307,7 +307,7 @@ public class AppointmentDAO {
                     "left join fetch a.services " +
                     "where a.appointmentId in :ids " +
                     "order by a.updatedAt asc";
-            
+
             return s.createQuery(fetchHql, Appointment.class)
                     .setParameter("ids", ids)
                     .getResultList();
@@ -321,25 +321,25 @@ public class AppointmentDAO {
                     "join a.customer c " +
                     "join a.pet p " +
                     "where (a.status = :confirmed or a.status = :inProgress) ");
-            
+
             if (customerName != null && !customerName.trim().isEmpty()) {
                 hql.append("and lower(c.fullName) like :customerName ");
             }
             if (petName != null && !petName.trim().isEmpty()) {
                 hql.append("and lower(p.name) like :petName ");
             }
-            
+
             var query = s.createQuery(hql.toString(), Long.class)
                     .setParameter("confirmed", AppointmentStatus.CONFIRMED)
                     .setParameter("inProgress", AppointmentStatus.IN_PROGRESS);
-            
+
             if (customerName != null && !customerName.trim().isEmpty()) {
                 query.setParameter("customerName", "%" + customerName.toLowerCase() + "%");
             }
             if (petName != null && !petName.trim().isEmpty()) {
                 query.setParameter("petName", "%" + petName.toLowerCase() + "%");
             }
-            
+
             return query.getSingleResult();
         }
     }
@@ -350,12 +350,12 @@ public class AppointmentDAO {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             tx = s.beginTransaction();
             Appointment a = s.get(Appointment.class, appointmentId);
-            
+
             if (a == null) {
                 System.out.println("❌ Check-in failed: Appointment #" + appointmentId + " not found");
                 return false;
             }
-            
+
             if (!a.canCheckIn()) {
                 System.out.println("❌ Check-in failed: Appointment #" + appointmentId + " has status: " + a.getStatus());
                 System.out.println("   Required status: SCHEDULED or CONFIRMED");
@@ -380,7 +380,7 @@ public class AppointmentDAO {
         Transaction tx = null;
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             tx = s.beginTransaction();
-            
+
             // Eager fetch appointment with invoice to avoid lazy loading issues
             String hql = "select a from Appointment a " +
                     "left join fetch a.customer " +
@@ -389,7 +389,7 @@ public class AppointmentDAO {
             Appointment a = s.createQuery(hql, Appointment.class)
                     .setParameter("id", appointmentId)
                     .uniqueResult();
-            
+
             if (a == null || !a.canCheckOut()) return false;
 
             a.checkOut();
@@ -398,7 +398,7 @@ public class AppointmentDAO {
                 Invoice invoice = new Invoice();
                 invoice.setAppointment(a);
                 invoice.setCustomer(a.getCustomer());
-                
+
                 // Initialize required fields
                 invoice.setSubtotal(a.getTotalAmount());
                 invoice.setTotalAmount(a.getTotalAmount());
@@ -406,7 +406,7 @@ public class AppointmentDAO {
                 invoice.setIssueDate(LocalDateTime.now());
                 invoice.setDueDate(LocalDateTime.now().plusDays(30)); // 30 days payment term
                 invoice.setStatus(com.petcaresystem.enities.enu.InvoiceStatus.PENDING);
-                
+
                 s.persist(invoice);
                 a.setInvoice(invoice);
             }
