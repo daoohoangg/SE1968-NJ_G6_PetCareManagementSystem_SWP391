@@ -56,12 +56,12 @@
         font-size: 14px;
     }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-        crossorigin="anonymous"></script>
 <%
     }
 %>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
 <header>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
@@ -70,99 +70,102 @@
                      style="height: 35px; width: auto; margin-right: 8px; border-radius: 4px;">
                 <span style="font-weight: 600;">PetCare</span>
             </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="mainNavbar">
-            <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
 
-                <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/home">Home</a>
-                </li>
-                <%
-                    String petsLink = request.getContextPath() + "/login";
-                    String appointmentsLink = request.getContextPath() + "/login";
-                    String servicesLink = request.getContextPath() + "/login";
-                    if (loggedInAccount != null && loggedInAccount.getRole() == AccountRoleEnum.CUSTOMER) {
-                        petsLink = request.getContextPath() + "/customer/pets";
-                        appointmentsLink = request.getContextPath() + "/customer/appointments.jsp";
-                        servicesLink = request.getContextPath() + "/services";
-                    } else if (loggedInAccount != null) {
-                        servicesLink = request.getContextPath() + "/services";
-                    }
-                %>
-
-                <li class="nav-item">
-                    <a class="nav-link" href="<%= servicesLink %>">Services</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="<%= petsLink %>">My Pets</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="<%= appointmentsLink %>">Appointments</a>
-                </li>
-                <%
-                    if (loggedInAccount != null) {
-                        AccountRoleEnum role = loggedInAccount.getRole();
-
-                        if (role == AccountRoleEnum.STAFF) {
-                %>
-                <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/staff/home">home</a>
-                </li>
-                <%
-                }
-                else if (role == AccountRoleEnum.ADMIN) {
-                %>
-                <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/admin/dashboard">Dashboard</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/admin/users">Manage Users</a>
-                </li>
-                <%
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/home">Home</a>
+                    </li>
+                    <%
+                        String servicesLink = request.getContextPath() + "/login";
+                        if (loggedInAccount != null) {
+                            servicesLink = request.getContextPath() + "/services";
                         }
-                    }
+                    %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= servicesLink %>">Services</a>
+                    </li>
+                    <%
+                        if (loggedInAccount != null && loggedInAccount.getRole() == AccountRoleEnum.CUSTOMER) {
+                    %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/customer/pets">My Pets</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/customer/appointments.jsp">Appointments</a>
+                    </li>
+                    <%
+                        }
+                    %>
 
-                %>
-                <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/inc/contact.jsp">Contact Us</a>
-                </li>
-            </ul>
-            <ul class="navbar-nav ms-auto">
-                <%
-                    if (loggedInAccount != null) {
-                %>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
-                        <div class="user-avatar"><%= loggedInAccount.getFullName().substring(0, 1).toUpperCase() %></div>
-                        <%= loggedInAccount.getFullName() %>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
-                        <%
-                            if (loggedInAccount.getRole() != AccountRoleEnum.ADMIN) {
-                        %>
-                        <li><a class="dropdown-item" href="<%= request.getContextPath() %>/customer/profile?action=edit">Profile</a></li>
-                        <%
-                            }
-                        %>
-                        <li><a class="dropdown-item" href="<%= request.getContextPath() %>/logout">Logout</a></li>
-                    </ul>
-                </li>
-                <%
-                } else {
-                %>
-                <li class="nav-item">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/login">Login</a>
-                </li>
-                <li class="nav-item  ms-2">
-                    <a class="nav-link" href="<%= request.getContextPath() %>/register">Register</a>
-                </li>
-                <%
+                    <%
+                        if (loggedInAccount != null) {
+                            AccountRoleEnum role = loggedInAccount.getRole();
+
+                            if (role == AccountRoleEnum.STAFF) {
+                    %>
+                    <%
                     }
-                %>
-            </ul>
-        </div>
+                    else if (role == AccountRoleEnum.ADMIN) {
+                    %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/admin/dashboard">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/admin/accounts">Manage Accounts</a>
+                    </li>
+                    <%
+                            }
+                        }
+
+                    %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/inc/contact.jsp">Contact Us</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <%
+                        if (loggedInAccount != null) {
+                    %>
+                    <li class="nav-item dropdown">
+                        <%
+                            String roleName = loggedInAccount.getRole().name();
+                            String formattedRole = roleName.substring(0, 1).toUpperCase() + roleName.substring(1).toLowerCase();
+                        %>
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
+                            <div class="user-avatar"><%= loggedInAccount.getFullName().substring(0, 1).toUpperCase() %></div>
+                            <%= loggedInAccount.getFullName() %> (<%= formattedRole %>)
+
+                        </a>
+
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
+                            <%
+                                if (loggedInAccount.getRole() == AccountRoleEnum.CUSTOMER) {
+                            %>
+                            <li><a class="dropdown-item" href="<%= request.getContextPath() %>/customer/profile?action=edit">Profile</a></li>
+                            <%
+                                }
+                            %>
+                            <li><a class="dropdown-item" href="<%= request.getContextPath() %>/logout">Logout</a></li>
+                        </ul>
+                    </li>
+                    <%
+                    } else {
+                    %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/login">Login</a>
+                    </li>
+                    <li class="nav-item  ms-2">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/register">Register</a>
+                    </li>
+                    <%
+                        }
+                    %>
+                </ul>
+            </div>
         </div>
     </nav>
 </header>
