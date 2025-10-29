@@ -274,7 +274,7 @@
                                     <% if (!"CANCELLED".equals(status) && !"COMPLETED".equals(status)) { %>
                                     <a href="<c:url value='/customer/appointments'>
                                                    <c:param name='action' value='cancel'/>
-                                                   <c:param name='id' value='<%= a.getAppointmentId() %>'/>
+                                                   <c:param name='id' value='<%= String.valueOf(a.getAppointmentId()) %>'/>
                                                  </c:url>"
                                        class="btn btn-outline-danger btn-sm">
                                         <i class="bi bi-x-circle"></i> Cancel
