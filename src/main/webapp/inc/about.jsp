@@ -2,6 +2,8 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About Us - PetCareManagementSystem</title>
@@ -54,7 +56,7 @@
         online scheduling, product purchasing, and pet health management.
     </p>
     <p>
-        The system ensures greater convenience, accuracy, and reliability — helping you care for your pets anytime, anywhere.
+        The system ensures greater convenience, accuracy, and reliability â€” helping you care for your pets anytime, anywhere.
     </p>
     <div class="back-link">
         <a href="<%= request.getContextPath() %>/home">Back Home</a>

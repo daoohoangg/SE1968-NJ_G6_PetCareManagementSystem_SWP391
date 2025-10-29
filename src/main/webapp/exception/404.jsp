@@ -8,13 +8,15 @@
 <!DOCTYPE html>
 <html>
     <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>404 Not Found</title>
         <style>
             /* Import font */
             @import url("https://fonts.googleapis.com/css?family=Barlow+Condensed:300,400,500,600,700,800,900|Barlow:300,400,500,600,700,800,900&display=swap");
 
-            /* Định nghĩa biến CSS */
+            /* Äá»‹nh nghÄ©a biáº¿n CSS */
             :root {
                 --font-01: "Barlow", sans-serif;
                 --font-02: "Barlow Condensed", sans-serif;
@@ -38,7 +40,7 @@
                     2px 2px 5px rgba(255, 255, 255, 0.2);
             }
 
-            /* Reset mặc định */
+            /* Reset máº·c Ä‘á»‹nh */
             body, h1, h2, h3, h4, h5, h6, p, ul, li, button, a, i, input {
                 margin: 0;
                 padding: 0;
@@ -54,7 +56,7 @@
                 background: var(--bg-01);
             }
 
-            /* Nút About với social links */
+            /* NÃºt About vá»›i social links */
             .about {
                 position: fixed;
                 z-index: 10;
@@ -143,7 +145,7 @@
                 opacity: 1;
             }
 
-            /* Hiệu ứng khi hover menu */
+            /* Hiá»‡u á»©ng khi hover menu */
             nav .menu .menu_links .link {
                 color: white;
                 text-transform: uppercase;
@@ -183,7 +185,7 @@
                 overflow-x: hidden;
             }
 
-            /* Hiển thị số 404 lớn */
+            /* Hiá»ƒn thá»‹ sá»‘ 404 lá»›n */
             .p404 {
                 font-size: 200px;
                 font-weight: 700;
@@ -339,3 +341,4 @@
     </section>
 </body>
 </html>
+

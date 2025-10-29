@@ -9,7 +9,7 @@
     // ===== Context =====
     String ctx = request.getContextPath();
 
-    // ===== Nhận data có thể đã được set bởi servlet =====
+    // ===== Nháº­n data cÃ³ thá»ƒ Ä‘Ã£ Ä‘Æ°á»£c set bá»Ÿi servlet =====
     List<Appointment> appointments = (List<Appointment>) request.getAttribute("appointments");
     List<Pet> pets = (List<Pet>) request.getAttribute("pets");
     List<Service> services = (List<Service>) request.getAttribute("services");
@@ -43,7 +43,7 @@
     String created = request.getParameter("created");
     String cancelled = request.getParameter("cancelled");
 
-    // ===== Sort services theo category.name rồi serviceName (null-safe) =====
+    // ===== Sort services theo category.name rá»“i serviceName (null-safe) =====
     List<Service> sortedServices = new ArrayList<>(services);
     Collections.sort(sortedServices, new Comparator<Service>() {
         @Override
@@ -64,6 +64,8 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <meta charset="UTF-8">
     <title>Appointments - PetCare</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -127,8 +129,8 @@
                 searchEnabled: true,
                 shouldSort: false,
                 placeholder: true,
-                placeholderValue: 'Chọn dịch vụ...',
-                noResultsText: 'Không tìm thấy dịch vụ',
+                placeholderValue: 'Chá»n dá»‹ch vá»¥...',
+                noResultsText: 'KhÃ´ng tÃ¬m tháº¥y dá»‹ch vá»¥',
                 itemSelectText: ''
             });
         }
@@ -143,7 +145,7 @@
         const servicePrices = {};
         el.querySelectorAll('option').forEach(opt => {
             const text = opt.textContent || "";
-            const match = text.match(/\(([\d.]+)\s*đ\)/);
+            const match = text.match(/\(([\d.]+)\s*Ä‘\)/);
             if (match) {
 
                 const price = parseFloat(match[1]);
@@ -157,7 +159,7 @@
                 if (servicePrices[opt.value]) total += servicePrices[opt.value];
             });
 
-            totalText.textContent = "Tổng tiền dịch vụ: " + total.toFixed(2) + " đ";
+            totalText.textContent = "Tá»•ng tiá»n dá»‹ch vá»¥: " + total.toFixed(2) + " Ä‘";
         }
 
         el.addEventListener('change', updateTotal);
@@ -176,11 +178,11 @@
     <%
         if ("1".equals(created)) {
     %>
-    <div class="alert alert-success"><i class="bi bi-check-circle-fill me-2"></i>Lịch hẹn đã được tạo thành công.</div>
+    <div class="alert alert-success"><i class="bi bi-check-circle-fill me-2"></i>Lá»‹ch háº¹n Ä‘Ã£ Ä‘Æ°á»£c táº¡o thÃ nh cÃ´ng.</div>
     <%
     } else if ("1".equals(cancelled)) {
     %>
-    <div class="alert alert-info"><i class="bi bi-info-circle-fill me-2"></i>Bạn đã huỷ lịch hẹn.</div>
+    <div class="alert alert-info"><i class="bi bi-info-circle-fill me-2"></i>Báº¡n Ä‘Ã£ huá»· lá»‹ch háº¹n.</div>
     <%
     } else if (error != null) {
     %>
@@ -190,14 +192,14 @@
         }
     %>
 
-    <!-- Form Đặt lịch -->
+    <!-- Form Äáº·t lá»‹ch -->
     <div class="card mb-4">
-        <div class="card-header"><i class="bi bi-calendar-plus-fill me-2"></i>ĐẶT LỊCH HẸN MỚI</div>
+        <div class="card-header"><i class="bi bi-calendar-plus-fill me-2"></i>Äáº¶T Lá»ŠCH Háº¸N Má»šI</div>
         <div class="card-body">
             <form method="post" action="<%= ctx %>/customer/appointments">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label required">Thú cưng</label>
+                        <label class="form-label required">ThÃº cÆ°ng</label>
 
                         <%
                             if (pets == null || pets.isEmpty()) {
@@ -219,11 +221,11 @@
 
                         <% if (pets == null || pets.isEmpty()) { %>
                         <select class="form-select" disabled>
-                            <option>(Bạn chưa có thú cưng nào – vui lòng thêm trước)</option>
+                            <option>(Báº¡n chÆ°a cÃ³ thÃº cÆ°ng nÃ o â€“ vui lÃ²ng thÃªm trÆ°á»›c)</option>
                         </select>
                         <% } else { %>
                         <select id="petId" name="petId" class="form-select" required>
-                            <option value="" hidden>Chọn thú cưng</option>
+                            <option value="" hidden>Chá»n thÃº cÆ°ng</option>
                             <% for (com.petcaresystem.enities.Pet p : pets) {
                                 if (p == null) continue; %>
                             <option value="<%= p.getIdpet() %>">
@@ -237,12 +239,12 @@
 
                     <!-- SERVICES -->
                     <div class="col-md-6">
-                        <label class="form-label required">Dịch vụ</label>
+                        <label class="form-label required">Dá»‹ch vá»¥</label>
                         <select id="serviceIds" name="serviceIds" class="form-select" multiple required>
                             <%
                                 if (sortedServices.isEmpty()) {
                             %>
-                            <option disabled>(Chưa có dịch vụ khả dụng)</option>
+                            <option disabled>(ChÆ°a cÃ³ dá»‹ch vá»¥ kháº£ dá»¥ng)</option>
                                 <%
             } else {
                 String currentCat = null;
@@ -251,7 +253,7 @@
                     if (s == null) continue;
 
                     String catName = (s.getCategory()!=null && s.getCategory().getName()!=null)
-                            ? s.getCategory().getName() : "Khác";
+                            ? s.getCategory().getName() : "KhÃ¡c";
 
                     if (currentCat == null || !currentCat.equals(catName)) {
                         if (currentCat != null) { %></optgroup><% }
@@ -264,7 +266,7 @@
                                     String priceStr = (price != null) ? price.toPlainString() : "0";
                                 %>
                                 <option value="<%= s.getServiceId() %>">
-                                    <%= s.getServiceName() %> (<%= priceStr %> đ)
+                                    <%= s.getServiceName() %> (<%= priceStr %> Ä‘)
                                 </option>
                                 <%
                                     if (i == sortedServices.size() - 1) { %></optgroup>
@@ -274,39 +276,39 @@
                             %>
                         </select>
                         <small id="totalPriceText" class="text-muted d-block mt-1">
-                            Tổng tiền dịch vụ: 0 đ
+                            Tá»•ng tiá»n dá»‹ch vá»¥: 0 Ä‘
                         </small>
                     </div>
 
 
                     <!-- TIME -->
                     <div class="col-md-6">
-                        <label class="form-label required">Ngày & giờ bắt đầu</label>
+                        <label class="form-label required">NgÃ y & giá» báº¯t Ä‘áº§u</label>
                         <input type="datetime-local" name="startAt" class="form-control" required>
                     </div>
 
 
                     <!-- NOTES -->
                     <div class="col-12">
-                        <label class="form-label">Ghi chú</label>
+                        <label class="form-label">Ghi chÃº</label>
                         <textarea name="notes" rows="3" class="form-control"
-                                  placeholder="Ví dụ: dị ứng sữa tắm, muốn cắt móng ngắn..."></textarea>
+                                  placeholder="VÃ­ dá»¥: dá»‹ á»©ng sá»¯a táº¯m, muá»‘n cáº¯t mÃ³ng ngáº¯n..."></textarea>
                     </div>
                 </div>
 
                 <div class="mt-4 d-flex justify-content-between align-items-center">
                     <button type="submit" class="btn btn-primary px-4">
-                        <i class="bi bi-send-fill me-2"></i>Gửi yêu cầu
+                        <i class="bi bi-send-fill me-2"></i>Gá»­i yÃªu cáº§u
                     </button>
                     <a href="<%= ctx %>/home.jsp" class="text-secondary text-decoration-none">
-                        <i class="bi bi-arrow-left"></i> Quay về trang chủ
+                        <i class="bi bi-arrow-left"></i> Quay vá» trang chá»§
                     </a>
                 </div>
             </form>
         </div>
     </div>
 
-    <%-- ===== LỊCH HẸN CỦA TÔI ===== --%>
+    <%-- ===== Lá»ŠCH Háº¸N Cá»¦A TÃ”I ===== --%>
         <%
     java.time.format.DateTimeFormatter df =
         java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -317,10 +319,10 @@
 %>
 
     <div class="card">
-        <div class="card-header"><i class="bi bi-list-check me-2"></i>LỊCH HẸN CỦA TÔI</div>
+        <div class="card-header"><i class="bi bi-list-check me-2"></i>Lá»ŠCH Háº¸N Cá»¦A TÃ”I</div>
         <div class="card-body">
             <% if (apps.isEmpty()) { %>
-            <p class="text-muted mb-0">Hiện chưa có lịch hẹn nào được tạo.</p>
+            <p class="text-muted mb-0">Hiá»‡n chÆ°a cÃ³ lá»‹ch háº¹n nÃ o Ä‘Æ°á»£c táº¡o.</p>
             <% } else { %>
 
             <div class="table-responsive">
@@ -328,13 +330,13 @@
                     <thead class="table-light">
                     <tr>
                         <th>#</th>
-                        <th>Thú cưng</th>
-                        <th>Dịch vụ</th>
-                        <th>Bắt đầu</th>
-                        <th>Kết thúc</th>
-                        <th class="text-end">Tổng tiền</th>
-                        <th>Trạng thái</th>
-                        <th class="text-end">Thao tác</th>
+                        <th>ThÃº cÆ°ng</th>
+                        <th>Dá»‹ch vá»¥</th>
+                        <th>Báº¯t Ä‘áº§u</th>
+                        <th>Káº¿t thÃºc</th>
+                        <th class="text-end">Tá»•ng tiá»n</th>
+                        <th>Tráº¡ng thÃ¡i</th>
+                        <th class="text-end">Thao tÃ¡c</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -342,11 +344,11 @@
                         for (int i = 0; i < apps.size(); i++) {
                             com.petcaresystem.enities.Appointment a = apps.get(i);
 
-                            // Tên thú cưng
+                            // TÃªn thÃº cÆ°ng
                             String petName = (a.getPet() != null && a.getPet().getName() != null)
                                     ? a.getPet().getName() : "(N/A)";
 
-                            // Danh sách dịch vụ "A, B, C"
+                            // Danh sÃ¡ch dá»‹ch vá»¥ "A, B, C"
                             StringBuilder svNames = new StringBuilder();
                             java.util.List<com.petcaresystem.enities.Service> svs = a.getServices();
                             if (svs != null) {
@@ -359,23 +361,23 @@
                                 }
                             }
 
-                            // Ngày giờ
+                            // NgÃ y giá»
                             String startText = (a.getAppointmentDate() != null)
                                     ? a.getAppointmentDate().format(df) : "";
                             String endText = (a.getEndDate() != null)
-                                    ? a.getEndDate().format(df) : "—";
+                                    ? a.getEndDate().format(df) : "â€”";
 
-                            // Tổng tiền
+                            // Tá»•ng tiá»n
                             String totalText = (a.getTotalAmount() != null)
-                                    ? a.getTotalAmount().toPlainString() + " đ" : "0 đ";
+                                    ? a.getTotalAmount().toPlainString() + " Ä‘" : "0 Ä‘";
 
-                            // Trạng thái (Enum → .name())
+                            // Tráº¡ng thÃ¡i (Enum â†’ .name())
                             String status = (a.getStatus() != null) ? a.getStatus().name() : "PENDING";
                     %>
                     <tr>
                         <td><%= i + 1 %></td>
                         <td><%= petName %></td>
-                        <td><%= svNames.length() > 0 ? svNames.toString() : "—" %></td>
+                        <td><%= svNames.length() > 0 ? svNames.toString() : "â€”" %></td>
                         <td><%= startText %></td>
                         <td><%= endText %></td>
                         <td class="text-end"><%= totalText %></td>
@@ -398,7 +400,7 @@
                             <% if (!"CANCELLED".equals(status) && !"COMPLETED".equals(status)) { %>
                             <a href="<%= ctx %>/customer/appointments?action=cancel&id=<%= a.getAppointmentId() %>"
                                class="btn btn-outline-danger btn-sm">
-                                <i class="bi bi-x-circle"></i> Huỷ
+                                <i class="bi bi-x-circle"></i> Huá»·
                             </a>
                             <% } %>
                         </td>
@@ -416,3 +418,4 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+

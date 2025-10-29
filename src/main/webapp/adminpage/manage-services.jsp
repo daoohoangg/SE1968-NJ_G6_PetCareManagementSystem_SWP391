@@ -5,6 +5,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Manage Services</title>
@@ -180,70 +182,14 @@
             0%{transform:translateY(18px);opacity:0}
             100%{transform:translateY(0);opacity:1}
         }
-        /* ===== Fix mờ modal: không opacity/blur, trắng đậm tuyệt đối ===== */
-
-        /* Overlay chỉ làm tối nền bằng màu, KHÔNG dùng opacity toàn cây */
-        .modal-backdrop{
-            background: rgba(17,24,39,.60) !important; /* tối nền phía sau */
-            opacity: 1 !important;                     /* quan trọng: không làm mờ con */
-            filter: none !important;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            z-index: 1200 !important;
-        }
-
-        /* Bản thân form phải trắng đậm và đứng trên overlay */
-        .modal-card,
-        .modal-card form,
-        .modal-header,
-        .modal-body,
-        .modal-actions{
-            background-color: #ffffff !important;
-            opacity: 1 !important;
-            filter: none !important;
-            mix-blend-mode: normal !important;
-        }
-
-        .modal-card{
-            position: relative;
-            z-index: 1201 !important; /* cao hơn overlay */
-            box-shadow: 0 28px 60px rgba(15,23,42,.35);
-            border: 1px solid rgba(148,163,184,.22);
-            isolation: isolate; /* chặn hiệu ứng ancestor “thấm” xuống */
-        }
-
-        /* Field bên trong cũng không được mờ */
-        .modal-field input,
-        .modal-field textarea,
-        .modal-field select,
-        .modal-close{
-            background-color: #ffffff !important;
-            opacity: 1 !important;
-            filter: none !important;
-        }
-
-        /* Trường hợp CSS khác làm mờ cả trang khi mở modal:
-           reset mọi blur/opacity ở khu vực nền (không đụng overlay/modal) */
-        body.modal-open .layout,
-        body.modal-open .content{
-            filter: none !important;
-            opacity: 1 !important;
-        }
-
-        /* An toàn: đừng để bất kỳ phần tử trong modal bị backdrop-filter */
-        #addServiceModal * , #editServiceModal * {
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-        }
-
     </style>
 </head>
 <body>
 <jsp:include page="../inc/header.jsp" />
 <div class="layout">
-    <% request.setAttribute("activePage", "manage-services"); %>
+    <% request.setAttribute("currentPage", "manage-services"); %>
 
-    <!-- Sidebar include (tự mang CSS của nó) -->
+    <!-- Sidebar include (tá»± mang CSS cá»§a nÃ³) -->
     <jsp:include page="../inc/side-bar.jsp" />
 
     <main class="content">
@@ -430,7 +376,7 @@
         <form class="search" method="get" action="${pageContext.request.contextPath}/admin/service">
             <input type="hidden" name="action" value="search"/>
             <i class="ri-search-line"></i>
-            <input type="text" name="keyword" placeholder="Search services (tìm kiếm tương đối)..." value="${fn:escapeXml(filterKeyword)}"/>
+            <input type="text" name="keyword" placeholder="Search services..." value="${fn:escapeXml(filterKeyword)}"/>
 
             <select name="categoryId">
                 <option value="">All categories</option>
@@ -472,16 +418,6 @@
 
             <button class="icon-btn" type="submit" title="Apply filters"><i class="ri-filter-3-line"></i></button>
         </form>
-
-
-        <!-- Search Result Indicator -->
-        <c:if test="${not empty filterKeyword}">
-            <div style="margin: 8px 0; padding: 8px 12px; background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; font-size: 13px;">
-                <i class="ri-search-line" style="color: #0ea5e9;"></i>
-                <strong>Search Results</strong> for "${fn:escapeXml(filterKeyword)}"
-                <span style="color: #6b7280;">(${totalItems} result<c:if test="${totalItems != 1}">s</c:if>)</span>
-            </div>
-        </c:if>
 
         <!-- Data binding -->
         <c:set var="rows"
@@ -615,99 +551,7 @@
                                 <span class="pager-btn disabled"><i class="ri-arrow-left-line"></i> Prev</span>
                             </c:otherwise>
                         </c:choose>
-                        
-                        <!-- Page numbers -->
-                        <c:set var="startPage" value="${currentPage > 3 ? currentPage - 2 : 1}" />
-                        <c:set var="endPage" value="${currentPage + 2 < totalPages ? currentPage + 2 : totalPages}" />
-                        
-                        <!-- First page -->
-                        <c:if test="${startPage > 1}">
-                            <c:url var="firstPageUrl" value="/admin/service">
-                                <c:param name="action" value="${serviceActionName}" />
-                                <c:if test="${not empty filterKeyword}">
-                                    <c:param name="keyword" value="${filterKeyword}" />
-                                </c:if>
-                                <c:if test="${selectedCategoryId != null}">
-                                    <c:param name="categoryId" value="${selectedCategoryId}" />
-                                </c:if>
-                                <c:if test="${selectedActiveValue != null}">
-                                    <c:param name="isActive" value="${selectedActiveValue}" />
-                                </c:if>
-                                <c:if test="${not empty sortBy}">
-                                    <c:param name="sortBy" value="${sortBy}" />
-                                </c:if>
-                                <c:if test="${not empty sortOrder}">
-                                    <c:param name="sortOrder" value="${sortOrder}" />
-                                </c:if>
-                                <c:param name="size" value="${pageSize}" />
-                                <c:param name="page" value="1" />
-                            </c:url>
-                            <a class="pager-btn" href="${firstPageUrl}">1</a>
-                            <c:if test="${startPage > 2}">
-                                <span class="pager-btn disabled">...</span>
-                            </c:if>
-                        </c:if>
-                        
-                        <!-- Page numbers around current page -->
-                        <c:forEach var="pageNum" begin="${startPage}" end="${endPage}">
-                            <c:choose>
-                                <c:when test="${pageNum == currentPage}">
-                                    <span class="pager-btn" style="background: var(--primary); color: white; border-color: var(--primary);">${pageNum}</span>
-                                </c:when>
-                                <c:otherwise>
-                                    <c:url var="pageUrl" value="/admin/service">
-                                        <c:param name="action" value="${serviceActionName}" />
-                                        <c:if test="${not empty filterKeyword}">
-                                            <c:param name="keyword" value="${filterKeyword}" />
-                                        </c:if>
-                                        <c:if test="${selectedCategoryId != null}">
-                                            <c:param name="categoryId" value="${selectedCategoryId}" />
-                                        </c:if>
-                                        <c:if test="${selectedActiveValue != null}">
-                                            <c:param name="isActive" value="${selectedActiveValue}" />
-                                        </c:if>
-                                        <c:if test="${not empty sortBy}">
-                                            <c:param name="sortBy" value="${sortBy}" />
-                                        </c:if>
-                                        <c:if test="${not empty sortOrder}">
-                                            <c:param name="sortOrder" value="${sortOrder}" />
-                                        </c:if>
-                                        <c:param name="size" value="${pageSize}" />
-                                        <c:param name="page" value="${pageNum}" />
-                                    </c:url>
-                                    <a class="pager-btn" href="${pageUrl}">${pageNum}</a>
-                                </c:otherwise>
-                            </c:choose>
-                        </c:forEach>
-                        
-                        <!-- Last page -->
-                        <c:if test="${endPage < totalPages}">
-                            <c:if test="${endPage < totalPages - 1}">
-                                <span class="pager-btn disabled">...</span>
-                            </c:if>
-                            <c:url var="lastPageUrl" value="/admin/service">
-                                <c:param name="action" value="${serviceActionName}" />
-                                <c:if test="${not empty filterKeyword}">
-                                    <c:param name="keyword" value="${filterKeyword}" />
-                                </c:if>
-                                <c:if test="${selectedCategoryId != null}">
-                                    <c:param name="categoryId" value="${selectedCategoryId}" />
-                                </c:if>
-                                <c:if test="${selectedActiveValue != null}">
-                                    <c:param name="isActive" value="${selectedActiveValue}" />
-                                </c:if>
-                                <c:if test="${not empty sortBy}">
-                                    <c:param name="sortBy" value="${sortBy}" />
-                                </c:if>
-                                <c:if test="${not empty sortOrder}">
-                                    <c:param name="sortOrder" value="${sortOrder}" />
-                                </c:if>
-                                <c:param name="size" value="${pageSize}" />
-                                <c:param name="page" value="${totalPages}" />
-                            </c:url>
-                            <a class="pager-btn" href="${lastPageUrl}">${totalPages}</a>
-                        </c:if>
-                        
+                        <span class="pagination-info">Page <c:out value="${currentPage}" /> of <c:out value="${totalPages}" /></span>
                         <c:choose>
                             <c:when test="${hasNextPage}">
                                 <a class="pager-btn" href="${nextUrl}">Next <i class="ri-arrow-right-line"></i></a>
@@ -882,3 +726,4 @@
 <jsp:include page="../inc/footer.jsp" />
 </body>
 </html>
+

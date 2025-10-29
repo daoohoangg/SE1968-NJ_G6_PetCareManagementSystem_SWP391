@@ -1,6 +1,8 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <title>Create Invoice</title>
 </head>
 <body>
@@ -19,3 +21,4 @@
 <p><a href="<%= request.getContextPath() %>/billing/invoices">Back</a></p>
 </body>
 </html>
+

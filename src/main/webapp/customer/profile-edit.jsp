@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="com.petcaresystem.enities.Account" %>
 
-<%-- ===== Helpers: escape HTML an toàn khi in ra ===== --%>
+<%-- ===== Helpers: escape HTML an toÃ n khi in ra ===== --%>
 <%!
     private String escape(String s){
         if (s == null) return "";
@@ -45,6 +45,8 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <meta charset="UTF-8" />
     <title>Edit Profile - PetCare</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -74,7 +76,7 @@
 
 <div class="page-container">
 
-    <!-- Tiêu đề + Back -->
+    <!-- TiÃªu Ä‘á» + Back -->
     <div class="d-flex align-items-center justify-content-between mb-3">
         <h2 class="m-0 fw-bold text-primary">Edit Profile</h2>
         <a class="btn btn-outline-secondary btn-sm" href="<%= ctx %>/home">Back</a>
@@ -85,7 +87,7 @@
     <% } %>
 
     <div class="card">
-        <div class="card-header">Thông tin tài khoản</div>
+        <div class="card-header">ThÃ´ng tin tÃ i khoáº£n</div>
         <div class="card-body">
 
             <form id="profileForm" method="post" action="<%= ctx %>/customer/profile" onsubmit="return routeSubmit();">
@@ -118,14 +120,14 @@
                         <input id="phone" name="phone" type="tel" maxlength="20"
                                class="form-control"
                                pattern="[0-9+()\\-\\s]{6,20}"
-                               title="6–20 ký tự, chỉ gồm số và ký tự + ( ) - khoảng trắng"
+                               title="6â€“20 kÃ½ tá»±, chá»‰ gá»“m sá»‘ vÃ  kÃ½ tá»± + ( ) - khoáº£ng tráº¯ng"
                                value="<%= escape(profile.getPhone()) %>">
                     </div>
 
                     <div class="col-12">
-                        <label for="password" class="form-label">Password (để trống nếu không đổi)</label>
+                        <label for="password" class="form-label">Password (Ä‘á»ƒ trá»‘ng náº¿u khÃ´ng Ä‘á»•i)</label>
                         <input id="password" name="password" type="password" minlength="6" class="form-control">
-                        <div class="form-text">Điền mật khẩu mới nếu muốn đổi. Nếu có mật khẩu, hệ thống sẽ đổi mật khẩu và đưa bạn về trang Home.</div>
+                        <div class="form-text">Äiá»n máº­t kháº©u má»›i náº¿u muá»‘n Ä‘á»•i. Náº¿u cÃ³ máº­t kháº©u, há»‡ thá»‘ng sáº½ Ä‘á»•i máº­t kháº©u vÃ  Ä‘Æ°a báº¡n vá» trang Home.</div>
                     </div>
                 </div>
 
@@ -149,8 +151,8 @@
         var username = document.getElementById('username').value.trim();
         var pwd = document.getElementById('password').value.trim();
 
-        if(!username){ alert('Username là bắt buộc'); return false; }
-        if(!email){ alert('Email là bắt buộc'); return false; }
+        if(!username){ alert('Username lÃ  báº¯t buá»™c'); return false; }
+        if(!email){ alert('Email lÃ  báº¯t buá»™c'); return false; }
 
         var base = '<%= ctx %>/customer/profile';
         if(pwd){
@@ -163,11 +165,12 @@
     function validateForm(){
         var username = document.getElementById('username').value.trim();
         var email    = document.getElementById('email').value.trim();
-        if(!username){ alert('Username là bắt buộc'); return false; }
-        if(!email){ alert('Email là bắt buộc'); return false; }
+        if(!username){ alert('Username lÃ  báº¯t buá»™c'); return false; }
+        if(!email){ alert('Email lÃ  báº¯t buá»™c'); return false; }
         return true;
     }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+

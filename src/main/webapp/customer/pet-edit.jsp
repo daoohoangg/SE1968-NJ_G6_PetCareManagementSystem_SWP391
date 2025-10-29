@@ -6,14 +6,16 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <meta charset="UTF-8"/>
-    <title>Cập nhật thú cưng</title>
+    <title>Cáº­p nháº­t thÃº cÆ°ng</title>
 </head>
 <body style="font-family: system-ui, Arial, sans-serif; margin:24px;">
-<h2>Cập nhật thú cưng</h2>
+<h2>Cáº­p nháº­t thÃº cÆ°ng</h2>
 
 <c:if test="${pet == null}">
-    <p>Không tìm thấy bản ghi.</p>
+    <p>KhÃ´ng tÃ¬m tháº¥y báº£n ghi.</p>
 </c:if>
 
 <c:if test="${pet != null}">
@@ -22,10 +24,11 @@
         <input type="hidden" name="id" value="${pet.petId}"/>
         <jsp:include page="_pet-form.jspf"/>
         <div class="actions">
-            <button class="btn" type="submit">Cập nhật</button>
-            <a class="btn" href="<%=ctx%>/customer/pets?action=list">Quay lại</a>
+            <button class="btn" type="submit">Cáº­p nháº­t</button>
+            <a class="btn" href="<%=ctx%>/customer/pets?action=list">Quay láº¡i</a>
         </div>
     </form>
 </c:if>
 </body>
 </html>
+

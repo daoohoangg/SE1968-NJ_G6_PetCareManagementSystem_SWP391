@@ -2,6 +2,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <meta charset="UTF-8" />
     <title>Login</title>
     <style>
@@ -123,3 +125,4 @@
 </div>
 </body>
 </html>
+

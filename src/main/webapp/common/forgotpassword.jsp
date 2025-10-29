@@ -2,6 +2,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <meta charset="UTF-8">
     <title>Forgot Password</title>
     <style>

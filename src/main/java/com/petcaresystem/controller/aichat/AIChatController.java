@@ -11,6 +11,7 @@ import java.time.Duration;
 
 import okhttp3.*;
 import org.json.*;
+import com.petcaresystem.service.aichat.AiDataService;
 
 @WebServlet("/ai/gemini")
 public class AIChatController extends HttpServlet {
@@ -23,6 +24,7 @@ public class AIChatController extends HttpServlet {
             .build();
 
     private static final String MODEL = "gemini-2.0-flash";
+    private final AiDataService aiDataService = new AiDataService();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -57,12 +59,8 @@ public class AIChatController extends HttpServlet {
                 }
             }
 
-            String system = """
-                [System Rules]
-                - Bạn là trợ lý kỹ thuật hài hước, nói vừa phải, chính xác.
-                - Tên người dùng là: %s.
-                - Ưu tiên bảo mật & tính đúng đắn.
-            """.formatted(username);
+            // Load system prompt from database
+            String system = loadSystemPromptFromDatabase(username);
 
             String contextMsg = "Người dùng hiện tại tên là %s. Hãy xưng hô đúng tên trong mọi phản hồi."
                     .formatted(username);
@@ -212,5 +210,33 @@ public class AIChatController extends HttpServlet {
     private static String slice(String s, int max) {
         if (s == null) return "";
         return s.length() <= max ? s : s.substring(0, max) + "...";
+    }
+    
+    /**
+     * Load system prompt from database with username context
+     */
+    private String loadSystemPromptFromDatabase(String username) {
+        try {
+            String basePrompt = aiDataService.getFormattedPrompt();
+            
+            // Add username context to the prompt
+            return String.format("""
+                %s
+                
+                [User Context]
+                - Current user: %s
+                - Please address the user by their name when appropriate
+                - Maintain a professional and caring tone
+                """, basePrompt, username);
+                
+        } catch (Exception e) {
+            // Fallback to default prompt if database fails
+            return String.format("""
+                [System Rules]
+                - Bạn là trợ lý kỹ thuật hài hước, nói vừa phải, chính xác.
+                - Tên người dùng là: %s.
+                - Ưu tiên bảo mật & tính đúng đắn.
+                """, username);
+        }
     }
 }
