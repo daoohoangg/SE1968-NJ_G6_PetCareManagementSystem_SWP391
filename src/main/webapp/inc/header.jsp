@@ -107,6 +107,7 @@
 
                             if (role == AccountRoleEnum.STAFF) {
                     %>
+                    // thêm chức năng
                     <%
                     }
                     else if (role == AccountRoleEnum.ADMIN) {
@@ -117,6 +118,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="<%= request.getContextPath() %>/admin/accounts">Manage Accounts</a>
                     </li>
+                    <%
+                    }
+                    else if (role == AccountRoleEnum.RECEPTIONIST) {
+                    %>
+                    // thêm chức năng vào
                     <%
                             }
                         }
