@@ -6,12 +6,13 @@
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
     <%@ include file="/inc/common-head.jspf" %>
 
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>404 Not Found</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>403 Forbidden</title>
         <style>
             /* Import font */
             @import url("https://fonts.googleapis.com/css?family=Barlow+Condensed:300,400,500,600,700,800,900|Barlow:300,400,500,600,700,800,900&display=swap");
@@ -252,6 +253,8 @@
             }
 
         </style>
+    </head>
+    <body>
     <script>
     // Parallax Code
     var scene = document.getElementById('scene');
