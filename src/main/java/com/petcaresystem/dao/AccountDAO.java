@@ -131,13 +131,13 @@ public class AccountDAO {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             System.out.println("Session opened successfully");
             
-            // Build WHERE clause for concrete classes
-            StringBuilder where = new StringBuilder(" WHERE a.isDeleted = false");
+            // Build WHERE clause for concrete classes (without alias)
+            StringBuilder where = new StringBuilder(" WHERE isDeleted = false");
             if (normalizedKeyword != null) {
-                where.append(" AND (lower(a.fullName) like :kw OR lower(a.email) like :kw OR lower(a.username) like :kw)");
+                where.append(" AND (lower(fullName) like :kw OR lower(email) like :kw OR lower(username) like :kw)");
             }
             if (normalizedRole != null) {
-                where.append(" AND a.role = :roleFilter");
+                where.append(" AND role = :roleFilter");
             }
 
             // Query all concrete account types
@@ -145,8 +145,8 @@ public class AccountDAO {
             long totalCount = 0;
 
             // Get Customer accounts
-            String customerCountHql = "SELECT COUNT(c.accountId) FROM Customer c" + where;
-            String customerDataHql = "FROM Customer c" + where + " ORDER BY c.accountId DESC";
+            String customerCountHql = "SELECT COUNT(accountId) FROM Customer" + where;
+            String customerDataHql = "FROM Customer" + where + " ORDER BY accountId DESC";
             
             Query<Long> customerCountQuery = session.createQuery(customerCountHql, Long.class);
             Query<Customer> customerDataQuery = session.createQuery(customerDataHql, Customer.class);
@@ -169,8 +169,8 @@ public class AccountDAO {
             totalCount += customerCount;
 
             // Get Staff accounts
-            String staffCountHql = "SELECT COUNT(s.accountId) FROM Staff s" + where;
-            String staffDataHql = "FROM Staff s" + where + " ORDER BY s.accountId DESC";
+            String staffCountHql = "SELECT COUNT(accountId) FROM Staff" + where;
+            String staffDataHql = "FROM Staff" + where + " ORDER BY accountId DESC";
             
             Query<Long> staffCountQuery = session.createQuery(staffCountHql, Long.class);
             Query<Staff> staffDataQuery = session.createQuery(staffDataHql, Staff.class);
@@ -193,8 +193,8 @@ public class AccountDAO {
             totalCount += staffCount;
 
             // Get Receptionist accounts
-            String receptionistCountHql = "SELECT COUNT(r.accountId) FROM Receptionist r" + where;
-            String receptionistDataHql = "FROM Receptionist r" + where + " ORDER BY r.accountId DESC";
+            String receptionistCountHql = "SELECT COUNT(accountId) FROM Receptionist" + where;
+            String receptionistDataHql = "FROM Receptionist" + where + " ORDER BY accountId DESC";
             
             Query<Long> receptionistCountQuery = session.createQuery(receptionistCountHql, Long.class);
             Query<Receptionist> receptionistDataQuery = session.createQuery(receptionistDataHql, Receptionist.class);
@@ -217,8 +217,8 @@ public class AccountDAO {
             totalCount += receptionistCount;
 
             // Get Administration accounts
-            String adminCountHql = "SELECT COUNT(a.accountId) FROM Administration a" + where;
-            String adminDataHql = "FROM Administration a" + where + " ORDER BY a.accountId DESC";
+            String adminCountHql = "SELECT COUNT(accountId) FROM Administration" + where;
+            String adminDataHql = "FROM Administration" + where + " ORDER BY accountId DESC";
             
             Query<Long> adminCountQuery = session.createQuery(adminCountHql, Long.class);
             Query<Administration> adminDataQuery = session.createQuery(adminDataHql, Administration.class);
@@ -263,13 +263,13 @@ public class AccountDAO {
         String normalizedRole = normalizeRole(role);
 
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            // Build WHERE clause for concrete classes
-            StringBuilder where = new StringBuilder(" WHERE a.isDeleted = false");
+            // Build WHERE clause for concrete classes (without alias)
+            StringBuilder where = new StringBuilder(" WHERE isDeleted = false");
             if (normalizedKeyword != null) {
-                where.append(" AND (lower(a.fullName) like :kw OR lower(a.email) like :kw OR lower(a.username) like :kw)");
+                where.append(" AND (lower(fullName) like :kw OR lower(email) like :kw OR lower(username) like :kw)");
             }
             if (normalizedRole != null) {
-                where.append(" AND a.role = :roleFilter");
+                where.append(" AND role = :roleFilter");
             }
 
             long total = 0;
@@ -279,7 +279,7 @@ public class AccountDAO {
             long customer = 0;
 
             // Count Customer accounts
-            String customerHql = "SELECT COUNT(c.accountId), SUM(CASE WHEN c.isActive = true THEN 1 ELSE 0 END) FROM Customer c" + where;
+            String customerHql = "SELECT COUNT(accountId), SUM(CASE WHEN isActive = true THEN 1 ELSE 0 END) FROM Customer" + where;
             Query<Object[]> customerQuery = session.createQuery(customerHql, Object[].class);
             if (normalizedKeyword != null) {
                 customerQuery.setParameter("kw", "%" + normalizedKeyword + "%");
@@ -295,7 +295,7 @@ public class AccountDAO {
             customer += customerCount;
 
             // Count Staff accounts
-            String staffHql = "SELECT COUNT(s.accountId), SUM(CASE WHEN s.isActive = true THEN 1 ELSE 0 END) FROM Staff s" + where;
+            String staffHql = "SELECT COUNT(accountId), SUM(CASE WHEN isActive = true THEN 1 ELSE 0 END) FROM Staff" + where;
             Query<Object[]> staffQuery = session.createQuery(staffHql, Object[].class);
             if (normalizedKeyword != null) {
                 staffQuery.setParameter("kw", "%" + normalizedKeyword + "%");
@@ -311,7 +311,7 @@ public class AccountDAO {
             staff += staffCount;
 
             // Count Receptionist accounts
-            String receptionistHql = "SELECT COUNT(r.accountId), SUM(CASE WHEN r.isActive = true THEN 1 ELSE 0 END) FROM Receptionist r" + where;
+            String receptionistHql = "SELECT COUNT(accountId), SUM(CASE WHEN isActive = true THEN 1 ELSE 0 END) FROM Receptionist" + where;
             Query<Object[]> receptionistQuery = session.createQuery(receptionistHql, Object[].class);
             if (normalizedKeyword != null) {
                 receptionistQuery.setParameter("kw", "%" + normalizedKeyword + "%");
@@ -326,7 +326,7 @@ public class AccountDAO {
             active += receptionistActive;
 
             // Count Administration accounts
-            String adminHql = "SELECT COUNT(a.accountId), SUM(CASE WHEN a.isActive = true THEN 1 ELSE 0 END) FROM Administration a" + where;
+            String adminHql = "SELECT COUNT(accountId), SUM(CASE WHEN isActive = true THEN 1 ELSE 0 END) FROM Administration" + where;
             Query<Object[]> adminQuery = session.createQuery(adminHql, Object[].class);
             if (normalizedKeyword != null) {
                 adminQuery.setParameter("kw", "%" + normalizedKeyword + "%");
