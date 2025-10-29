@@ -2,6 +2,8 @@
 <%@ page import="com.petcaresystem.enities.Invoice, com.petcaresystem.enities.Payment, java.util.*" %>
 <html>
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <title>Invoice Detail</title>
 </head>
 <body>
@@ -66,3 +68,4 @@
 <p><a href="<%= request.getContextPath() %>/billing/invoices">Back to list</a></p>
 </body>
 </html>
+

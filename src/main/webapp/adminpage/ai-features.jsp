@@ -515,6 +515,14 @@
                         <h2>AI Configuration</h2>
                         <p>Configure your Gemini API integration and assistant behaviour.</p>
                     </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-outline" type="button" id="loadConfigBtn">
+                            <i class="ri-refresh-line"></i> Load Current
+                        </button>
+                        <button class="btn-outline" type="button" id="resetConfigBtn">
+                            <i class="ri-restart-line"></i> Reset
+                        </button>
+                    </div>
                 </div>
 
                 <div class="config-grid">
@@ -551,11 +559,27 @@
 
                 <div class="config-field">
                     <label for="systemPrompt">System Prompt</label>
-                    <textarea id="systemPrompt">You are a helpful AI assistant for a pet care management system. Provide professional, caring, and accurate advice about pet care services, scheduling, and customer support. Always prioritise pet welfare and customer satisfaction.</textarea>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <button class="btn-outline" type="button" id="loadPromptBtn" style="padding: 8px 12px; font-size: 12px;">
+                            <i class="ri-download-line"></i> Load from DB
+                        </button>
+                        <button class="btn-outline" type="button" id="savePromptBtn" style="padding: 8px 12px; font-size: 12px;">
+                            <i class="ri-upload-line"></i> Save to DB
+                        </button>
+                        <button class="btn-outline" type="button" id="previewPromptBtn" style="padding: 8px 12px; font-size: 12px;">
+                            <i class="ri-eye-line"></i> Preview
+                        </button>
+                    </div>
+                    <textarea id="systemPrompt" placeholder="Enter your system prompt here...">You are a helpful AI assistant for a pet care management system. Provide professional, caring, and accurate advice about pet care services, scheduling, and customer support. Always prioritise pet welfare and customer satisfaction.</textarea>
+                    <div id="promptStats" style="margin-top: 8px; font-size: 12px; color: var(--muted);">
+                        <span id="promptLength">0</span> characters
+                    </div>
                 </div>
 
                 <div class="config-footer">
-                    <button class="save-btn" type="button"><i class="ri-save-3-line"></i> Save AI Configuration</button>
+                    <button class="save-btn" type="button" id="saveConfigBtn">
+                        <i class="ri-save-3-line"></i> Save AI Configuration
+                    </button>
                 </div>
             </div>
         </div>
@@ -564,6 +588,9 @@
 
 <script>
     (function(){
+        // ===== Global Variables =====
+        let currentConfig = null;
+        
         // ===== Slider Logic =====
         const slider = document.getElementById('creativitySlider');
         const valueLabel = document.getElementById('creativityValue');
@@ -572,6 +599,274 @@
             slider.addEventListener('input', updateValue);
             updateValue();
         }
+        
+        // ===== Prompt Management =====
+        const systemPrompt = document.getElementById('systemPrompt');
+        const promptLength = document.getElementById('promptLength');
+        
+        // Update prompt length counter
+        function updatePromptLength() {
+            if (systemPrompt && promptLength) {
+                promptLength.textContent = systemPrompt.value.length;
+            }
+        }
+        
+        if (systemPrompt) {
+            systemPrompt.addEventListener('input', updatePromptLength);
+            updatePromptLength();
+        }
+        
+        // Load current configuration from database
+        async function loadCurrentConfig() {
+            try {
+                const response = await fetch('<%= request.getContextPath() %>/admin/ai/current');
+                const data = await response.json();
+                
+                if (data.success && data.configuration) {
+                    currentConfig = data.configuration;
+                    
+                    // Update form fields
+                    if (systemPrompt) {
+                        systemPrompt.value = currentConfig.prompt || '';
+                        updatePromptLength();
+                    }
+                    
+                    if (slider) {
+                        slider.value = currentConfig.creativityLevel || 40;
+                        updateValue();
+                    }
+                    
+                    showNotification('Configuration loaded successfully!', 'success');
+                } else {
+                    showNotification('Failed to load configuration: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Load config error:', error);
+                showNotification('Error loading configuration: ' + error.message, 'error');
+            }
+        }
+        
+        // Save configuration to database
+        async function saveConfiguration() {
+            const prompt = systemPrompt ? systemPrompt.value : '';
+            const creativityLevel = slider ? parseInt(slider.value) : 40;
+            
+            if (!prompt.trim()) {
+                showNotification('Please enter a system prompt', 'error');
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('prompt', prompt);
+                formData.append('creativityLevel', creativityLevel.toString());
+                
+                const response = await fetch('<%= request.getContextPath() %>/admin/ai/update-config', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('Configuration saved successfully!', 'success');
+                    currentConfig = { prompt, creativityLevel };
+                } else {
+                    showNotification('Failed to save configuration: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Save config error:', error);
+                showNotification('Error saving configuration: ' + error.message, 'error');
+            }
+        }
+        
+        // Load prompt from database
+        async function loadPrompt() {
+            await loadCurrentConfig();
+        }
+        
+        // Save prompt to database
+        async function savePrompt() {
+            const prompt = systemPrompt ? systemPrompt.value : '';
+            
+            if (!prompt.trim()) {
+                showNotification('Please enter a system prompt', 'error');
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('prompt', prompt);
+                
+                const response = await fetch('<%= request.getContextPath() %>/admin/ai/update-prompt', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('Prompt saved successfully!', 'success');
+                } else {
+                    showNotification('Failed to save prompt: ' + (data.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Save prompt error:', error);
+                showNotification('Error saving prompt: ' + error.message, 'error');
+            }
+        }
+        
+        // Preview prompt
+        function previewPrompt() {
+            const prompt = systemPrompt ? systemPrompt.value : '';
+            
+            if (!prompt.trim()) {
+                showNotification('Please enter a system prompt to preview', 'error');
+                return;
+            }
+            
+            // Create preview modal
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            `;
+            
+            modal.innerHTML = `
+                <div style="
+                    background: white;
+                    padding: 20px;
+                    border-radius: 12px;
+                    max-width: 600px;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+                ">
+                    <h3 style="margin: 0 0 15px 0; color: var(--text);">Prompt Preview</h3>
+                    <div style="
+                        background: #f8f9fa;
+                        padding: 15px;
+                        border-radius: 8px;
+                        border-left: 4px solid var(--primary);
+                        white-space: pre-wrap;
+                        font-family: monospace;
+                        font-size: 14px;
+                        line-height: 1.5;
+                        color: var(--text);
+                    ">${escapeHtml(prompt)}</div>
+                    <div style="margin-top: 15px; text-align: right;">
+                        <button onclick="this.closest('.modal').remove()" style="
+                            background: var(--primary);
+                            color: white;
+                            border: none;
+                            padding: 8px 16px;
+                            border-radius: 6px;
+                            cursor: pointer;
+                        ">Close</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Close on click outside
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+        
+        // Reset configuration
+        function resetConfiguration() {
+            if (confirm('Are you sure you want to reset the configuration to default values?')) {
+                if (systemPrompt) {
+                    systemPrompt.value = 'You are a helpful AI assistant for a pet care management system. Provide professional, caring, and accurate advice about pet care services, scheduling, and customer support. Always prioritise pet welfare and customer satisfaction.';
+                    updatePromptLength();
+                }
+                
+                if (slider) {
+                    slider.value = 40;
+                    updateValue();
+                }
+                
+                showNotification('Configuration reset to default values', 'info');
+            }
+        }
+        
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 1001;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            const colors = {
+                success: '#10b981',
+                error: '#ef4444',
+                info: '#3b82f6',
+                warning: '#f59e0b'
+            };
+            
+            notification.style.backgroundColor = colors[type] || colors.info;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+        
+        // Add CSS for animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // ===== Event Listeners =====
+        const loadConfigBtn = document.getElementById('loadConfigBtn');
+        const resetConfigBtn = document.getElementById('resetConfigBtn');
+        const loadPromptBtn = document.getElementById('loadPromptBtn');
+        const savePromptBtn = document.getElementById('savePromptBtn');
+        const previewPromptBtn = document.getElementById('previewPromptBtn');
+        const saveConfigBtn = document.getElementById('saveConfigBtn');
+        
+        if (loadConfigBtn) loadConfigBtn.addEventListener('click', loadCurrentConfig);
+        if (resetConfigBtn) resetConfigBtn.addEventListener('click', resetConfiguration);
+        if (loadPromptBtn) loadPromptBtn.addEventListener('click', loadPrompt);
+        if (savePromptBtn) savePromptBtn.addEventListener('click', savePrompt);
+        if (previewPromptBtn) previewPromptBtn.addEventListener('click', previewPrompt);
+        if (saveConfigBtn) saveConfigBtn.addEventListener('click', saveConfiguration);
+        
+        // Load configuration on page load
+        loadCurrentConfig();
 
         // ===== Generate Suggestions =====
         const generateBtn = document.getElementById('generateSuggestionsBtn');

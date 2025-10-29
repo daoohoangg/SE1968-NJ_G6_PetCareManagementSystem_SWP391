@@ -2,6 +2,8 @@
 <%@ page import="java.util.*, com.petcaresystem.enities.Invoice, java.time.format.DateTimeFormatter" %>
 <html>
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <title>Invoices</title>
 </head>
 <body>
@@ -46,3 +48,4 @@
 %>
 </body>
 </html>
+

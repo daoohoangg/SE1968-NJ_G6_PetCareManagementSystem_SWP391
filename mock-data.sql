@@ -145,6 +145,19 @@ INSERT INTO rule_week_days (rule_set_id, day_of_week, is_open, open_time, close_
                                                                                           (3, 'SATURDAY', 1, '09:00:00', '17:00:00'),
                                                                                           (3, 'SUNDAY', 0, NULL, NULL);
 
+INSERT INTO ai_data (creativity_level, prompt) VALUES (
+                                                          40,
+                                                          'You are a helpful AI assistant for a pet care management system. Provide professional, caring, and accurate advice about pet care services, scheduling, and customer support. Always prioritize pet welfare and customer satisfaction.
+
+                                                      Guidelines:
+                                                      - Be friendly and professional
+                                                      - Provide accurate pet care information
+                                                      - Help with appointment scheduling
+                                                      - Offer service recommendations
+                                                      - Maintain a caring and supportive tone
+                                                      - Address users by their name when appropriate
+                                                      - Keep responses concise but informative'
+                                                      );
 -- Insert Bookings
 SET IDENTITY_INSERT bookings ON;
 INSERT INTO bookings (bookingId, pet_name, customer_name, bookingDate, status)VALUES

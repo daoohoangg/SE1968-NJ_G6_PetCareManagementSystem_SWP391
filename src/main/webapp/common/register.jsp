@@ -2,6 +2,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <meta charset="UTF-8" />
     <title>Register</title>
     <style>
@@ -86,12 +88,12 @@
             text-decoration: line-through;
         }
         .password-rules small::before {
-            content: '✖ ';
+            content: 'âœ– ';
             display: inline-block;
             font-weight: bold;
         }
         .password-rules small.valid::before {
-            content: '✔ ';
+            content: 'âœ” ';
             font-weight: bold;
         }
         .static-rules {
@@ -108,7 +110,7 @@
             margin-bottom: 4px;
         }
         .static-rules small::before {
-            content: '• ';
+            content: 'â€¢ ';
             color: #0d6efd;
             font-weight: bold;
         }
@@ -249,3 +251,4 @@
 </script>
 </body>
 </html>
+

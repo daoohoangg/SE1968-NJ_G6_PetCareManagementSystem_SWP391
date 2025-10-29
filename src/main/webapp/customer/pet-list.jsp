@@ -6,8 +6,10 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <meta charset="UTF-8"/>
-    <title>Thú cưng của tôi</title>
+    <title>ThÃº cÆ°ng cá»§a tÃ´i</title>
     <style>
         body { font-family: system-ui, Arial, sans-serif; margin: 24px; }
         .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
@@ -24,8 +26,8 @@
 <body>
 
 <div class="topbar">
-    <h2>Thú cưng của tôi</h2>
-    <a class="btn" href="<%=ctx%>/customer/pets?action=add">+ Thêm thú cưng</a>
+    <h2>ThÃº cÆ°ng cá»§a tÃ´i</h2>
+    <a class="btn" href="<%=ctx%>/customer/pets?action=add">+ ThÃªm thÃº cÆ°ng</a>
 </div>
 
 <c:if test="${not empty sessionScope.flash}">
@@ -35,22 +37,22 @@
 
 <c:choose>
     <c:when test="${empty pets}">
-        <div class="empty">Bạn chưa thêm thú cưng nào.</div>
+        <div class="empty">Báº¡n chÆ°a thÃªm thÃº cÆ°ng nÃ o.</div>
     </c:when>
     <c:otherwise>
         <table>
             <thead>
             <tr>
-                <th>Tên</th>
-                <th>Loài</th>
-                <th>Giống</th>
-                <th>Giới tính</th>
-                <th>Tuổi</th>
-                <th>Ngày sinh</th>
-                <th>Cân nặng (kg)</th>
-                <th>Tình trạng sức khoẻ</th>
-                <th>Ghi chú y tế</th>
-                <th>Hành động</th>
+                <th>TÃªn</th>
+                <th>LoÃ i</th>
+                <th>Giá»‘ng</th>
+                <th>Giá»›i tÃ­nh</th>
+                <th>Tuá»•i</th>
+                <th>NgÃ y sinh</th>
+                <th>CÃ¢n náº·ng (kg)</th>
+                <th>TÃ¬nh tráº¡ng sá»©c khoáº»</th>
+                <th>Ghi chÃº y táº¿</th>
+                <th>HÃ nh Ä‘á»™ng</th>
             </tr>
             </thead>
             <tbody>
@@ -66,11 +68,11 @@
                     <td>${p.healthStatus}</td>
                     <td><c:out value="${p.medicalNotes}"/></td>
                     <td class="actions">
-                        <a class="btn" href="<%=ctx%>/customer/pets?action=edit&id=${p.petId}">Sửa</a>
-                        <form action="<%=ctx%>/customer/pets" method="post" onsubmit="return confirm('Xoá thú cưng này?');">
+                        <a class="btn" href="<%=ctx%>/customer/pets?action=edit&id=${p.petId}">Sá»­a</a>
+                        <form action="<%=ctx%>/customer/pets" method="post" onsubmit="return confirm('XoÃ¡ thÃº cÆ°ng nÃ y?');">
                             <input type="hidden" name="action" value="delete"/>
                             <input type="hidden" name="id" value="${p.petId}"/>
-                            <button class="btn" type="submit">Xoá</button>
+                            <button class="btn" type="submit">XoÃ¡</button>
                         </form>
                     </td>
                 </tr>
@@ -82,3 +84,4 @@
 
 </body>
 </html>
+

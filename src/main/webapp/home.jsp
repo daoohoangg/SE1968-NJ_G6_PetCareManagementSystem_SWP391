@@ -3,6 +3,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <meta charset="UTF-8">
     <title>PetCare - Home</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">

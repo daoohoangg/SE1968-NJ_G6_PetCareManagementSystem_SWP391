@@ -4,6 +4,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Invoice Detail - ${invoice.invoiceNumber}</title>
@@ -351,3 +353,4 @@
 <jsp:include page="../inc/footer.jsp"/>
 </body>
 </html>
+

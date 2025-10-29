@@ -5,6 +5,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Pet Service History</title>
@@ -224,8 +226,8 @@
                                 <td>
                                     <c:if test="${h.rating != null}">
                                         <span class="rating">
-                                            <c:forEach begin="1" end="${h.rating}">★</c:forEach>
-                                            <c:forEach begin="${h.rating + 1}" end="5">☆</c:forEach>
+                                            <c:forEach begin="1" end="${h.rating}">â˜…</c:forEach>
+                                            <c:forEach begin="${h.rating + 1}" end="5">â˜†</c:forEach>
                                         </span>
                                     </c:if>
                                     <c:if test="${h.rating == null}">-</c:if>
@@ -297,3 +299,4 @@
 <jsp:include page="../inc/footer.jsp" />
 </body>
 </html>
+
