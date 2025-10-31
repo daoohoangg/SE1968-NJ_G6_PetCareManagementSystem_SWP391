@@ -83,7 +83,7 @@
         }
         .service-section {
             padding: 60px 0;
-            background-color: #f8f9fa; /* Màu nền xám nhạt */
+            background-color: #f8f9fa;
         }
         .service-title {
             font-weight: 700;
@@ -112,10 +112,19 @@
         .service-list-item {
             padding: 1rem 1.25rem;
         }
-        .service-image-grid img {
+        .service-column-image {
             width: 100%;
+            height: 500px;
+            object-fit: cover;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .about-image {
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
         }
     </style>
 </head>
@@ -158,44 +167,24 @@
             <p class="quote">
                 "PetCare - The solution for modern pet care services."
             </p>
+            <div class="mt-4">
+                <a href="<%= request.getContextPath() %>/inc/about.jsp" class="btn btn-primary">
+                    <i class="fas fa-arrow-right me-2"></i> Explore now.
+                </a>
+            </div>
         </div>
         <div class="col-lg-5">
-            <div class="info-list-item">
-                <div class="icon"><i class="fas fa-map-marker-alt"></i></div>
-                <div class="info-content">
-                    <h6>Address</h6>
-                    <p>FPT University, Hoa Lac Hi-Tech Park, Km29, Thang Long Avenue, Thach That, Hanoi.</p>
-                </div>
-            </div>
-            <div class="info-list-item">
-                <div class="icon"><i class="fas fa-clock"></i></div>
-                <div class="info-content">
-                    <h6>Opening Hours</h6>
-                    <p>8:00 AM - 8:00 PM (All Days)</p>
-                </div>
-            </div>
-            <div class="info-list-item">
-                <div class="icon"><i class="fas fa-phone-alt"></i></div>
-                <div class="info-content">
-                    <h6>Consult & Booking</h6>
-                    <p>Phone: <strong>0914.430.472</strong></p>
-                </div>
-            </div>
-            <div class="info-list-item">
-                <div class="icon"><i class="fas fa-envelope"></i></div>
-                <div class="info-content">
-                    <h6>Email</h6>
-                    <p>hahshe186536@fpt.edu.vn</p>
-                </div>
-            </div>
-
+            <img src="<%= request.getContextPath() %>/images/pethome.jpg"
+                 alt="About Us Image"
+                 class="img-fluid about-image"
+                 style="background: #eee; border: 1px solid #ddd; object-fit: cover; width: 100%;">
         </div>
     </div>
 </main>
 <section class="service-section">
     <div class="container">
-        <div class="row g-5 align-items-start">
-            <div class="col-lg-7">
+        <div class="row g-4 align-items-start">
+            <div class="col-lg-6">
                 <h2 class="service-title">Our Services & Pricing</h2>
                 <p class="text-muted mb-4">
                     Click each category to see our services and pricing.
@@ -313,7 +302,6 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
 
                 <div class="mt-4">
@@ -322,21 +310,18 @@
                     </a>
                 </div>
             </div>
-            <div class="col-lg-5">
-                <div class="service-image-grid">
-                    <p class="text-muted fst-italic">
-                       sẽ thêm ảnh sau
-                    </p>
-                    <img src="<%= request.getContextPath() %>/images/placeholder-service-1.jpg"
-                         alt="Pet Grooming"
-                         class="img-fluid rounded mb-3"
-                         style="border: 1px solid #ddd; background: #eee; height: 250px; width:100%; object-fit: cover;">
 
-                    <img src="<%= request.getContextPath() %>/images/placeholder-service-2.jpg"
-                         alt="Pet Hotel"
-                         class="img-fluid rounded"
-                         style="border: 1px solid #ddd; background: #eee; height: 250px; width:100%; object-fit: cover;">
-                </div>
+            <div class="col-lg-3">
+                <img src="<%= request.getContextPath() %>/images/petgrooming.jpg"
+                     alt="Pet Grooming"
+                     class="img-fluid service-column-image"
+                     style="border: 1px solid #ddd; background: #eee;">
+            </div>
+            <div class="col-lg-3">
+                <img src="<%= request.getContextPath() %>/images/petspa.jpg"
+                     alt="Pet Spa"
+                     class="img-fluid service-column-image"
+                     style="border: 1px solid #ddd; background: #eee;">
             </div>
 
         </div>
