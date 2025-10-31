@@ -81,6 +81,42 @@
             font-size: 0.9rem;
             color: #555;
         }
+        .service-section {
+            padding: 60px 0;
+            background-color: #f8f9fa; /* Màu nền xám nhạt */
+        }
+        .service-title {
+            font-weight: 700;
+            color: #1976d2;
+            margin-bottom: 25px;
+        }
+        .service-accordion-item {
+            border: 1px solid #dee2e6;
+            border-radius: 8px !important;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .accordion-button {
+            font-weight: 600;
+            color: #333;
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: #e9f2ff;
+            color: #0d6efd;
+            box-shadow: none;
+        }
+        .accordion-button:focus {
+            box-shadow: none;
+            border-color: rgba(0,0,0,.125);
+        }
+        .service-list-item {
+            padding: 1rem 1.25rem;
+        }
+        .service-image-grid img {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
@@ -156,7 +192,156 @@
         </div>
     </div>
 </main>
+<section class="service-section">
+    <div class="container">
+        <div class="row g-5 align-items-start">
+            <div class="col-lg-7">
+                <h2 class="service-title">Our Services & Pricing</h2>
+                <p class="text-muted mb-4">
+                    Click each category to see our services and pricing.
+                </p>
+                <div class="accordion" id="serviceAccordion">
+                    <div class="accordion-item service-accordion-item">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                Medical Checkup
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#serviceAccordion">
+                            <div class="accordion-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item service-list-item d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <strong>General Checkup</strong>
+                                            <br>
+                                            <small class="text-muted">Comprehensive health examination</small>
+                                        </span>
+                                        <span class="text-primary fw-bold ms-auto" style="white-space: nowrap;">
+                                            75.00 đ
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item service-list-item d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <strong>Vaccination</strong>
+                                            <br>
+                                            <small class="text-muted">Core and non-core vaccinations</small>
+                                        </span>
+                                        <span class="text-primary fw-bold ms-auto" style="white-space: nowrap;">
+                                            45.00 đ
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item service-accordion-item">
+                        <h2 class="accordion-header" id="headingTwo">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                Surgery & Dental
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#serviceAccordion">
+                            <div class="accordion-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item service-list-item d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <strong>Spay/Neuter Surgery</strong>
+                                            <br>
+                                            <small class="text-muted">Spaying or neutering procedure</small>
+                                        </span>
+                                        <span class="text-primary fw-bold ms-auto" style="white-space: nowrap;">
+                                            200.00 đ
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item service-list-item d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <strong>Dental Cleaning</strong>
+                                            <br>
+                                            <small class="text-muted">Professional dental cleaning</small>
+                                        </span>
+                                        <span class="text-primary fw-bold ms-auto" style="white-space: nowrap;">
+                                            150.00 đ
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item service-accordion-item">
+                        <h2 class="accordion-header" id="headingThree">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                Grooming
+                            </button>
+                        </h2>
+                        <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#serviceAccordion">
+                            <div class="accordion-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item service-list-item d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <strong>Basic Grooming</strong>
+                                            <br>
+                                            <small class="text-muted">Bath, brush, and nail trim</small>
+                                        </span>
+                                        <span class="text-primary fw-bold ms-auto" style="white-space: nowrap;">
+                                            40.00 đ
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item service-accordion-item">
+                        <h2 class="accordion-header" id="headingFour">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                                Emergency
+                            </button>
+                        </h2>
+                        <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#serviceAccordion">
+                            <div class="accordion-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item service-list-item d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <strong>Emergency Consultation</strong>
+                                            <br>
+                                            <small class="text-muted">Urgent medical consultation</small>
+                                        </span>
+                                        <span class="text-primary fw-bold ms-auto" style="white-space: nowrap;">
+                                            100.00 đ
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
 
+                </div>
+
+                <div class="mt-4">
+                    <a href="<%= request.getContextPath() %>/customer/appointments.jsp" class="btn btn-primary">
+                        <i class="fas fa-calendar-check me-2"></i> Book Appointment Now
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="service-image-grid">
+                    <p class="text-muted fst-italic">
+                       sẽ thêm ảnh sau
+                    </p>
+                    <img src="<%= request.getContextPath() %>/images/placeholder-service-1.jpg"
+                         alt="Pet Grooming"
+                         class="img-fluid rounded mb-3"
+                         style="border: 1px solid #ddd; background: #eee; height: 250px; width:100%; object-fit: cover;">
+
+                    <img src="<%= request.getContextPath() %>/images/placeholder-service-2.jpg"
+                         alt="Pet Hotel"
+                         class="img-fluid rounded"
+                         style="border: 1px solid #ddd; background: #eee; height: 250px; width:100%; object-fit: cover;">
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
 <%@ include file="inc/chatbox.jsp" %>
 <%@ include file="inc/footer.jsp"%>
 </body>
