@@ -89,14 +89,14 @@
                     <li class="nav-item">
                         <a class="nav-link" href="<%= servicesLink %>">Services</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/customer/appointments.jsp">Appointments</a>
+                    </li>
                     <%
                         if (loggedInAccount != null && loggedInAccount.getRole() == AccountRoleEnum.CUSTOMER) {
                     %>
                     <li class="nav-item">
                         <a class="nav-link" href="<%= request.getContextPath() %>/customer/pets">My Pets</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<%= request.getContextPath() %>/customer/appointments.jsp">Appointments</a>
                     </li>
                     <%
                         }
