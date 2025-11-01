@@ -1,12 +1,16 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: #f5f5f5;
         }
         .box {
@@ -86,12 +90,12 @@
             text-decoration: line-through;
         }
         .password-rules small::before {
-            content: '✖ ';
+            content: 'âœ– ';
             display: inline-block;
             font-weight: bold;
         }
         .password-rules small.valid::before {
-            content: '✔ ';
+            content: 'âœ” ';
             font-weight: bold;
         }
         .static-rules {
@@ -108,7 +112,7 @@
             margin-bottom: 4px;
         }
         .static-rules small::before {
-            content: '• ';
+            content: 'â€¢ ';
             color: #0d6efd;
             font-weight: bold;
         }
@@ -249,3 +253,4 @@
 </script>
 </body>
 </html>
+

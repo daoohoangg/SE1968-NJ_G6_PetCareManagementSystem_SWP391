@@ -11,21 +11,24 @@ import java.util.List;
 
 public class AppointmentDAO {
 
-    /** Danh sách lịch hẹn của 1 khách, mới nhất trước (EAGER fetch Customer, Pet) */
-    public List<Appointment> findByCustomer(Long customerId) {
+    public List<Appointment> findByCustomer(Long accountId) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
-            String hql = "select a from Appointment a " +
-                    "join fetch a.customer " +
-                    "join fetch a.pet " +
-                    "where a.customer.accountId = :cid " +
-                    "order by a.appointmentDate desc";
+            String hql =
+                    "select distinct a " +
+                            "from Appointment a " +
+                            "join fetch a.customer c " +
+                            "join fetch a.pet p " +
+                            "left join fetch a.services sv " +
+                            "where c.accountId = :cid " +
+                            "order by a.appointmentDate desc";
+
             return s.createQuery(hql, Appointment.class)
-                    .setParameter("cid", customerId)
+                    .setParameter("cid", accountId)
                     .list();
         }
     }
 
-    /** Upcoming (>= now) cho trang khách hàng (EAGER fetch Customer, Pet) */
+
     public List<Appointment> findUpcomingByCustomer(Long customerId) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             String hql = "select a from Appointment a " +
@@ -40,7 +43,6 @@ public class AppointmentDAO {
         }
     }
 
-    /** Lấy chi tiết 1 lịch (EAGER fetch Customer, Pet, Services) */
     public Appointment findById(Long id) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             String hql = "select a from Appointment a " +
@@ -54,7 +56,6 @@ public class AppointmentDAO {
         }
     }
 
-    /** Tạo lịch hẹn */
     public boolean create(Long customerId,
                           Long petId,
                           List<Long> serviceIds,
@@ -97,7 +98,6 @@ public class AppointmentDAO {
         }
     }
 
-    /** Hủy lịch nếu thuộc về customer */
     public boolean cancelIfOwnedBy(Long appointmentId, Long customerId) {
         Transaction tx = null;
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
@@ -120,7 +120,6 @@ public class AppointmentDAO {
         }
     }
 
-    /** Lấy danh sách appointments theo ngày (EAGER fetch Customer, Pet) */
     public List<Appointment> findByDate(LocalDateTime startOfDay, LocalDateTime endOfDay) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             String hql = "select a from Appointment a " +
@@ -135,7 +134,6 @@ public class AppointmentDAO {
         }
     }
 
-    /** Lấy appointments có thể check-in */
     public List<Appointment> findCheckInEligible(LocalDateTime startOfDay, LocalDateTime endOfDay) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             String hql = "select a from Appointment a " +
@@ -154,7 +152,6 @@ public class AppointmentDAO {
         }
     }
 
-    /** Lấy appointments có thể check-in với filter và paging */
     public List<Appointment> findCheckInEligibleWithFilter(LocalDateTime startOfDay, LocalDateTime endOfDay,
                                                            String customerName, String petName,
                                                            int page, int pageSize) {
@@ -211,7 +208,6 @@ public class AppointmentDAO {
         }
     }
 
-    /** Đếm số appointments có thể check-in với filter */
     public long countCheckInEligible(LocalDateTime startOfDay, LocalDateTime endOfDay,
                                      String customerName, String petName) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
@@ -245,7 +241,6 @@ public class AppointmentDAO {
         }
     }
 
-    /** Lấy appointments đã check-in (có thể check-out) */
     public List<Appointment> findCheckedIn() {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             String hql = "select a from Appointment a " +
@@ -261,7 +256,6 @@ public class AppointmentDAO {
         }
     }
 
-    /** Lấy appointments đã check-in với filter và paging */
     public List<Appointment> findCheckedInWithFilter(String customerName, String petName,
                                                      int page, int pageSize) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
@@ -314,7 +308,6 @@ public class AppointmentDAO {
         }
     }
 
-    /** Đếm số appointments đã check-in với filter */
     public long countCheckedIn(String customerName, String petName) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             StringBuilder hql = new StringBuilder("select count(distinct a.appointmentId) from Appointment a " +
@@ -344,7 +337,6 @@ public class AppointmentDAO {
         }
     }
 
-    /** Check-in */
     public boolean checkIn(Long appointmentId) {
         Transaction tx = null;
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
@@ -375,7 +367,6 @@ public class AppointmentDAO {
         }
     }
 
-    /** Check-out và tạo invoice nếu chưa có */
     public boolean checkOut(Long appointmentId) {
         Transaction tx = null;
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {

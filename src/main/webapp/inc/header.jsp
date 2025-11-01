@@ -11,6 +11,7 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
       crossorigin="anonymous"/>
+<link rel="icon" href="<%= request.getContextPath() %>/images/logo.png" type="image/png">
 <style>
     html, body{
         min-height:100%;
@@ -88,14 +89,14 @@
                     <li class="nav-item">
                         <a class="nav-link" href="<%= servicesLink %>">Services</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/customer/appointments.jsp">Appointments</a>
+                    </li>
                     <%
                         if (loggedInAccount != null && loggedInAccount.getRole() == AccountRoleEnum.CUSTOMER) {
                     %>
                     <li class="nav-item">
                         <a class="nav-link" href="<%= request.getContextPath() %>/customer/pets">My Pets</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<%= request.getContextPath() %>/customer/appointments.jsp">Appointments</a>
                     </li>
                     <%
                         }
@@ -107,6 +108,7 @@
 
                             if (role == AccountRoleEnum.STAFF) {
                     %>
+                    // thêm chức năng
                     <%
                     }
                     else if (role == AccountRoleEnum.ADMIN) {
@@ -117,6 +119,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="<%= request.getContextPath() %>/admin/accounts">Manage Accounts</a>
                     </li>
+                    <%
+                    }
+                    else if (role == AccountRoleEnum.RECEPTIONIST) {
+                    %>
+                    // thêm chức năng vào
                     <%
                             }
                         }

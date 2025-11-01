@@ -1,22 +1,45 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%
-    String ctx = request.getContextPath();
-%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <meta charset="UTF-8"/>
-    <title>Thêm thú cưng</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Pet</title>
+
+    <!-- Inter + fallbacks -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:24px; background:#fafbfc; }
+        h2 { margin: 0 0 16px; }
+        .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:18px; box-shadow:0 6px 14px rgba(0,0,0,.06); }
+        .actions { display:flex; gap:10px; margin-top:16px; }
+        .btn { padding:8px 14px; border:1px solid #cfd6df; background:#f4f6f8; color:#1f2a37;
+            border-radius:8px; text-decoration:none; cursor:pointer; font-weight:600; }
+        .btn:hover { background:#e9edf1; }
+        .btn-primary { background:#0d6efd; border-color:#0d6efd; color:#fff; }
+        .btn-primary:hover { background:#0b5ed7; }
+    </style>
 </head>
-<body style="font-family: system-ui, Arial, sans-serif; margin:24px;">
-<h2>Thêm thú cưng</h2>
-<form action="<%=ctx%>/customer/pets" method="post" autocomplete="on">
-    <input type="hidden" name="action" value="create"/>
-    <jsp:include page="_pet-form.jspf"/>
-    <div class="actions">
-        <button class="btn" type="submit">Lưu</button>
-        <a class="btn" href="<%=ctx%>/customer/pets?action=list">Huỷ</a>
-    </div>
-</form>
+<body>
+<h2>Add Pet</h2>
+
+<div class="card">
+    <form action="<c:url value='/customer/pets'/>" method="post" autocomplete="on">
+        <input type="hidden" name="action" value="create"/>
+
+        <!-- Reuse shared pet fields -->
+        <%@ include file="/inc/common-head.jspf" %>
+
+        <div class="actions">
+            <button class="btn btn-primary" type="submit">Save</button>
+            <a class="btn" href="<c:url value='/customer/pets'><c:param name='action' value='list'/></c:url>">Cancel</a>
+        </div>
+    </form>
+</div>
 </body>
 </html>

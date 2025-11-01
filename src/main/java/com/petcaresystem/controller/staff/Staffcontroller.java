@@ -61,6 +61,5 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response)
                     response.sendRedirect("staff?action=list");
                     break;
             }
-        }
+        }}}
 
-    }}

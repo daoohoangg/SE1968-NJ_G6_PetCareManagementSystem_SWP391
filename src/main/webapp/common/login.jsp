@@ -1,11 +1,15 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <%@ include file="/inc/common-head.jspf" %>
+
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:#f5f5f5; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:#f5f5f5; }
         .box { width:360px; margin:80px auto; background:#fff; padding:24px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,.08); }
         .row { margin-bottom:16px; }
         label { display:block; margin-bottom:6px; font-weight:600; font-size: 14px; }
@@ -120,6 +124,10 @@
         <a href="<%= request.getContextPath() %>/register">Register</a> |
         <a href="<%= request.getContextPath() %>/forgotpassword">Forgot Password?</a>
     </div>
+    <div class="row" style="text-align:center; margin-top:15px; border-top: 1px solid #eee; padding-top: 15px;">
+        <a href="<%= request.getContextPath() %>/home">Back to Home</a>
+    </div>
 </div>
 </body>
 </html>
+

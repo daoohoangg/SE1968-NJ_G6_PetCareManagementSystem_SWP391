@@ -1,6 +1,7 @@
 package com.petcaresystem.enities;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -12,6 +13,7 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "receptionists")
+@DiscriminatorValue("RECEPTIONIST")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor

@@ -576,16 +576,6 @@
                 <button class="add-account-btn" type="submit" style="margin-left:8px">Search</button>
             </form>
 
-            <!-- Debug Information -->
-            <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px;">
-                <h4>Debug Information:</h4>
-                <p><strong>Accounts size:</strong> ${accounts != null ? accounts.size() : 'null'}</p>
-                <p><strong>Current Page:</strong> ${currentPage}</p>
-                <p><strong>Total Pages:</strong> ${totalPages}</p>
-                <p><strong>Total Items:</strong> ${totalItems}</p>
-                <p><strong>Filter Keyword:</strong> ${filterKeyword}</p>
-                <p><strong>Filter Role:</strong> ${filterRole}</p>
-            </div>
 
             <table class="accounts-table">
                 <thead>
