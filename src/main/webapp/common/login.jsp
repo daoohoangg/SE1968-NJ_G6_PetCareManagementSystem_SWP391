@@ -124,6 +124,9 @@
         <a href="<%= request.getContextPath() %>/register">Register</a> |
         <a href="<%= request.getContextPath() %>/forgotpassword">Forgot Password?</a>
     </div>
+    <div class="row" style="text-align:center; margin-top:15px; border-top: 1px solid #eee; padding-top: 15px;">
+        <a href="<%= request.getContextPath() %>/home">Back to Home</a>
+    </div>
 </div>
 </body>
 </html>
