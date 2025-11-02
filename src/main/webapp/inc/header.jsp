@@ -154,7 +154,7 @@
                     %>
                     <%-- // Thêm chức năng staff (ví dụ: Lịch làm việc) --%>
                     <li class="nav-item">
-
+                        <a class="nav-link" href="<%= request.getContextPath() %>/petServiceHistory">Pet Data</a>
                     </li>
                     <%
                     } else if (loggedInAccount.getRole() == AccountRoleEnum.RECEPTIONIST) {
