@@ -154,9 +154,6 @@
                     %>
                     <%-- // Thêm chức năng staff (ví dụ: Lịch làm việc) --%>
                     <li class="nav-item">
-                        <a class="nav-link" href="<%= request.getContextPath() %>/staff/petServiceData">P</a>
-                    </li>
-                    <li class="nav-item">
 
                     </li>
                     <%
@@ -169,7 +166,7 @@
                         <a class="nav-link" href="<%= request.getContextPath() %>/reception/checkout">Check-Out</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="<%= request.getContextPath() %>/reception/invoices">Invoice</a>
+                        <a class="nav-link" href="<%= request.getContextPath() %>/invoices">Invoice</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="<%= request.getContextPath() %>/customer/appointments.jsp">Appointments</a>

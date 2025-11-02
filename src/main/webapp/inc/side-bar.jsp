@@ -1,7 +1,13 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-
+<%@ page session="true" %>
+<%
+    String role = (String) session.getAttribute("role");
+    if (role == null || !"ADMIN".equalsIgnoreCase(role)) {
+        return;
+    }
+%>
 <c:if test="${empty activePage}">
     <c:set var="requestUri" value="${pageContext.request.requestURI}" />
     <c:choose>
