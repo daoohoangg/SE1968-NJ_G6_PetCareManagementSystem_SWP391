@@ -172,15 +172,18 @@ public class ServiceDAO {
     /** Active services */
     public List<Service> getActiveServices() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery(
+            String hql =
                     "SELECT s FROM Service s " +
-                            "LEFT JOIN FETCH s.category " +
+                            "JOIN FETCH s.category c " +               // dùng LEFT nếu category có thể null
                             "WHERE s.isActive = true " +
-                            "ORDER BY s.serviceName",
-                    Service.class
-            ).list();
+                            "ORDER BY c.name, s.serviceName";
+
+            return session.createQuery(hql, Service.class)
+                    .setReadOnly(true)
+                    .getResultList();
         }
     }
+
 
     /** Dịch vụ theo categoryId */
     public List<Service> getServicesByCategoryId(int categoryId) {

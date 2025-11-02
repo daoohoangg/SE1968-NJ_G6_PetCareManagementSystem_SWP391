@@ -80,15 +80,19 @@ public class PetDAO {
         }
     }
 
-    // ✅ Lấy danh sách Pet theo customerId
     public List<Pet> findByCustomerId(Long accountId) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             return s.createQuery(
-                    "FROM Pet p JOIN FETCH p.customer c WHERE p.customer.accountId = :cid ORDER BY p.name",
-                    Pet.class
-            ).setParameter("cid", accountId).getResultList();
+                            "FROM Pet p JOIN FETCH p.customer c " +
+                                    "WHERE p.customer.accountId = :cid " +
+                                    "ORDER BY p.name",
+                            Pet.class
+                    )
+                    .setParameter("cid", accountId)
+                    .getResultList();
         }
     }
+
 
 
     // ✅ Xóa thú cưng thuộc về đúng chủ
