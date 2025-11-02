@@ -13,7 +13,6 @@
     List<Pet>         pets         = (List<Pet>)         request.getAttribute("pets");
     List<Service>     services     = (List<Service>)     request.getAttribute("services");
 
-    // ===== Self-hydrate if servlet didn't set them =====
     if (services == null) {
         try {
             services = new ServiceDAO().getActiveServices();
