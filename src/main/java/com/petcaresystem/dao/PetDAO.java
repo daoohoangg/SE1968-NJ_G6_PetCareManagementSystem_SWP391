@@ -1,5 +1,6 @@
 package com.petcaresystem.dao;
 
+import com.petcaresystem.enities.Customer;
 import com.petcaresystem.enities.Pet;
 import com.petcaresystem.utils.HibernateUtil;
 import org.hibernate.Session;
@@ -9,71 +10,27 @@ import java.util.List;
 
 public class PetDAO {
 
-    // ✅ Lấy danh sách tất cả thú cưng
+    /* ================== LIST / READ ================== */
+
+    // Giữ lại hàm cũ
     public List<Pet> getPet() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery("from Pet", Pet.class).list();
         }
     }
 
-    // ✅ Alias method cho getAllPets()
-    public List<Pet> getAllPets() {
-        return getPet();
-    }
+    public List<Pet> getAllPets() { return getPet(); }
 
-    // ✅ Thêm thú cưng mới
-    public void addPet(Pet pet) {
-        Transaction tx = null;
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            tx = session.beginTransaction();
-            session.persist(pet);
-            tx.commit();
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            e.printStackTrace();
-        }
-    }
-
-    // ✅ Cập nhật thông tin thú cưng
-    public void updatePet(Pet pet) {
-        Transaction tx = null;
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            tx = session.beginTransaction();
-            session.merge(pet);
-            tx.commit();
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            e.printStackTrace();
-        }
-    }
-
-    // ✅ Xóa thú cưng theo ID
-    public void deletePet(int id) {
-        Transaction tx = null;
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            tx = session.beginTransaction();
-            Pet pet = session.get(Pet.class, (long) id);
-            if (pet != null) {
-                session.remove(pet);
-            }
-            tx.commit();
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            e.printStackTrace();
-        }
-    }
-
-    // ✅ Lấy thú cưng theo ID
     public Pet getPetById(Long id) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.get(Pet.class, id);
         }
     }
 
-    // ✅ Kiểm tra Pet có tồn tại hay không
     public boolean existsById(Long id) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Long count = session.createQuery("select count(p.idpet) from Pet p where p.idpet = :id", Long.class)
+            Long count = session.createQuery(
+                            "select count(p.idpet) from Pet p where p.idpet = :id", Long.class)
                     .setParameter("id", id)
                     .uniqueResult();
             return count != null && count > 0;
@@ -83,11 +40,8 @@ public class PetDAO {
     public List<Pet> findByCustomerId(Long accountId) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             return s.createQuery(
-                            "FROM Pet p JOIN FETCH p.customer c " +
-                                    "WHERE p.customer.accountId = :cid " +
-                                    "ORDER BY p.name",
-                            Pet.class
-                    )
+                            "select p from Pet p join fetch p.customer c " +
+                                    "where c.accountId = :cid order by p.name", Pet.class)
                     .setParameter("cid", accountId)
                     .getResultList();
         }
@@ -100,17 +54,93 @@ public class PetDAO {
         }
     }
 
+    /* ================== CREATE / UPDATE / DELETE (tên mới khớp controller) ================== */
 
+    // ===== CREATE
+    /** Tạo pet và gán đúng chủ dựa vào accountId (controller đang gọi tên này) */
+    public void createForCustomer(Long customerAccountId, Pet pet) {
+        Transaction tx = null;
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            tx = s.beginTransaction();
 
-    // ✅ Xóa thú cưng thuộc về đúng chủ
-    public boolean deleteOwned(Long petId, Long customerId) {
+            Customer customer = s.createQuery(
+                            "from Customer c where c.accountId = :aid", Customer.class)
+                    .setParameter("aid", customerAccountId)
+                    .uniqueResult();
+
+            if (customer == null) {
+                throw new IllegalArgumentException("Customer (by accountId) not found");
+            }
+
+            pet.setCustomer(customer);
+            s.persist(pet);
+
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            // KHÔNG throw e; -> bọc RuntimeException để khỏi phải khai báo throws
+            throw new RuntimeException(e);
+        }
+    }
+
+    // Giữ lại hàm cũ addPet (nếu nơi khác còn dùng)
+    public void addPet(Pet pet) {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             tx = session.beginTransaction();
-            Pet pet = session.get(Pet.class, petId);
-            if (pet != null && pet.getCustomer() != null &&
-                    customerId.equals(pet.getCustomer().getAccountId())) {
-                session.remove(pet);
+            session.persist(pet);
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            throw new RuntimeException(e);
+        }
+    }
+
+    // ===== UPDATE
+    /** Alias cho controller */
+    public void update(Pet pet) { updatePet(pet); }
+
+    public void updatePet(Pet pet) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            session.merge(pet);
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            throw new RuntimeException(e);
+        }
+    }
+
+    // ===== DELETE
+    /** Alias cho controller – ở đây xoá cứng cho đơn giản (không dùng reflection) */
+    public void softDelete(Long petId) { hardDelete(petId); }
+
+    public void hardDelete(Long petId) {
+        Transaction tx = null;
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            tx = s.beginTransaction();
+            Pet p = s.get(Pet.class, petId);
+            if (p != null) s.remove(p);
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            throw new RuntimeException(e);
+        }
+    }
+
+    // Giữ lại hàm cũ (int id) để không phá chỗ khác:
+    public void deletePet(int id) { hardDelete((long) id); }
+
+    /** Xoá chỉ khi đúng chủ (kiểm tra accountId) */
+    public boolean deleteOwned(Long petId, Long ownerAccountId) {
+        Transaction tx = null;
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            tx = s.beginTransaction();
+            Pet p = s.get(Pet.class, petId);
+            if (p != null && p.getCustomer() != null &&
+                    ownerAccountId.equals(p.getCustomer().getAccountId())) {
+                s.remove(p);
                 tx.commit();
                 return true;
             }
@@ -118,15 +148,12 @@ public class PetDAO {
             return false;
         } catch (Exception e) {
             if (tx != null) tx.rollback();
-            e.printStackTrace();
-            return false;
+            throw new RuntimeException(e);
         }
     }
 
-    // ✅ Test nhanh
-    public static void main(String[] args) {
-        PetDAO petDAO = new PetDAO();
-        List<Pet> pets = petDAO.getPet();
-        pets.forEach(System.out::println);
-    }
+    /* ================== ALIAS cho controller gọi ================== */
+
+    // PetSelfController đang gọi findById()
+    public Pet findById(Long id) { return getPetById(id); }
 }
