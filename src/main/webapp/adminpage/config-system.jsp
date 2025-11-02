@@ -2,6 +2,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<title>Configure System</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 <style>
@@ -188,7 +189,7 @@
         <div class="config-main">
             <div class="config-card">
             <div class="config-header">
-                <h1>System Configuration</h1>
+                <h1>Configure System</h1>
                 <p>Configure rules, schedules, vouchers, and email notifications</p>
             </div>
 

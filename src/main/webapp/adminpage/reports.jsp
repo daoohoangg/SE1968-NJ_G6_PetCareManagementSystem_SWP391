@@ -1,4 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
+<title>Generate Reports</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 <style>
@@ -610,19 +611,23 @@
             const statSubElements = document.querySelectorAll('.stat-sub');
             
             if (statValueElements.length >= 4 && statSubElements.length >= 4) {
-                // Total Revenue
-                statValueElements[0].textContent = '$' + Math.round(stats.totalRevenue).toLocaleString();
+                const totalRevenue = Number(stats.totalRevenue || 0);
+                statValueElements[0].textContent = '$' + totalRevenue.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
                 statSubElements[0].innerHTML = '<i class="ri-arrow-up-s-line"></i>' + stats.revenueGrowth;
                 
-                // Total Appointments
                 statValueElements[1].textContent = stats.totalAppointments;
                 statSubElements[1].innerHTML = '<i class="ri-check-line"></i><a href="#">' + stats.completionRate + '% completed</a>';
                 
-                // Avg Transaction
-                statValueElements[2].textContent = '$' + stats.avgTransaction.toFixed(1);
+                const averageTransaction = Number(stats.avgTransaction || 0);
+                statValueElements[2].textContent = '$' + averageTransaction.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
                 statSubElements[2].innerHTML = '<i class="ri-medal-line"></i><a href="#">Top: ' + stats.topService + '</a>';
                 
-                // Customer Rating
                 statValueElements[3].textContent = stats.customerRating + ' / 5.0';
                 statSubElements[3].innerHTML = '<i class="ri-time-line"></i>Avg duration: ' + stats.avgDuration + ' min';
             }

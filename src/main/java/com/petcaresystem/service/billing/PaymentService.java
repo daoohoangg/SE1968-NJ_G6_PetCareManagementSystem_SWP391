@@ -4,6 +4,7 @@ import com.petcaresystem.dao.PaymentDAO;
 import com.petcaresystem.enities.Payment;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public class PaymentService {
 
@@ -11,5 +12,9 @@ public class PaymentService {
 
     public Payment addPayment(Long invoiceId, BigDecimal amount, String method, String notes) {
         return paymentDAO.create(invoiceId, amount, method, notes);
+    }
+
+    public BigDecimal getTotalRevenue(LocalDate startDate, LocalDate endDate) {
+        return paymentDAO.getTotalRevenue(startDate, endDate);
     }
 }

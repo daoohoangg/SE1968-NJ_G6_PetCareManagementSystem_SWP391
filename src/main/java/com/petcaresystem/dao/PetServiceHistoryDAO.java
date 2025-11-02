@@ -39,6 +39,21 @@ public class PetServiceHistoryDAO {
         }
     }
     
+    public List<PetServiceHistory> getRecentHistories(int limit) {
+        int effectiveLimit = limit <= 0 ? DEFAULT_PAGE_SIZE : limit;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                    "select h from PetServiceHistory h " +
+                    "join fetch h.pet p " +
+                    "left join fetch p.customer " +
+                    "left join fetch h.staff " +
+                    "order by h.serviceDate desc, h.id desc",
+                    PetServiceHistory.class)
+                    .setMaxResults(effectiveLimit)
+                    .list();
+        }
+    }
+    
     // Count total records for pagination
     public long countAllHistories() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
