@@ -13,35 +13,56 @@
       crossorigin="anonymous"/>
 <link rel="icon" href="<%= request.getContextPath() %>/images/logo.png" type="image/png">
 <style>
-    html, body{
-        min-height:100%;
-        min-height:100vh;
+    .navbar {
+        padding: 0.75rem 2rem;
     }
-    body{
-        display:flex;
-        flex-direction:column;
-        min-height:100vh;
+
+    .navbar .container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
     }
-    body > header,
-    body > footer{
-        flex-shrink:0;
+    .navbar-collapse {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
     }
-    body > footer{
-        margin-top:auto;
+    .navbar-nav.mx-auto {
+        flex: 1;
+        justify-content: center;
     }
-    body > main,
-    body > section.page,
-    body > .page,
-    body > .layout,
-    body > .container,
-    body > .config-page,
-    body > .content-wrapper{
-        flex:1 0 auto;
+    .navbar-nav.ms-auto {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
     }
-    body > .content-wrapper{
-        width:100%;
-        display:flex;
-        flex-direction:column;
+    .navbar-nav .nav-item {
+        margin: 0 0.5rem;
+    }
+    .navbar-nav .nav-link {
+        color: #ccc !important;
+        font-weight: 500;
+        transition: color 0.2s ease, transform 0.2s ease;
+    }
+
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link:focus {
+        color: #fff !important;
+        transform: translateY(-1px);
+    }
+    .navbar-brand {
+        display: flex;
+        align-items: center;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #fff !important;
+    }
+    .navbar-brand img {
+        height: 35px;
+        width: auto;
+        margin-right: 8px;
+        border-radius: 4px;
     }
     .user-avatar {
         width: 32px;
@@ -55,6 +76,18 @@
         font-weight: bold;
         margin-right: 8px;
         font-size: 14px;
+    }
+    @media (max-width: 991px) {
+        .navbar .container {
+            flex-wrap: wrap;
+        }
+        .navbar-nav.mx-auto {
+            justify-content: flex-start;
+            text-align: left;
+        }
+        .navbar-nav.ms-auto {
+            justify-content: flex-start;
+        }
     }
 </style>
 <%
@@ -81,37 +114,34 @@
                         <a class="nav-link" href="<%= request.getContextPath() %>/home">Home</a>
                     </li>
                     <%
-                        String servicesLink = request.getContextPath() + "/login";
-                        if (loggedInAccount != null) {
-                            servicesLink = request.getContextPath() + "/services";
-                        }
+                        if (loggedInAccount == null) {
                     %>
                     <li class="nav-item">
-                        <a class="nav-link" href="<%= servicesLink %>">Services</a>
+                        <a class="nav-link" href="<%= request.getContextPath() %>/services">Services</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="<%= request.getContextPath() %>/customer/appointments.jsp">Appointments</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/inc/contact.jsp">Contact Us</a>
+                    </li>
                     <%
-                        if (loggedInAccount != null && loggedInAccount.getRole() == AccountRoleEnum.CUSTOMER) {
+                    } else if (loggedInAccount.getRole() == AccountRoleEnum.CUSTOMER) {
                     %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/services">Services</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/customer/appointments.jsp">Appointments</a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="<%= request.getContextPath() %>/customer/pets">My Pets</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/inc/contact.jsp">Contact Us</a>
+                    </li>
                     <%
-                        }
-                    %>
-
-                    <%
-                        if (loggedInAccount != null) {
-                            AccountRoleEnum role = loggedInAccount.getRole();
-
-                            if (role == AccountRoleEnum.STAFF) {
-                    %>
-                    // thêm chức năng
-                    <%
-                    }
-                    else if (role == AccountRoleEnum.ADMIN) {
+                    } else if (loggedInAccount.getRole() == AccountRoleEnum.ADMIN) {
                     %>
                     <li class="nav-item">
                         <a class="nav-link" href="<%= request.getContextPath() %>/admin/dashboard">Dashboard</a>
@@ -120,18 +150,22 @@
                         <a class="nav-link" href="<%= request.getContextPath() %>/admin/accounts">Manage Accounts</a>
                     </li>
                     <%
-                    }
-                    else if (role == AccountRoleEnum.RECEPTIONIST) {
+                    } else if (loggedInAccount.getRole() == AccountRoleEnum.STAFF) {
                     %>
-                    // thêm chức năng vào
-                    <%
-                            }
-                        }
-
-                    %>
+                    <%-- // Thêm chức năng staff (ví dụ: Lịch làm việc) --%>
                     <li class="nav-item">
-                        <a class="nav-link" href="<%= request.getContextPath() %>/inc/contact.jsp">Contact Us</a>
+
                     </li>
+                    <%
+                    } else if (loggedInAccount.getRole() == AccountRoleEnum.RECEPTIONIST) {
+                    %>
+                    <%-- // Thêm chức năng receptionist (ví dụ: Quản lý Lịch hẹn) --%>
+                    <li class="nav-item">
+
+                    </li>
+                    <%
+                        }
+                    %>
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     <%
