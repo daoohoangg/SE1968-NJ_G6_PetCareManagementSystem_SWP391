@@ -12,7 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet(name = "InvoiceManagementController", urlPatterns = {"/invoices"})
+@WebServlet(name = "InvoiceManagementController", urlPatterns = {"/reception/invoices"})
 public class InvoiceController extends HttpServlet {
 
     private static final int PAGE_SIZE = 10;

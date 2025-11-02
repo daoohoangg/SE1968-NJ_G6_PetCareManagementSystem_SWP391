@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
-@WebServlet(name = "PetDataController", urlPatterns = {"/petServiceData"})
+@WebServlet(name = "PetDataController", urlPatterns = {"/staff/petServiceData"})
 public class PetDataController extends HttpServlet {
 
     private PetServiceHistoryDAO historyDAO;

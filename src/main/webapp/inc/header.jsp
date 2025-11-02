@@ -154,14 +154,25 @@
                     %>
                     <%-- // Thêm chức năng staff (ví dụ: Lịch làm việc) --%>
                     <li class="nav-item">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/staff/petServiceData">P</a>
+                    </li>
+                    <li class="nav-item">
 
                     </li>
                     <%
                     } else if (loggedInAccount.getRole() == AccountRoleEnum.RECEPTIONIST) {
                     %>
-                    <%-- // Thêm chức năng receptionist (ví dụ: Quản lý Lịch hẹn) --%>
+                <li class="nav-item">
+                    <a class="nav-link" href="<%= request.getContextPath() %>/reception/checkin">Check-In</a>
+                </li>
                     <li class="nav-item">
-
+                        <a class="nav-link" href="<%= request.getContextPath() %>/reception/checkout">Check-Out</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/reception/invoices">Invoice</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="<%= request.getContextPath() %>/customer/appointments.jsp">Appointments</a>
                     </li>
                     <%
                         }
