@@ -5,6 +5,7 @@ import com.petcaresystem.dao.PetDAO;
 import com.petcaresystem.dao.ServiceDAO;
 import com.petcaresystem.enities.Account;
 import com.petcaresystem.enities.Pet;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 public class Appointments extends HttpServlet {
 
     private static final String VIEW = "/customer/appointments.jsp";
+    private static final DateTimeFormatter ISO_LOCAL = DateTimeFormatter.ISO_LOCAL_DATE_TIME; // "yyyy-MM-dd'T'HH:mm"
 
     private AppointmentDAO appointmentDAO;
     private PetDAO petDAO;
@@ -42,15 +44,17 @@ public class Appointments extends HttpServlet {
         return (o instanceof Account) ? (Account) o : null;
     }
 
-    private Long currentCustomerId(HttpServletRequest req) {
+    /** Trả về accounts.account_id (== customers.account_id) */
+    private Long currentCustomerAccountId(HttpServletRequest req) {
         Account u = currentUser(req);
-        return (u != null) ? u.getAccountId() : null; // customers.account_id == accounts.account_id
+        return (u != null) ? u.getAccountId() : null;
     }
 
-    private void loadModel(HttpServletRequest req, Long customerId) {
-        req.setAttribute("pets",         petDAO.findByCustomerId(customerId));
+    /** Nạp dữ liệu cho JSP (pets/services/appointments) – các DAO nên dùng openSession() */
+    private void loadModel(HttpServletRequest req, Long customerAccountId) {
+        req.setAttribute("pets",         petDAO.findByCustomerId(customerAccountId)); // chú ý: hàm này cần lọc theo account_id
         req.setAttribute("services",     serviceDAO.getActiveServices());
-        req.setAttribute("appointments", appointmentDAO.findByCustomer(customerId));
+        req.setAttribute("appointments", appointmentDAO.findByCustomer(customerAccountId));
     }
 
     private void forward(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -66,14 +70,13 @@ public class Appointments extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
 
-        Long customerId = currentCustomerId(req);
-        if (customerId == null) {
+        Long customerAid = currentCustomerAccountId(req);
+        if (customerAid == null) {
             resp.sendRedirect(req.getContextPath() + "/login");
             return;
         }
 
-        String action = req.getParameter("action");
-        if (action == null) action = "list";
+        String action = Optional.ofNullable(req.getParameter("action")).orElse("list");
 
         switch (action) {
             case "cancel": {
@@ -81,15 +84,16 @@ public class Appointments extends HttpServlet {
                 if (idStr != null && !idStr.isBlank()) {
                     try {
                         long apptId = Long.parseLong(idStr);
-                        appointmentDAO.cancelIfOwnedBy(apptId, customerId);
-                    } catch (NumberFormatException ignored) { }
+                        appointmentDAO.cancelIfOwnedBy(apptId, customerAid);
+                    } catch (NumberFormatException ignored) {
+                    }
                 }
                 resp.sendRedirect(req.getContextPath() + "/customer/appointments?cancelled=1");
                 return;
             }
             case "list":
             default: {
-                loadModel(req, customerId);
+                loadModel(req, customerAid);
                 forward(req, resp);
             }
         }
@@ -104,72 +108,85 @@ public class Appointments extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         resp.setCharacterEncoding("UTF-8");
 
-        Long customerId = currentCustomerId(req);
-        if (customerId == null) {
+        Long customerAid = currentCustomerAccountId(req);
+        if (customerAid == null) {
             resp.sendRedirect(req.getContextPath() + "/login");
             return;
         }
 
         try {
-            /* --- 1) Xác thực thú cưng thuộc customer --- */
-            Long petId = Long.parseLong(req.getParameter("petId"));
-            boolean ownsPet = petDAO.findByCustomerId(customerId)
+            /* --- 1) Lấy & kiểm tra pet thuộc về customer --- */
+            String petIdStr = req.getParameter("petId");
+            if (petIdStr == null || petIdStr.isBlank()) {
+                req.setAttribute("error", "Vui lòng chọn thú cưng.");
+                loadModel(req, customerAid); forward(req, resp); return;
+            }
+            Long petId = Long.parseLong(petIdStr);
+
+            boolean ownsPet = petDAO.findByCustomerId(customerAid)
                     .stream()
                     .filter(Objects::nonNull)
+                    // NOTE: dùng getter ID đúng với entity của bạn (getIdpet() hoặc getPetId())
                     .map(Pet::getIdpet)
-                    .anyMatch(id -> id.equals(petId));
+                    .anyMatch(id -> id != null && id.equals(petId));
+
             if (!ownsPet) {
                 req.setAttribute("error", "Thú cưng không thuộc tài khoản của bạn.");
-                loadModel(req, customerId);
-                forward(req, resp);
-                return;
+                loadModel(req, customerAid); forward(req, resp); return;
             }
 
-            /* --- 2) Lấy danh sách dịch vụ --- */
+            /* --- 2) Lấy danh sách serviceIds --- */
             String[] serviceIdsParam = req.getParameterValues("serviceIds");
-            List<Long> serviceIds = (serviceIdsParam == null)
-                    ? Collections.emptyList()
-                    : Arrays.stream(serviceIdsParam)
+            if (serviceIdsParam == null || serviceIdsParam.length == 0) {
+                req.setAttribute("error", "Bạn phải chọn ít nhất một dịch vụ.");
+                loadModel(req, customerAid); forward(req, resp); return;
+            }
+            List<Long> serviceIds = Arrays.stream(serviceIdsParam)
                     .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
                     .map(Long::parseLong)
                     .collect(Collectors.toList());
 
-            if (serviceIds.isEmpty()) {
-                req.setAttribute("error", "Bạn phải chọn ít nhất một dịch vụ.");
-                loadModel(req, customerId);
-                forward(req, resp);
-                return;
-            }
-
-            /* --- 3) Parse thời gian --- */
-            DateTimeFormatter fmt = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+            /* --- 3) Parse thời gian bắt đầu (input datetime-local: yyyy-MM-dd'T'HH:mm) --- */
             String startAtStr = req.getParameter("startAt");
-            LocalDateTime startAt = LocalDateTime.parse(startAtStr, fmt);
+            if (startAtStr == null || startAtStr.isBlank()) {
+                req.setAttribute("error", "Vui lòng chọn thời gian bắt đầu.");
+                loadModel(req, customerAid); forward(req, resp); return;
+            }
+            LocalDateTime startAt = LocalDateTime.parse(startAtStr.trim(), ISO_LOCAL);
 
-            // endAt = null, DAO sẽ tự tính hoặc lưu nguyên startAt
+            // Nếu hiện tại bạn chưa cho nhập 'end', để null; có thể tính theo tổng duration service sau
             LocalDateTime endAt = null;
 
             /* --- 4) Ghi chú --- */
-            String notes = req.getParameter("notes");
+            String notes = Optional.ofNullable(req.getParameter("notes")).orElse(null);
 
-            /* --- 5) Lưu xuống DB --- */
-            boolean success = appointmentDAO.create(customerId, petId, serviceIds, startAt, endAt, notes);
+            /* --- 5) Lưu DB: truyền vào account_id (NOT customer_id PK) --- */
+            boolean success = appointmentDAO.create(customerAid, petId, serviceIds, startAt, endAt, notes);
 
             if (!success) {
                 req.setAttribute("error", "Không thể tạo lịch hẹn. Vui lòng thử lại.");
-                loadModel(req, customerId);
-                forward(req, resp);
-                return;
+                loadModel(req, customerAid); forward(req, resp); return;
             }
 
-            /* --- 6) Thành công: redirect về trang chính --- */
+            /* --- 6) Thành công --- */
             resp.sendRedirect(req.getContextPath() + "/customer/appointments?created=1");
 
+        } catch (IllegalArgumentException iae) {
+            // Lỗi do validate trong DAO (customer/pet/service/time)
+            req.setAttribute("error", iae.getMessage());
+            loadModel(req, customerAid);
+            forward(req, resp);
         } catch (Exception e) {
             e.printStackTrace();
-            req.setAttribute("error", "Dữ liệu không hợp lệ hoặc lỗi hệ thống: " + e.getMessage());
-            loadModel(req, customerId);
+            String msg = (e.getMessage() != null && !e.getMessage().isBlank())
+                    ? e.getMessage()
+                    : "Không thể xử lý yêu cầu. Vui lòng kiểm tra lại dữ liệu và thử lại.";
+            req.setAttribute("error", msg);
+            loadModel(req, customerAid);
             forward(req, resp);
         }
+
     }
 }

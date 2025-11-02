@@ -33,7 +33,7 @@ public class Appointment {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private AppointmentStatus status = AppointmentStatus.SCHEDULED;
+    private AppointmentStatus status = AppointmentStatus.PENDING;
 
     @Lob
     @Column(name = "notes")
@@ -105,7 +105,7 @@ public class Appointment {
     }
 
     public void confirm() {
-        if (this.status == AppointmentStatus.SCHEDULED) {
+        if (this.status == AppointmentStatus.PENDING || this.status == AppointmentStatus.SCHEDULED) {
             this.status = AppointmentStatus.CONFIRMED;
         }
     }
@@ -117,7 +117,7 @@ public class Appointment {
     }
 
     public void cancel() {
-        if (this.status == AppointmentStatus.SCHEDULED || this.status == AppointmentStatus.CONFIRMED) {
+        if (this.status == AppointmentStatus.PENDING || this.status == AppointmentStatus.SCHEDULED || this.status == AppointmentStatus.CONFIRMED) {
             this.status = AppointmentStatus.CANCELLED;
         }
     }
@@ -149,7 +149,7 @@ public class Appointment {
     }
 
     public boolean canCheckIn() {
-        return this.status == AppointmentStatus.SCHEDULED;
+        return this.status == AppointmentStatus.SCHEDULED || this.status == AppointmentStatus.CONFIRMED;
     }
 
     public boolean canCheckOut() {
