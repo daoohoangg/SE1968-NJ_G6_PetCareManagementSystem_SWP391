@@ -58,25 +58,27 @@
     </style>
 </head>
 <body>
-
-<!-- Reusable header -->
 <jsp:include page="/inc/header.jsp" />
 
 <div class="page-card">
-    <div class="page-head">
-        <h3 class="m-0 fw-bold">My Pets</h3>
-        <div class="text-muted mt-1" style="font-size:14px;">
-            Account owner:
-            <strong><%= (loggedInAccount != null && loggedInAccount.getFullName()!=null) ? loggedInAccount.getFullName() : "" %></strong>
+    <div class="page-head d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="m-0 fw-bold">My Pets</h3>
+            <div class="text-muted mt-1" style="font-size:14px;">
+                Account owner:
+                <strong><%= (loggedInAccount != null && loggedInAccount.getFullName()!=null) ? loggedInAccount.getFullName() : "" %></strong>
+            </div>
         </div>
+
+        <!-- Add Pet -->
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddPet">
+            + Add Pet
+        </button>
     </div>
 
     <div class="page-body">
-
         <div class="row-line header">
-            <div>Name</div>
-            <div>Breed</div>
-            <div>Health</div>
+            <div>Name</div><div>Breed</div><div>Health</div>
         </div>
 
         <%
@@ -87,22 +89,38 @@
         } else {
             for (Pet p : pets) {
                 if (p == null) continue;
-                String hs = p.getHealthStatus();
-                if (hs == null) hs = "HEALTHY";
-
-                String cls   = "is-good";
-                String label = "Good";
-                if ("AVERAGE".equalsIgnoreCase(hs)) { cls = "is-average"; label = "Average"; }
-                else if ("SICK".equalsIgnoreCase(hs)) { cls = "is-bad"; label = "Poor"; }
+                String hs = p.getHealthStatus(); if (hs==null) hs="HEALTHY";
+                String cls="is-good", label="Good";
+                if ("AVERAGE".equalsIgnoreCase(hs)) { cls="is-average"; label="Average"; }
+                else if ("SICK".equalsIgnoreCase(hs)) { cls="is-bad"; label="Poor"; }
         %>
-        <div class="row-line" style="align-items:center;">
+
+        <div class="row-line align-items-center">
             <input class="form-control" type="text" value="<%= p.getName()==null? "" : p.getName() %>" readonly>
             <input class="form-control" type="text" value="<%= p.getBreed()==null? "" : p.getBreed() %>" readonly>
+            <div class="d-flex align-items-center" style="gap:8px;">
+                <select class="form-select <%= cls %>" disabled><option><%= label %></option></select>
 
-            <select class="form-select <%= cls %>" disabled>
-                <option><%= label %></option>
-            </select>
+                <!-- Edit -->
+                <button
+                        class="btn btn-sm btn-outline-secondary"
+                        data-bs-toggle="modal" data-bs-target="#modalEditPet"
+                        data-id="<%= p.getIdpet() %>"
+                        data-name="<%= p.getName()==null? "" : p.getName() %>"
+                        data-breed="<%= p.getBreed()==null? "" : p.getBreed() %>"
+                        data-health="<%= hs %>">
+                    Edit
+                </button>
+
+                <!-- Delete -->
+                <form method="post" action="<%= ctx %>/customer/pets" onsubmit="return confirm('Delete this pet?');">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="petId" value="<%= p.getIdpet() %>">
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                </form>
+            </div>
         </div>
+
         <%
                 } // end for
             } // end else
@@ -110,5 +128,86 @@
     </div>
 </div>
 
+<!-- ========== MODAL: ADD ========== -->
+<div class="modal fade" id="modalAddPet" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+        <form method="post" action="<%= ctx %>/customer/pets">
+            <input type="hidden" name="action" value="create">
+            <div class="modal-header"><h5 class="modal-title">Add Pet</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Name *</label>
+                    <input name="name" class="form-control" maxlength="50" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Breed</label>
+                    <input name="breed" class="form-control" maxlength="50">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Health Status</label>
+                    <select name="health" class="form-select">
+                        <option value="HEALTHY">Healthy</option>
+                        <option value="AVERAGE">Average</option>
+                        <option value="SICK">Sick</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" type="submit">Save</button>
+            </div>
+        </form>
+    </div></div>
+</div>
+
+<!-- ========== MODAL: EDIT ========== -->
+<div class="modal fade" id="modalEditPet" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+        <form method="post" action="<%= ctx %>/customer/pets">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="petId" id="edit-petId">
+            <div class="modal-header"><h5 class="modal-title">Edit Pet</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Name *</label>
+                    <input name="name" id="edit-name" class="form-control" maxlength="50" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Breed</label>
+                    <input name="breed" id="edit-breed" class="form-control" maxlength="50">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Health Status</label>
+                    <select name="health" id="edit-health" class="form-select">
+                        <option value="HEALTHY">Healthy</option>
+                        <option value="AVERAGE">Average</option>
+                        <option value="SICK">Sick</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" type="submit">Update</button>
+            </div>
+        </form>
+    </div></div>
+</div>
+
+<!-- Bootstrap JS & tiny script để đổ data vào Edit modal -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const editModal = document.getElementById('modalEditPet');
+    editModal.addEventListener('show.bs.modal', function (event) {
+        const btn = event.relatedTarget;
+        document.getElementById('edit-petId').value = btn.getAttribute('data-id');
+        document.getElementById('edit-name').value = btn.getAttribute('data-name') || '';
+        document.getElementById('edit-breed').value = btn.getAttribute('data-breed') || '';
+        document.getElementById('edit-health').value = (btn.getAttribute('data-health') || 'HEALTHY').toUpperCase();
+    });
+</script>
 </body>
 </html>
