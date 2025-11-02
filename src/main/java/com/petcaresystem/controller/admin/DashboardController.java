@@ -22,6 +22,8 @@ public class DashboardController extends HttpServlet {
         req.setAttribute("pendingAppointments", dashboardMetricsService.countPendingAppointments());
         req.setAttribute("weatherTemperatureC", dashboardMetricsService.getTodayWeatherCelsius());
         req.setAttribute("weatherSummary", dashboardMetricsService.getWeatherSummary());
+        req.setAttribute("recentActivities", dashboardMetricsService.getRecentActivities());
+        req.setAttribute("upcomingSchedule", dashboardMetricsService.getUpcomingSchedule());
 
         req.getRequestDispatcher("/adminpage/dashbroad.jsp").forward(req, resp);
     }

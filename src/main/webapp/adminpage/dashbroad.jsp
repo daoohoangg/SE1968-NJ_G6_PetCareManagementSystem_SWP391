@@ -542,61 +542,40 @@
                         <a class="ghost-link" href="#">View All</a>
                     </div>
                     <ul class="activity-list">
-                        <li class="activity-item urgent">
-                            <div class="activity-icon"><i class="ri-alert-fill"></i></div>
-                            <div class="activity-info">
-                                <strong>Emergency visit scheduled</strong>
-                                <span>Sarah Johnson &ndash; Max (Golden Retriever)</span>
-                            </div>
-                            <div class="activity-meta">
-                                <span class="badge urgent">Urgent</span>
-                                <time>2 minutes ago</time>
-                            </div>
-                        </li>
-                        <li class="activity-item">
-                            <div class="activity-icon"><i class="ri-scissors-cut-line"></i></div>
-                            <div class="activity-info">
-                                <strong>Grooming session completed</strong>
-                                <span>Mike Chen &ndash; Luna (Persian Cat)</span>
-                            </div>
-                            <div class="activity-meta">
-                                <span class="badge success">Completed</span>
-                                <time>15 minutes ago</time>
-                            </div>
-                        </li>
-                        <li class="activity-item">
-                            <div class="activity-icon"><i class="ri-user-add-line"></i></div>
-                            <div class="activity-info">
-                                <strong>New customer registered</strong>
-                                <span>Emma Wilson &ndash; Buddy (Labrador)</span>
-                            </div>
-                            <div class="activity-meta">
-                                <span class="badge upcoming">New</span>
-                                <time>1 hour ago</time>
-                            </div>
-                        </li>
-                        <li class="activity-item">
-                            <div class="activity-icon"><i class="ri-wallet-3-line"></i></div>
-                            <div class="activity-info">
-                                <strong>Payment received</strong>
-                                <span>David Brown &ndash; Whiskers (Maine Coon)</span>
-                            </div>
-                            <div class="activity-meta">
-                                <span class="badge success">Settled</span>
-                                <time>2 hours ago</time>
-                            </div>
-                        </li>
-                        <li class="activity-item">
-                            <div class="activity-icon"><i class="ri-notification-3-line"></i></div>
-                            <div class="activity-info">
-                                <strong>Vaccination reminder sent</strong>
-                                <span>Lisa Garcia &ndash; Rocky (Beagle)</span>
-                            </div>
-                            <div class="activity-meta">
-                                <span class="badge upcoming">Reminder</span>
-                                <time>3 hours ago</time>
-                            </div>
-                        </li>
+                        <c:choose>
+                            <c:when test="${not empty recentActivities}">
+                                <c:forEach var="activity" items="${recentActivities}">
+                                    <li class="activity-item${activity.urgent ? ' urgent' : ''}">
+                                        <div class="activity-icon"><i class="${empty activity.icon ? 'ri-calendar-event-line' : activity.icon}"></i></div>
+                                        <div class="activity-info">
+                                            <strong>${activity.primaryText}</strong>
+                                            <c:if test="${not empty activity.secondaryText}">
+                                                <span>${activity.secondaryText}</span>
+                                            </c:if>
+                                        </div>
+                                        <div class="activity-meta">
+                                            <c:if test="${not empty activity.badgeLabel}">
+                                                <span class="badge ${empty activity.badgeClass ? 'in-progress' : activity.badgeClass}">${activity.badgeLabel}</span>
+                                            </c:if>
+                                            <time>${activity.timeLabel}</time>
+                                        </div>
+                                    </li>
+                                </c:forEach>
+                            </c:when>
+                            <c:otherwise>
+                                <li class="activity-item">
+                                    <div class="activity-icon"><i class="ri-information-line"></i></div>
+                                    <div class="activity-info">
+                                        <strong>No recent activities yet</strong>
+                                        <span>Service updates will appear here once recorded.</span>
+                                    </div>
+                                    <div class="activity-meta">
+                                        <span class="badge upcoming">Waiting</span>
+                                        <time>--</time>
+                                    </div>
+                                </li>
+                            </c:otherwise>
+                        </c:choose>
                     </ul>
                 </div>
 
@@ -606,72 +585,40 @@
                         <a class="ghost-link" href="#">Full Calendar</a>
                     </div>
                     <ul class="schedule-list">
-                        <li class="schedule-item">
-                            <div class="schedule-icon"><i class="ri-scissors-2-line"></i></div>
-                            <div class="schedule-info">
-                                <strong>Dog Grooming &ndash; Max</strong>
-                                <span>Owner: John Smith</span>
-                            </div>
-                            <div class="schedule-meta">
-                                <span class="time">9:00 AM</span>
-                                <span class="badge in-progress">In Progress</span>
-                            </div>
-                        </li>
-                        <li class="schedule-item">
-                            <div class="schedule-icon"><i class="ri-heart-3-line"></i></div>
-                            <div class="schedule-info">
-                                <strong>Health Checkup &ndash; Luna</strong>
-                                <span>Owner: Maria Lopez</span>
-                            </div>
-                            <div class="schedule-meta">
-                                <span class="time">10:30 AM</span>
-                                <span class="badge upcoming">Upcoming</span>
-                            </div>
-                        </li>
-                        <li class="schedule-item">
-                            <div class="schedule-icon"><i class="ri-syringe-line"></i></div>
-                            <div class="schedule-info">
-                                <strong>Cat Vaccination &ndash; Whiskers</strong>
-                                <span>Owner: Emily Davis</span>
-                            </div>
-                            <div class="schedule-meta">
-                                <span class="time">11:30 AM</span>
-                                <span class="badge upcoming">Upcoming</span>
-                            </div>
-                        </li>
-                        <li class="schedule-item">
-                            <div class="schedule-icon"><i class="ri-run-line"></i></div>
-                            <div class="schedule-info">
-                                <strong>Training Session &ndash; Buddy</strong>
-                                <span>Owner: Alex Johnson</span>
-                            </div>
-                            <div class="schedule-meta">
-                                <span class="time">1:30 PM</span>
-                                <span class="badge upcoming">Upcoming</span>
-                            </div>
-                        </li>
-                        <li class="schedule-item">
-                            <div class="schedule-icon"><i class="ri-home-2-line"></i></div>
-                            <div class="schedule-info">
-                                <strong>Boarding Check-in &ndash; Rocky</strong>
-                                <span>Owner: Sarah Wilson</span>
-                            </div>
-                            <div class="schedule-meta">
-                                <span class="time">2:30 PM</span>
-                                <span class="badge upcoming">Upcoming</span>
-                            </div>
-                        </li>
-                        <li class="schedule-item">
-                            <div class="schedule-icon"><i class="ri-alert-line"></i></div>
-                            <div class="schedule-info">
-                                <strong>Emergency Visit &ndash; Bella</strong>
-                                <span>Owner: Mike Chen</span>
-                            </div>
-                            <div class="schedule-meta">
-                                <span class="time">4:00 PM</span>
-                                <span class="badge urgent">Urgent</span>
-                            </div>
-                        </li>
+                        <c:choose>
+                            <c:when test="${not empty upcomingSchedule}">
+                                <c:forEach var="item" items="${upcomingSchedule}">
+                                    <li class="schedule-item">
+                                        <div class="schedule-icon"><i class="${empty item.icon ? 'ri-calendar-event-line' : item.icon}"></i></div>
+                                        <div class="schedule-info">
+                                            <strong>${item.primaryText}</strong>
+                                            <c:if test="${not empty item.secondaryText}">
+                                                <span>${item.secondaryText}</span>
+                                            </c:if>
+                                        </div>
+                                        <div class="schedule-meta">
+                                            <span class="time">${item.timeLabel}</span>
+                                            <c:if test="${not empty item.badgeLabel}">
+                                                <span class="badge ${empty item.badgeClass ? 'upcoming' : item.badgeClass}">${item.badgeLabel}</span>
+                                            </c:if>
+                                        </div>
+                                    </li>
+                                </c:forEach>
+                            </c:when>
+                            <c:otherwise>
+                                <li class="schedule-item">
+                                    <div class="schedule-icon"><i class="ri-calendar-event-line"></i></div>
+                                    <div class="schedule-info">
+                                        <strong>No upcoming appointments</strong>
+                                        <span>You're all caught up for now.</span>
+                                    </div>
+                                    <div class="schedule-meta">
+                                        <span class="time">--</span>
+                                        <span class="badge success">Relax</span>
+                                    </div>
+                                </li>
+                            </c:otherwise>
+                        </c:choose>
                     </ul>
                 </div>
             </div>

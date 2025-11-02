@@ -10,7 +10,11 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.hibernate.query.Query;
 
 public class AppointmentDAO {
@@ -120,6 +124,58 @@ public class AppointmentDAO {
                     .setParameter("cid", customerId)
                     .setParameter("now", LocalDateTime.now())
                     .list();
+        }
+    }
+
+    public List<Appointment> findUpcomingAppointments(int limit) {
+        int effectiveLimit = limit <= 0 ? 5 : limit;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            LocalDateTime start = LocalDate.now().atStartOfDay();
+
+            List<Long> ids = session.createQuery(
+                            "select a.appointmentId from Appointment a " +
+                            "where a.appointmentDate >= :startOfDay " +
+                            "order by a.appointmentDate asc",
+                            Long.class)
+                    .setParameter("startOfDay", start)
+                    .setMaxResults(effectiveLimit)
+                    .list();
+
+            if (ids.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            List<Appointment> fetched = session.createQuery(
+                            "select distinct a from Appointment a " +
+                            "join fetch a.customer " +
+                            "join fetch a.pet " +
+                            "left join fetch a.staff " +
+                            "left join fetch a.services " +
+                            "where a.appointmentId in (:ids) " +
+                            "order by a.appointmentDate asc",
+                            Appointment.class)
+                    .setParameterList("ids", ids)
+                    .list();
+            
+            if (fetched.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            Map<Long, Appointment> byId = new HashMap<>();
+            for (Appointment appointment : fetched) {
+                if (appointment != null && appointment.getAppointmentId() != null) {
+                    byId.put(appointment.getAppointmentId(), appointment);
+                }
+            }
+
+            List<Appointment> ordered = new ArrayList<>(ids.size());
+            for (Long id : ids) {
+                Appointment appointment = byId.get(id);
+                if (appointment != null) {
+                    ordered.add(appointment);
+                }
+            }
+            return ordered;
         }
     }
 
