@@ -90,12 +90,12 @@
             text-decoration: line-through;
         }
         .password-rules small::before {
-            content: 'âœ– ';
+            content: '✘';
             display: inline-block;
             font-weight: bold;
         }
         .password-rules small.valid::before {
-            content: 'âœ” ';
+            content: '✔';
             font-weight: bold;
         }
         .static-rules {
@@ -112,7 +112,7 @@
             margin-bottom: 4px;
         }
         .static-rules small::before {
-            content: 'â€¢ ';
+            content: '-';
             color: #0d6efd;
             font-weight: bold;
         }
