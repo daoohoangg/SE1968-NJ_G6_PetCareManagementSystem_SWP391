@@ -6,7 +6,11 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import org.hibernate.query.Query;
 
 public class PaymentDAO {
 
@@ -35,6 +39,41 @@ public class PaymentDAO {
         } catch (Exception e) {
             if (tx != null) tx.rollback();
             throw e;
+        }
+    }
+
+    public BigDecimal getTotalRevenue(LocalDate startDate, LocalDate endDate) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            StringBuilder sql = new StringBuilder(
+                    "SELECT COALESCE(SUM(amount), 0) FROM payments WHERE UPPER(status) = 'COMPLETED'");
+
+            if (startDate != null) {
+                sql.append(" AND COALESCE(payment_date, created_at) >= :from");
+            }
+            if (endDate != null) {
+                sql.append(" AND COALESCE(payment_date, created_at) <= :to");
+            }
+
+            Query<?> query = session.createNativeQuery(sql.toString());
+
+            if (startDate != null) {
+                query.setParameter("from", Timestamp.valueOf(startDate.atStartOfDay()));
+            }
+            if (endDate != null) {
+                query.setParameter("to", Timestamp.valueOf(endDate.atTime(LocalTime.MAX)));
+            }
+
+            Object result = query.getSingleResult();
+            if (result == null) {
+                return BigDecimal.ZERO;
+            }
+            if (result instanceof BigDecimal) {
+                return (BigDecimal) result;
+            }
+            if (result instanceof Number) {
+                return BigDecimal.valueOf(((Number) result).doubleValue());
+            }
+            return new BigDecimal(result.toString());
         }
     }
 }

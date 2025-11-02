@@ -7,16 +7,21 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import java.math.BigDecimal;
+import com.petcaresystem.service.billing.PaymentService;
+import com.petcaresystem.service.report.ReportMetricsService;
 
 @WebServlet("/admin/reports/*")
 public class ReportController extends HttpServlet {
+
+    private final PaymentService paymentService = new PaymentService();
+    private final ReportMetricsService reportMetricsService = new ReportMetricsService();
     
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -60,33 +65,38 @@ public class ReportController extends HttpServlet {
         String endDateParam = req.getParameter("endDate");
         
         // Parse dates
-        LocalDate startDate = startDateParam != null ? 
-            LocalDate.parse(startDateParam) : LocalDate.now().minusDays(30);
-        LocalDate endDate = endDateParam != null ? 
-            LocalDate.parse(endDateParam) : LocalDate.now();
-        
+        LocalDate requestedStart = (startDateParam != null && !startDateParam.isBlank())
+                ? LocalDate.parse(startDateParam)
+                : null;
+        LocalDate requestedEnd = (endDateParam != null && !endDateParam.isBlank())
+                ? LocalDate.parse(endDateParam)
+                : null;
+
+        LocalDate effectiveStart = requestedStart != null ? requestedStart : LocalDate.now().minusDays(30);
+        LocalDate effectiveEnd = requestedEnd != null ? requestedEnd : LocalDate.now();
+
         // Generate report data
         Map<String, Object> reportData = new HashMap<>();
-        
+
         // Financial data
-        Map<String, Object> financialData = generateFinancialData(startDate, endDate);
+        Map<String, Object> financialData = generateFinancialData(effectiveStart, effectiveEnd);
         reportData.put("financial", financialData);
-        
+
         // Operational data
-        Map<String, Object> operationalData = generateOperationalData(startDate, endDate);
+        Map<String, Object> operationalData = generateOperationalData(effectiveStart, effectiveEnd);
         reportData.put("operational", operationalData);
-        
+
         // Summary stats
-        Map<String, Object> summary = generateSummaryStats(startDate, endDate);
+        Map<String, Object> summary = generateSummaryStats(requestedStart, requestedEnd);
         reportData.put("summary", summary);
-        
+
         // Return JSON response
         JSONObject response = new JSONObject()
                 .put("success", true)
                 .put("message", "Report generated successfully")
                 .put("data", reportData)
-                .put("startDate", startDate.toString())
-                .put("endDate", endDate.toString());
+                .put("startDate", effectiveStart.toString())
+                .put("endDate", effectiveEnd.toString());
         
         resp.getWriter().write(response.toString());
     }
@@ -101,12 +111,14 @@ public class ReportController extends HttpServlet {
         String startDateParam = req.getParameter("startDate");
         String endDateParam = req.getParameter("endDate");
         
-        LocalDate startDate = startDateParam != null ? 
-            LocalDate.parse(startDateParam) : LocalDate.now().minusDays(30);
-        LocalDate endDate = endDateParam != null ? 
-            LocalDate.parse(endDateParam) : LocalDate.now();
-        
-        Map<String, Object> stats = generateSummaryStats(startDate, endDate);
+        LocalDate requestedStart = (startDateParam != null && !startDateParam.isBlank())
+                ? LocalDate.parse(startDateParam)
+                : null;
+        LocalDate requestedEnd = (endDateParam != null && !endDateParam.isBlank())
+                ? LocalDate.parse(endDateParam)
+                : null;
+
+        Map<String, Object> stats = generateSummaryStats(requestedStart, requestedEnd);
         
         JSONObject response = new JSONObject()
                 .put("success", true)
@@ -239,19 +251,24 @@ public class ReportController extends HttpServlet {
      */
     private Map<String, Object> generateSummaryStats(LocalDate start, LocalDate end) {
         Map<String, Object> stats = new HashMap<>();
-        
-        // Total revenue
-        double totalRevenue = 91000 + new Random().nextInt(10000);
+
+        BigDecimal revenueAmount = paymentService.getTotalRevenue(start, end);
+        double totalRevenue = revenueAmount != null ? revenueAmount.doubleValue() : 0.0;
         stats.put("totalRevenue", totalRevenue);
         stats.put("revenueGrowth", "+12.5%");
-        
-        // Total appointments
-        int totalAppointments = 624 + new Random().nextInt(100);
+
+        long totalAppointments = reportMetricsService.countAppointments(start, end);
+        long completedAppointments = reportMetricsService.countCompletedAppointments(start, end);
         stats.put("totalAppointments", totalAppointments);
-        stats.put("completionRate", 94.2);
-        
-        // Average transaction
-        double avgTransaction = totalRevenue / totalAppointments;
+
+        double completionRate = totalAppointments > 0
+                ? (completedAppointments * 100.0) / totalAppointments
+                : 0.0;
+        stats.put("completionRate", Math.round(completionRate * 10.0) / 10.0);
+
+        double avgTransaction = totalAppointments > 0
+                ? totalRevenue / totalAppointments
+                : 0.0;
         stats.put("avgTransaction", Math.round(avgTransaction * 100.0) / 100.0);
         stats.put("topService", "Dog Grooming");
         

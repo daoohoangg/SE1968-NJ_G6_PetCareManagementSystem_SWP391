@@ -1,4 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<title>AI Features</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 <style>
@@ -516,9 +519,6 @@
                         <p>Configure your Gemini API integration and assistant behaviour.</p>
                     </div>
                     <div style="display: flex; gap: 10px;">
-                        <button class="btn-outline" type="button" id="loadConfigBtn">
-                            <i class="ri-refresh-line"></i> Load Current
-                        </button>
                         <button class="btn-outline" type="button" id="resetConfigBtn">
                             <i class="ri-restart-line"></i> Reset
                         </button>
@@ -526,16 +526,16 @@
                 </div>
 
                 <div class="config-grid">
-                    <div class="config-field">
+                    <div class="config-field" style="display: none;">
                         <label for="apiKey">Gemini API Key</label>
-                        <input id="apiKey" type="text" value="YOUR_GEMINI_API_KEY_HERE" />
+                        <input id="apiKey" type="text" value="YOUR_GEMINI_API_KEY_HERE" disabled readonly />
                         <small style="display:block;margin-top:6px;font-size:12px;color:var(--muted);">
-                            Replace with your actual Gemini API key for live functionality.
+                            API key is configured on the server side and cannot be changed from here.
                         </small>
                     </div>
-                    <div class="config-field">
+                    <div class="config-field" style="display: none;">
                         <label for="modelSelect">AI Model</label>
-                        <select id="modelSelect">
+                        <select id="modelSelect" disabled>
                             <option>Gemini Pro Vision</option>
                             <option>Gemini Pro</option>
                             <option>Gemini Flash</option>
@@ -559,17 +559,6 @@
 
                 <div class="config-field">
                     <label for="systemPrompt">System Prompt</label>
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <button class="btn-outline" type="button" id="loadPromptBtn" style="padding: 8px 12px; font-size: 12px;">
-                            <i class="ri-download-line"></i> Load from DB
-                        </button>
-                        <button class="btn-outline" type="button" id="savePromptBtn" style="padding: 8px 12px; font-size: 12px;">
-                            <i class="ri-upload-line"></i> Save to DB
-                        </button>
-                        <button class="btn-outline" type="button" id="previewPromptBtn" style="padding: 8px 12px; font-size: 12px;">
-                            <i class="ri-eye-line"></i> Preview
-                        </button>
-                    </div>
                     <textarea id="systemPrompt" placeholder="Enter your system prompt here...">You are a helpful AI assistant for a pet care management system. Provide professional, caring, and accurate advice about pet care services, scheduling, and customer support. Always prioritise pet welfare and customer satisfaction.</textarea>
                     <div id="promptStats" style="margin-top: 8px; font-size: 12px; color: var(--muted);">
                         <span id="promptLength">0</span> characters
@@ -581,6 +570,7 @@
                         <i class="ri-save-3-line"></i> Save AI Configuration
                     </button>
                 </div>
+
             </div>
         </div>
     </section>
@@ -588,9 +578,6 @@
 
 <script>
     (function(){
-        // ===== Global Variables =====
-        let currentConfig = null;
-        
         // ===== Slider Logic =====
         const slider = document.getElementById('creativitySlider');
         const valueLabel = document.getElementById('creativityValue');
@@ -616,175 +603,45 @@
             updatePromptLength();
         }
         
-        // Load current configuration from database
-        async function loadCurrentConfig() {
-            try {
-                const response = await fetch('<%= request.getContextPath() %>/admin/ai/current');
-                const data = await response.json();
-                
-                if (data.success && data.configuration) {
-                    currentConfig = data.configuration;
-                    
-                    // Update form fields
-                    if (systemPrompt) {
-                        systemPrompt.value = currentConfig.prompt || '';
-                        updatePromptLength();
-                    }
-                    
-                    if (slider) {
-                        slider.value = currentConfig.creativityLevel || 40;
-                        updateValue();
-                    }
-                    
-                    showNotification('Configuration loaded successfully!', 'success');
-                } else {
-                    showNotification('Failed to load configuration: ' + (data.error || 'Unknown error'), 'error');
-                }
-            } catch (error) {
-                console.error('Load config error:', error);
-                showNotification('Error loading configuration: ' + error.message, 'error');
-            }
-        }
-        
-        // Save configuration to database
+        // Load/save/preview helpers removed per request
+
+        // Save configuration
         async function saveConfiguration() {
-            const prompt = systemPrompt ? systemPrompt.value : '';
-            const creativityLevel = slider ? parseInt(slider.value) : 40;
-            
-            if (!prompt.trim()) {
+            const prompt = systemPrompt ? systemPrompt.value.trim() : '';
+            const creativityLevel = slider ? parseInt(slider.value, 10) : 40;
+
+            if (!prompt) {
                 showNotification('Please enter a system prompt', 'error');
                 return;
             }
-            
+
+            const formData = new URLSearchParams();
+            formData.append('prompt', prompt);
+            formData.append('creativityLevel', creativityLevel.toString());
+
             try {
-                const formData = new FormData();
-                formData.append('prompt', prompt);
-                formData.append('creativityLevel', creativityLevel.toString());
-                
                 const response = await fetch('<%= request.getContextPath() %>/admin/ai/update-config', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    },
+                    body: formData.toString()
                 });
-                
+
                 const data = await response.json();
-                
-                if (data.success) {
-                    showNotification('Configuration saved successfully!', 'success');
-                    currentConfig = { prompt, creativityLevel };
+
+                if (response.ok && data.success) {
+                    showNotification(data.message || 'Configuration saved successfully!', 'success');
                 } else {
-                    showNotification('Failed to save configuration: ' + (data.error || 'Unknown error'), 'error');
+                    const errorMessage = (data && (data.error || data.message)) || 'Unknown error';
+                    showNotification('Failed to save configuration: ' + errorMessage, 'error');
                 }
             } catch (error) {
                 console.error('Save config error:', error);
                 showNotification('Error saving configuration: ' + error.message, 'error');
             }
         }
-        
-        // Load prompt from database
-        async function loadPrompt() {
-            await loadCurrentConfig();
-        }
-        
-        // Save prompt to database
-        async function savePrompt() {
-            const prompt = systemPrompt ? systemPrompt.value : '';
-            
-            if (!prompt.trim()) {
-                showNotification('Please enter a system prompt', 'error');
-                return;
-            }
-            
-            try {
-                const formData = new FormData();
-                formData.append('prompt', prompt);
-                
-                const response = await fetch('<%= request.getContextPath() %>/admin/ai/update-prompt', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showNotification('Prompt saved successfully!', 'success');
-                } else {
-                    showNotification('Failed to save prompt: ' + (data.error || 'Unknown error'), 'error');
-                }
-            } catch (error) {
-                console.error('Save prompt error:', error);
-                showNotification('Error saving prompt: ' + error.message, 'error');
-            }
-        }
-        
-        // Preview prompt
-        function previewPrompt() {
-            const prompt = systemPrompt ? systemPrompt.value : '';
-            
-            if (!prompt.trim()) {
-                showNotification('Please enter a system prompt to preview', 'error');
-                return;
-            }
-            
-            // Create preview modal
-            const modal = document.createElement('div');
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.5);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 1000;
-            `;
-            
-            modal.innerHTML = `
-                <div style="
-                    background: white;
-                    padding: 20px;
-                    border-radius: 12px;
-                    max-width: 600px;
-                    max-height: 80vh;
-                    overflow-y: auto;
-                    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-                ">
-                    <h3 style="margin: 0 0 15px 0; color: var(--text);">Prompt Preview</h3>
-                    <div style="
-                        background: #f8f9fa;
-                        padding: 15px;
-                        border-radius: 8px;
-                        border-left: 4px solid var(--primary);
-                        white-space: pre-wrap;
-                        font-family: monospace;
-                        font-size: 14px;
-                        line-height: 1.5;
-                        color: var(--text);
-                    ">${escapeHtml(prompt)}</div>
-                    <div style="margin-top: 15px; text-align: right;">
-                        <button onclick="this.closest('.modal').remove()" style="
-                            background: var(--primary);
-                            color: white;
-                            border: none;
-                            padding: 8px 16px;
-                            border-radius: 6px;
-                            cursor: pointer;
-                        ">Close</button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-            
-            // Close on click outside
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.remove();
-                }
-            });
-        }
-        
+
         // Reset configuration
         function resetConfiguration() {
             if (confirm('Are you sure you want to reset the configuration to default values?')) {
@@ -795,7 +652,9 @@
                 
                 if (slider) {
                     slider.value = 40;
-                    updateValue();
+                    if (valueLabel) {
+                        valueLabel.textContent = slider.value + '%';
+                    }
                 }
                 
                 showNotification('Configuration reset to default values', 'info');
@@ -851,22 +710,10 @@
         document.head.appendChild(style);
         
         // ===== Event Listeners =====
-        const loadConfigBtn = document.getElementById('loadConfigBtn');
         const resetConfigBtn = document.getElementById('resetConfigBtn');
-        const loadPromptBtn = document.getElementById('loadPromptBtn');
-        const savePromptBtn = document.getElementById('savePromptBtn');
-        const previewPromptBtn = document.getElementById('previewPromptBtn');
         const saveConfigBtn = document.getElementById('saveConfigBtn');
-        
-        if (loadConfigBtn) loadConfigBtn.addEventListener('click', loadCurrentConfig);
         if (resetConfigBtn) resetConfigBtn.addEventListener('click', resetConfiguration);
-        if (loadPromptBtn) loadPromptBtn.addEventListener('click', loadPrompt);
-        if (savePromptBtn) savePromptBtn.addEventListener('click', savePrompt);
-        if (previewPromptBtn) previewPromptBtn.addEventListener('click', previewPrompt);
         if (saveConfigBtn) saveConfigBtn.addEventListener('click', saveConfiguration);
-        
-        // Load configuration on page load
-        loadCurrentConfig();
 
         // ===== Generate Suggestions =====
         const generateBtn = document.getElementById('generateSuggestionsBtn');
@@ -916,10 +763,10 @@
                 li.className = 'suggestion-item';
                 li.innerHTML = `
                     <div class="suggestion-content">
-                        <strong>${escapeHtml(item.service)}</strong>
-                        <span>${item.date} at ${item.time}</span>
+                        <strong>\${escapeHtml(item.service)}</strong>
+                        <span>\${item.date} at \${item.time}</span>
                     </div>
-                    <span class="match-badge">${item.matchPercent}% match</span>
+                    <span class="match-badge">\${item.matchPercent}% match</span>
                 `;
                 listContainer.appendChild(li);
             });
@@ -936,10 +783,10 @@
                 li.className = 'recommend-item';
                 li.innerHTML = `
                     <div>
-                        <strong>${escapeHtml(item.serviceName)}</strong>
-                        <span style="display:block;font-size:12px;color:var(--muted);margin-top:4px;">${escapeHtml(item.description)}</span>
+                        <strong>\${escapeHtml(item.serviceName)}</strong>
+                        <span style="display:block;font-size:12px;color:var(--muted);margin-top:4px;">\${escapeHtml(item.description)}</span>
                     </div>
-                    <span class="confidence-badge">${item.confidence}% confidence</span>
+                    <span class="confidence-badge">\${item.confidence}% confidence</span>
                 `;
                 listContainer.appendChild(li);
             });
@@ -967,13 +814,13 @@
             
             if (isBot) {
                 messageDiv.innerHTML = `
-                    <div class="chat-meta"><i class="ri-robot-line"></i><span>${timeStr}</span></div>
-                    <div class="chat-bubble">${escapeHtml(text)}</div>
+                    <div class="chat-meta"><i class="ri-robot-line"></i><span>\${timeStr}</span></div>
+                    <div class="chat-bubble">\${escapeHtml(text)}</div>
                 `;
             } else {
                 messageDiv.innerHTML = `
-                    <div class="chat-meta"><span>${timeStr}</span></div>
-                    <div class="chat-bubble">${escapeHtml(text)}</div>
+                    <div class="chat-meta"><span>\${timeStr}</span></div>
+                    <div class="chat-bubble">\${escapeHtml(text)}</div>
                 `;
             }
             

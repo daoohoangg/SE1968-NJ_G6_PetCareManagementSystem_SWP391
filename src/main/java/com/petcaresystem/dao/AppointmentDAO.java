@@ -6,8 +6,12 @@ import com.petcaresystem.utils.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
+import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+import org.hibernate.query.Query;
 
 public class AppointmentDAO {
 
@@ -25,6 +29,82 @@ public class AppointmentDAO {
             return s.createQuery(hql, Appointment.class)
                     .setParameter("cid", accountId)
                     .list();
+        }
+    }
+
+    public long countCompletedAppointments(LocalDate startDate, LocalDate endDate) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM appointments WHERE UPPER(status) = 'COMPLETED'");
+
+            if (startDate != null) {
+                sql.append(" AND COALESCE(appointment_date, created_at) >= :from");
+            }
+            if (endDate != null) {
+                sql.append(" AND COALESCE(appointment_date, created_at) <= :to");
+            }
+
+            Query<?> query = session.createNativeQuery(sql.toString());
+
+            if (startDate != null) {
+                query.setParameter("from", Timestamp.valueOf(startDate.atStartOfDay()));
+            }
+            if (endDate != null) {
+                query.setParameter("to", Timestamp.valueOf(endDate.atTime(LocalTime.MAX)));
+            }
+
+            Object result = query.getSingleResult();
+            if (result instanceof Number) {
+                return ((Number) result).longValue();
+            }
+            return result != null ? Long.parseLong(result.toString()) : 0L;
+        }
+    }
+
+    public long countAppointments(LocalDate startDate, LocalDate endDate) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM appointments WHERE 1 = 1");
+
+            if (startDate != null) {
+                sql.append(" AND COALESCE(appointment_date, created_at) >= :from");
+            }
+            if (endDate != null) {
+                sql.append(" AND COALESCE(appointment_date, created_at) <= :to");
+            }
+
+            Query<?> query = session.createNativeQuery(sql.toString());
+
+            if (startDate != null) {
+                query.setParameter("from", Timestamp.valueOf(startDate.atStartOfDay()));
+            }
+            if (endDate != null) {
+                query.setParameter("to", Timestamp.valueOf(endDate.atTime(LocalTime.MAX)));
+            }
+
+            Object result = query.getSingleResult();
+            if (result instanceof Number) {
+                return ((Number) result).longValue();
+            }
+            return result != null ? Long.parseLong(result.toString()) : 0L;
+        }
+    }
+
+    public long countPendingAppointments() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            List<AppointmentStatus> pendingStatuses = List.of(
+                    AppointmentStatus.SCHEDULED,
+                    AppointmentStatus.CONFIRMED,
+                    AppointmentStatus.CHECKED_IN,
+                    AppointmentStatus.IN_PROGRESS
+            );
+
+            Query<Long> query = session.createQuery(
+                    "select count(a.appointmentId) from Appointment a where a.status in (:statuses)",
+                    Long.class
+            );
+            query.setParameterList("statuses", pendingStatuses);
+
+            Long result = query.uniqueResult();
+            return result != null ? result : 0L;
         }
     }
 

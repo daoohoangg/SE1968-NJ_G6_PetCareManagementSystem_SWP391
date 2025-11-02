@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<title>Manage Accounts</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 <style>
@@ -502,7 +503,7 @@
         <div class="accounts-main">
             <div class="accounts-header">
                 <div>
-                    <h1>Account Management</h1>
+                    <h1>Manage Accounts</h1>
                     <p>Create accounts with different roles and manage authorization</p>
                 </div>
                 <button class="add-account-btn" type="button" data-open-modal="addAccountModal">

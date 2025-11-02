@@ -1,4 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<title>Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 <style>
@@ -408,7 +411,7 @@
             <div class="dashboard-header">
                 <div class="dashboard-title">
                     <h1>Dashboard</h1>
-                    <p>Welcome back! Here's a snapshot of today's operations across PetCare.</p>
+                    <p>Welcome back! Here's a snapshot of operations across PetCare.</p>
                 </div>
                 <div class="quick-actions">
                     <a class="action-btn primary" href="#"><i class="ri-add-line"></i>New Appointment</a>
@@ -423,8 +426,17 @@
                     <div class="stat-icon"><i class="ri-sun-cloudy-line"></i></div>
                     <div class="stat-meta">
                         <span class="stat-label">Weather Today</span>
-                        <span class="stat-value">72&deg;F</span>
-                        <span class="stat-sub">Perfect weather for outdoor activities</span>
+                        <span class="stat-value">
+                            <c:choose>
+                                <c:when test="${not empty weatherTemperatureC}">
+                                    <fmt:formatNumber value="${weatherTemperatureC}" minFractionDigits="0" maxFractionDigits="1"/>&deg;C
+                                </c:when>
+                                <c:otherwise>--&deg;C</c:otherwise>
+                            </c:choose>
+                        </span>
+                        <span class="stat-sub">
+                            <c:out value="${empty weatherSummary ? 'Comfortable conditions for outdoor activities' : weatherSummary}"/>
+                        </span>
                     </div>
                 </div>
                 <div class="card stat-card success">
@@ -447,24 +459,45 @@
                     <div class="stat-icon"><i class="ri-group-line"></i></div>
                     <div class="stat-meta">
                         <span class="stat-label">Total Customers</span>
-                        <span class="stat-value">1,247</span>
-                        <span class="stat-sub">+32 since last week</span>
+                        <span class="stat-value">
+                            <c:choose>
+                                <c:when test="${not empty totalCustomers}">
+                                    <fmt:formatNumber value="${totalCustomers}" type="number" groupingUsed="true"/>
+                                </c:when>
+                                <c:otherwise>0</c:otherwise>
+                            </c:choose>
+                        </span>
+                        <span class="stat-sub">Registered customers</span>
                     </div>
                 </div>
                 <div class="card stat-card">
                     <div class="stat-icon"><i class="ri-hearts-line"></i></div>
                     <div class="stat-meta">
                         <span class="stat-label">Happy Pets</span>
-                        <span class="stat-value">2,156</span>
-                        <span class="stat-sub">97% satisfaction rate</span>
+                        <span class="stat-value">
+                            <c:choose>
+                                <c:when test="${not empty happyPets}">
+                                    <fmt:formatNumber value="${happyPets}" type="number" groupingUsed="true"/>
+                                </c:when>
+                                <c:otherwise>0</c:otherwise>
+                            </c:choose>
+                        </span>
+                        <span class="stat-sub">Pets under our care</span>
                     </div>
                 </div>
                 <div class="card stat-card emergency">
                     <div class="stat-icon"><i class="ri-calendar-check-line"></i></div>
                     <div class="stat-meta">
                         <span class="stat-label">Pending Appointments</span>
-                        <span class="stat-value">28</span>
-                        <span class="stat-sub">12 scheduled for today</span>
+                        <span class="stat-value">
+                            <c:choose>
+                                <c:when test="${not empty pendingAppointments}">
+                                    <fmt:formatNumber value="${pendingAppointments}" type="number" groupingUsed="true"/>
+                                </c:when>
+                                <c:otherwise>0</c:otherwise>
+                            </c:choose>
+                        </span>
+                        <span class="stat-sub">Awaiting service completion</span>
                     </div>
                 </div>
             </div>
@@ -569,7 +602,7 @@
 
                 <div class="card">
                     <div class="card-head">
-                        <h2>Today's Schedule</h2>
+                        <h2>Schedule</h2>
                         <a class="ghost-link" href="#">Full Calendar</a>
                     </div>
                     <ul class="schedule-list">
@@ -645,7 +678,7 @@
 
             <div class="card staff-card">
                 <div class="card-head">
-                    <h2>Staff Performance Today</h2>
+                    <h2>Staff Performance</h2>
                     <p>Highlights from the team</p>
                 </div>
                 <ul class="staff-list">
