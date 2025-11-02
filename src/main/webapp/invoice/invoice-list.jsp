@@ -337,7 +337,7 @@
 <body>
 <jsp:include page="../inc/header.jsp"/>
 <div class="layout">
-    <% request.setAttribute("currentPage", "invoices"); %>
+    <% request.setAttribute("activePage", "invoices"); %>
     <jsp:include page="../inc/side-bar.jsp"/>
 
     <main class="content">

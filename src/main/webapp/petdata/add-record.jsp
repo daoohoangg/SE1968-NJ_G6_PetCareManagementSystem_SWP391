@@ -176,7 +176,7 @@
 <body>
 <jsp:include page="../inc/header.jsp"/>
 <div class="layout">
-    <% request.setAttribute("currentPage", "pet-data"); %>
+    <% request.setAttribute("activePage", "pet-data"); %>
     <jsp:include page="../inc/side-bar.jsp"/>
 
     <main class="content">

@@ -348,6 +348,16 @@ public class AccountDAO {
         }
     }
 
+    public long countCustomers() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Long count = session.createQuery(
+                    "select count(c.accountId) from Customer c where c.isDeleted = false",
+                    Long.class
+            ).uniqueResult();
+            return count != null ? count : 0L;
+        }
+    }
+
     public List<Account> searchAccounts(String keyword, String role) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             StringBuilder hql = new StringBuilder("FROM Account a WHERE a.isDeleted = false ");

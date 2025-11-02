@@ -93,6 +93,13 @@ public class PetDAO {
         }
     }
 
+    public long countAllPets() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Long count = session.createQuery("select count(p.idpet) from Pet p", Long.class).uniqueResult();
+            return count != null ? count : 0L;
+        }
+    }
+
 
 
     // ✅ Xóa thú cưng thuộc về đúng chủ

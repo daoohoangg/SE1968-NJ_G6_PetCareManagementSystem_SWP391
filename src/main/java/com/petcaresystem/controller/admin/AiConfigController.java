@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-@WebServlet("/admin/ai")
+@WebServlet("/admin/ai/*")
 public class AiConfigController extends HttpServlet {
     private AiDataService aiDataService;
 
@@ -42,9 +42,20 @@ public class AiConfigController extends HttpServlet {
             if (path.equals("/current")) {
                 // Get current configuration
                 AiData currentConfig = aiDataService.getCurrentConfiguration();
+                JSONObject configJson = new JSONObject();
+                if (currentConfig != null) {
+                    configJson.put("id", currentConfig.getId() != null ? currentConfig.getId() : JSONObject.NULL);
+                    configJson.put("prompt", currentConfig.getPrompt() != null ? currentConfig.getPrompt() : "");
+                    configJson.put("creativityLevel", currentConfig.getCreativityLevel());
+                } else {
+                    // Return default values if no configuration exists
+                    configJson.put("id", JSONObject.NULL);
+                    configJson.put("prompt", "");
+                    configJson.put("creativityLevel", 40);
+                }
                 resp.getWriter().write(new JSONObject()
                         .put("success", true)
-                        .put("configuration", currentConfig)
+                        .put("configuration", configJson)
                         .toString());
             } else if (path.equals("/stats")) {
                 // Get configuration statistics

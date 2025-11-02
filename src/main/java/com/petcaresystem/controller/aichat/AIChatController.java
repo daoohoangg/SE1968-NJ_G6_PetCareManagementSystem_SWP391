@@ -60,21 +60,19 @@ public class AIChatController extends HttpServlet {
             }
 
             // Load system prompt from database
-            String system = loadSystemPromptFromDatabase(username);
-
-            String contextMsg = "Người dùng hiện tại tên là %s. Hãy xưng hô đúng tên trong mọi phản hồi."
-                    .formatted(username);
+            String systemPrompt = aiDataService.getFormattedPrompt();
+            if (systemPrompt == null || systemPrompt.isBlank()) {
+                // Fallback to default prompt if database is empty
+                systemPrompt = "You are a helpful AI assistant for a pet care management system. Provide professional, caring, and accurate advice about pet care services, scheduling, and customer support. Always prioritize pet welfare and customer satisfaction.";
+            }
 
             JSONObject body = new JSONObject()
                     .put("systemInstruction", new JSONObject()
-                            .put("parts", new JSONArray().put(new JSONObject().put("text", system))))
+                            .put("parts", new JSONArray().put(new JSONObject().put("text", systemPrompt))))
                     .put("contents", new JSONArray()
                             .put(new JSONObject()
                                     .put("role", "user")
-                                    .put("parts", new JSONArray().put(new JSONObject().put("text", contextMsg)))))
-                    .append("contents", new JSONObject()
-                            .put("role", "user")
-                            .put("parts", new JSONArray().put(new JSONObject().put("text", prompt))));
+                                    .put("parts", new JSONArray().put(new JSONObject().put("text", prompt)))));
 
             String url = "https://generativelanguage.googleapis.com/v1beta/models/"
                     + MODEL + ":generateContent?key=" + apiKey;
@@ -210,33 +208,5 @@ public class AIChatController extends HttpServlet {
     private static String slice(String s, int max) {
         if (s == null) return "";
         return s.length() <= max ? s : s.substring(0, max) + "...";
-    }
-    
-    /**
-     * Load system prompt from database with username context
-     */
-    private String loadSystemPromptFromDatabase(String username) {
-        try {
-            String basePrompt = aiDataService.getFormattedPrompt();
-            
-            // Add username context to the prompt
-            return String.format("""
-                %s
-                
-                [User Context]
-                - Current user: %s
-                - Please address the user by their name when appropriate
-                - Maintain a professional and caring tone
-                """, basePrompt, username);
-                
-        } catch (Exception e) {
-            // Fallback to default prompt if database fails
-            return String.format("""
-                [System Rules]
-                - Bạn là trợ lý kỹ thuật hài hước, nói vừa phải, chính xác.
-                - Tên người dùng là: %s.
-                - Ưu tiên bảo mật & tính đúng đắn.
-                """, username);
-        }
     }
 }
