@@ -114,7 +114,7 @@
                 <ul>
                     <li><a href="<%= request.getContextPath() %>/home">Home</a></li>
                     <li><a href="<%= request.getContextPath() %>/inc/about.jsp">About Us</a></li>
-                    <li><a href="#">Services</a></li>
+                    <li><a href="<%= request.getContextPath() %>/services">Services</a></li>
                     <li><a href="<%= request.getContextPath() %>/inc/contact.jsp">Contact</a></li>
                 </ul>
             </div>

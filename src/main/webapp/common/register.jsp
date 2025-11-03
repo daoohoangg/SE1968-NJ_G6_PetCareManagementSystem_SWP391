@@ -119,6 +119,7 @@
     </style>
 </head>
 <body>
+<jsp:include page="/inc/header.jsp"/>
 <div class="box">
     <h2>Register</h2>
 
@@ -251,6 +252,7 @@
     setupStaticHintValidation("phoneInput", "phoneRules");
 
 </script>
+<%@ include file="/inc/footer.jsp" %>
 </body>
 </html>
 
