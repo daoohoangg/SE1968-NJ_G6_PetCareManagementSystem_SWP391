@@ -19,6 +19,7 @@
     </style>
 </head>
 <body>
+<jsp:include page="/inc/header.jsp"/>
 <div class="box">
     <h2>Forgot Password</h2>
 
@@ -38,5 +39,6 @@
         <a href="<%= request.getContextPath() %>/login">Back to Login</a>
     </div>
 </div>
+<%@ include file="/inc/footer.jsp" %>
 </body>
 </html>

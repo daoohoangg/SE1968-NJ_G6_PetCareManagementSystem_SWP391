@@ -34,6 +34,7 @@
     </style>
 </head>
 <body>
+<jsp:include page="/inc/header.jsp"/>
 <div class="box">
     <h2>Login</h2>
     <%
@@ -128,6 +129,7 @@
         <a href="<%= request.getContextPath() %>/home">Back to Home</a>
     </div>
 </div>
+<%@ include file="/inc/footer.jsp" %>
 </body>
 </html>
 

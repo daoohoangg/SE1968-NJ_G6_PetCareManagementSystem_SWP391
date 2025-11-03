@@ -262,6 +262,22 @@
                             <% } %>
                         </td>
                         <td class="text-end">
+                            <%
+                                boolean canPay =
+                                        !"CANCELLED".equals(status) &&
+                                                !"COMPLETED".equals(status) &&
+                                                a.getTotalAmount() != null &&
+                                                a.getTotalAmount().longValue() > 0L;
+                            %>
+
+                            <% if (canPay) { %>
+                            <a href="<%= ctx %>/customer/payments/mock?appointmentId=<%= a.getAppointmentId() %>"
+                               class="btn btn-success btn-sm me-1">
+                                <i class="bi bi-qr-code-scan"></i> Pay (Mock QR)
+                            </a>
+
+                            <% } %>
+
                             <% if (!"CANCELLED".equals(status) && !"COMPLETED".equals(status)) { %>
                             <a href="<%= ctx %>/customer/appointments?action=cancel&id=<%= a.getAppointmentId() %>"
                                class="btn btn-outline-danger btn-sm"
@@ -270,6 +286,7 @@
                             </a>
                             <% } %>
                         </td>
+
                     </tr>
                     <% } // for %>
                     </tbody>
