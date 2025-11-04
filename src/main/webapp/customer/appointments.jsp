@@ -262,30 +262,37 @@
                             <% } %>
                         </td>
                         <td class="text-end">
-                            <%
-                                boolean canPay =
-                                        !"CANCELLED".equals(status) &&
-                                                !"COMPLETED".equals(status) &&
-                                                a.getTotalAmount() != null &&
-                                                a.getTotalAmount().longValue() > 0L;
-                            %>
+                            <div class="d-inline-flex flex-wrap justify-content-end align-items-center gap-2"
+                                 style="min-width:220px">
+                                <%
+                                    boolean canPay =
+                                            !"CANCELLED".equals(status) &&
+                                                    !"COMPLETED".equals(status) &&
+                                                    a.getTotalAmount() != null &&
+                                                    a.getTotalAmount().longValue() > 0L;
 
-                            <% if (canPay) { %>
-                            <a href="<%= ctx %>/customer/payments/mock?appointmentId=<%= a.getAppointmentId() %>"
-                               class="btn btn-success btn-sm me-1">
-                                <i class="bi bi-qr-code-scan"></i> Pay (Mock QR)
-                            </a>
+                                    boolean canCancel =
+                                            !"CANCELLED".equals(status) &&
+                                                    !"COMPLETED".equals(status);
+                                %>
 
-                            <% } %>
+                                <% if (canPay) { %>
+                                <a href="<%= ctx %>/customer/payments/mock?appointmentId=<%= a.getAppointmentId() %>"
+                                   class="btn btn-success btn-sm d-flex align-items-center">
+                                    <i class="bi bi-qr-code-scan me-1"></i> Pay (Mock QR)
+                                </a>
+                                <% } %>
 
-                            <% if (!"CANCELLED".equals(status) && !"COMPLETED".equals(status)) { %>
-                            <a href="<%= ctx %>/customer/appointments?action=cancel&id=<%= a.getAppointmentId() %>"
-                               class="btn btn-outline-danger btn-sm"
-                               onclick="return confirm('Cancel this appointment?');">
-                                <i class="bi bi-x-circle"></i> Cancel
-                            </a>
-                            <% } %>
+                                <% if (canCancel) { %>
+                                <a href="<%= ctx %>/customer/appointments?action=cancel&id=<%= a.getAppointmentId() %>"
+                                   class="btn btn-outline-danger btn-sm d-flex align-items-center"
+                                   onclick="return confirm('Cancel this appointment?');">
+                                    <i class="bi bi-x-circle me-1"></i> Cancel
+                                </a>
+                                <% } %>
+                            </div>
                         </td>
+
 
                     </tr>
                     <% } // for %>
