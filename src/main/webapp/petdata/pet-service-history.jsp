@@ -112,7 +112,7 @@
 <jsp:include page="../inc/header.jsp" />
 <div class="layout">
     <% request.setAttribute("activePage", "pet-data"); %>
-    <jsp:include page="../inc/side-bar.jsp" />
+    <jsp:include page="../inc/staff-sidebar.jsp" />
 
     <main class="content">
         <div class="topbar">
