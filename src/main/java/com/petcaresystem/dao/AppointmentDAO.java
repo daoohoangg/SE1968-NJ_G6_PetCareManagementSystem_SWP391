@@ -525,6 +525,32 @@ public class AppointmentDAO {
             return result != null ? result : 0L;
         }
     }
+
+    public long countPetsInCareOn(LocalDate date) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            LocalDateTime startOfDay = date.atStartOfDay();
+            LocalDateTime startOfNextDay = date.plusDays(1).atStartOfDay();
+
+            List<AppointmentStatus> activeStatuses = List.of(
+                    AppointmentStatus.CHECKED_IN,
+                    AppointmentStatus.IN_PROGRESS
+            );
+
+            Query<Long> query = session.createQuery(
+                    "select count(distinct a.pet.idpet) from Appointment a " +
+                            "where a.appointmentDate >= :startOfDay " +
+                            "and a.appointmentDate < :startOfNextDay " +
+                            "and a.status in (:statuses)",
+                    Long.class
+            );
+            query.setParameter("startOfDay", startOfDay);
+            query.setParameter("startOfNextDay", startOfNextDay);
+            query.setParameterList("statuses", activeStatuses);
+
+            Long result = query.uniqueResult();
+            return result != null ? result : 0L;
+        }
+    }
     public List<Appointment> findUpcomingAppointments(int limit) {
         int effectiveLimit = limit <= 0 ? 5 : limit;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {

@@ -562,7 +562,6 @@
                     <option value="all" <c:if test="${empty roleValue || roleValue == 'all'}">selected</c:if>>All Roles</option>
                     <option value="ADMIN" <c:if test="${roleValue == 'ADMIN'}">selected</c:if>>Admin</option>
                     <option value="STAFF" <c:if test="${roleValue == 'STAFF'}">selected</c:if>>Staff</option>
-                    <option value="CUSTOMER" <c:if test="${roleValue == 'CUSTOMER'}">selected</c:if>>Customer</option>
                 </select>
                 <label class="page-size-control">
                     Show

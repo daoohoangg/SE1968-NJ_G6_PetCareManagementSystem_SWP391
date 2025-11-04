@@ -48,6 +48,10 @@ public class DashboardMetricsService {
         return appointmentDAO.countPendingAppointments();
     }
 
+    public long countPetsInCareToday() {
+        return appointmentDAO.countPetsInCareOn(LocalDate.now());
+    }
+
     public double getTodayWeatherCelsius() {
         double baseTemperature = 27.0;
         double seasonalVariation = Math.sin(LocalDate.now().getDayOfYear() / 365.0 * 2 * Math.PI) * 4;

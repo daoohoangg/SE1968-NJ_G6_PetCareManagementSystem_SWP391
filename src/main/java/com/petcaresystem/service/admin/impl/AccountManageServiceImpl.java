@@ -74,6 +74,7 @@ public class AccountManageServiceImpl implements IAccountManageService {
         if (byEmail != null && !byEmail.getAccountId().equals(a.getAccountId())) {
             return new OperationResult(false, "Email already in use");
         }
+
         boolean ok = accountDAO.updateAccount(a);
         return new OperationResult(ok, ok ? "Account updated" : "Failed to update account");
     }

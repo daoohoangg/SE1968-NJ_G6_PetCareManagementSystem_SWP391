@@ -134,6 +134,10 @@
         background:rgba(79,70,229,.12);
         color:#4f46e5;
     }
+    .stat-card.care .stat-icon{
+        background:rgba(14,165,233,.14);
+        color:#0ea5e9;
+    }
     .stat-card.emergency .stat-icon{
         background:rgba(220,38,38,.15);
         color:var(--danger);
@@ -414,10 +418,9 @@
                     <p>Welcome back! Here's a snapshot of operations across PetCare.</p>
                 </div>
                 <div class="quick-actions">
-                    <a class="action-btn primary" href="#"><i class="ri-add-line"></i>New Appointment</a>
-                    <a class="action-btn success" href="#"><i class="ri-user-add-line"></i>Add Customer</a>
-                    <a class="action-btn danger" href="#"><i class="ri-alarm-warning-line"></i>Emergency Alert</a>
-                    <a class="action-btn secondary" href="#"><i class="ri-bar-chart-line"></i>View Reports</a>
+                    <a class="action-btn primary" href="/PetCareManagementSystem/customer/appointments.jsp"><i class="ri-add-line"></i>New Appointment</a>
+                    <a class="action-btn success" href="accounts"><i class="ri-user-add-line"></i>Add Customer</a>
+                    <a class="action-btn secondary" href="reports"><i class="ri-bar-chart-line"></i>View Reports</a>
                 </div>
             </div>
 
@@ -485,6 +488,21 @@
                         <span class="stat-sub">Pets under our care</span>
                     </div>
                 </div>
+                <div class="card stat-card care">
+                    <div class="stat-icon"><i class="ri-hand-heart-line"></i></div>
+                    <div class="stat-meta">
+                        <span class="stat-label">Pets In Care</span>
+                        <span class="stat-value">
+                            <c:choose>
+                                <c:when test="${not empty petsInCareToday}">
+                                    <fmt:formatNumber value="${petsInCareToday}" type="number" groupingUsed="true"/>
+                                </c:when>
+                                <c:otherwise>0</c:otherwise>
+                            </c:choose>
+                        </span>
+                        <span class="stat-sub">Receiving services today</span>
+                    </div>
+                </div>
                 <div class="card stat-card emergency">
                     <div class="stat-icon"><i class="ri-calendar-check-line"></i></div>
                     <div class="stat-meta">
@@ -500,6 +518,7 @@
                         <span class="stat-sub">Awaiting service completion</span>
                     </div>
                 </div>
+
             </div>
 
             <div class="charts-grid">

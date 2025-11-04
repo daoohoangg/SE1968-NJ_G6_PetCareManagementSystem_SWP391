@@ -179,6 +179,49 @@
         from{opacity:0;transform:translateY(8px)}
         to{opacity:1;transform:translateY(0)}
     }
+    .voucher-form{
+        width: 100%;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        align-items: start;
+        overflow: hidden;
+    }
+
+    .voucher-form > label,
+    .voucher-form > .config-input,
+    .voucher-form > .config-select,
+    .voucher-form > .config-textarea,
+    .voucher-form > button{
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .voucher-form label{
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .voucher-form input.config-input,
+    .voucher-form select.config-select,
+    .voucher-form textarea.config-textarea{
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .voucher-form .voucher-add-btn{
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .config-card{
+        overflow: hidden;
+    }
+    @media (max-width: 560px){
+        .voucher-form{
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 
 <jsp:include page="../inc/header.jsp" />
@@ -298,7 +341,6 @@
                             <select class="config-select" name="discountType">
                                 <option value="PERCENTAGE">Percentage</option>
                                 <option value="FIXED">Fixed Amount</option>
-                                <option value="FREE_SERVICE">Free Service</option>
                             </select>
                         </label>
                         <label>
@@ -492,49 +534,6 @@
                     <div class="form-actions">
                         <button type="submit" class="save-btn">
                             <i class="ri-checkbox-circle-line"></i> Save Email Settings
-                        </button>
-                    </div>
-                </form>
-
-                <!-- SMTP Configuration -->
-                <form method="post" action="${pageContext.request.contextPath}/admin/config" style="margin-top: 32px;">
-                    <input type="hidden" name="action" value="update-smtp"/>
-                    <input type="hidden" name="tab" value="email"/>
-                    
-                    <div class="setting-section">
-                        <h2>SMTP Configuration</h2>
-                        <div class="number-inputs">
-                            <label class="full">
-                                SMTP Host
-                                <input class="config-input" type="text" name="smtpHost" 
-                                       value="${smtpHost != null ? smtpHost : 'smtp.gmail.com'}" required/>
-                            </label>
-                            <label>
-                                SMTP Port
-                                <input class="config-input" type="number" name="smtpPort" 
-                                       value="${smtpPort != null ? smtpPort : 587}" required/>
-                            </label>
-                            <label class="full">
-                                From Email
-                                <input class="config-input" type="email" name="fromEmail" 
-                                       value="${fromEmail != null ? fromEmail : ''}" required/>
-                            </label>
-                            <label class="full">
-                                App Password
-                                <input class="config-input" type="password" name="appPassword" 
-                                       value="${appPassword != null ? appPassword : ''}" 
-                                       placeholder="Leave blank to keep current" autocomplete="new-password"/>
-                            </label>
-                        </div>
-                        <p class="setting-desc" style="margin-top:8px">
-                            <i class="ri-information-line"></i> Gmail users: Use an App Password, not your regular password. 
-                            <a href="https://support.google.com/accounts/answer/185833" target="_blank">Learn more</a>
-                        </p>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" class="save-btn">
-                            <i class="ri-settings-3-line"></i> Save SMTP Settings
                         </button>
                     </div>
                 </form>

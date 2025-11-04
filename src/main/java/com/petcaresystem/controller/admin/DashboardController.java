@@ -19,6 +19,7 @@ public class DashboardController extends HttpServlet {
             throws ServletException, IOException {
         req.setAttribute("totalCustomers", dashboardMetricsService.countCustomers());
         req.setAttribute("happyPets", dashboardMetricsService.countHappyPets());
+        req.setAttribute("petsInCareToday", dashboardMetricsService.countPetsInCareToday());
         req.setAttribute("pendingAppointments", dashboardMetricsService.countPendingAppointments());
         req.setAttribute("weatherTemperatureC", dashboardMetricsService.getTodayWeatherCelsius());
         req.setAttribute("weatherSummary", dashboardMetricsService.getWeatherSummary());
