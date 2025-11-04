@@ -182,6 +182,42 @@
             0%{transform:translateY(18px);opacity:0}
             100%{transform:translateY(0);opacity:1}
         }
+        .modal-backdrop{
+            position: fixed; inset: 0;
+            background: rgba(17,24,39,.60) !important;  /* tối nền */
+            display: none; align-items: center; justify-content: center;
+            z-index: 1200 !important; padding: 20px;
+            opacity: 1 !important;              /* quan trọng: không mờ cây con */
+            filter: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+        .modal-backdrop.show{ display:flex; }
+        .modal-card{
+            position: relative;
+            z-index: 1201 !important;               /* đứng trên overlay */
+            background: #fff !important;
+            color: var(--text);
+            border: 1px solid rgba(148,163,184,.22);
+            box-shadow: 0 28px 60px rgba(15,23,42,.35);
+
+            /* Chống mờ từ ancestor */
+            opacity: 1 !important;
+            filter: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            isolation: isolate;                     /* ngắt stacking context thấm xuống */
+
+            /* Tránh render “đục” do layer hợp nhất */
+            transform: translateZ(0);
+            will-change: transform;
+        }
+        .modal-card, .modal-card *{
+            background-color:#fff !important;       /* mọi nền trong modal phải trắng nét */
+            opacity: 1 !important;
+            filter: none !important;
+            mix-blend-mode: normal !important;
+        }
     </style>
 </head>
 <body>
@@ -470,7 +506,6 @@
                                     </c:choose>
                                 </td>
                                 <td class="actions">
-                                    <a class="icon-btn" href="${pageContext.request.contextPath}/admin/service?action=view&id=${s.serviceId}" title="View"><i class="ri-eye-line"></i></a>
                                     <a class="icon-btn"
                                        href="${pageContext.request.contextPath}/admin/service?action=edit&id=${s.serviceId}"
                                        title="Edit"
