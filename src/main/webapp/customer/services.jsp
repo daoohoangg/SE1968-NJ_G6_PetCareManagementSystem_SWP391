@@ -2,7 +2,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="com.petcaresystem.enities.Service" %>
 <%@ page import="java.math.BigDecimal" %>
-
+<%@ page import="java.util.Map" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,7 +40,10 @@
 </div>
 
 <div class="container my-5">
-    <% String error = (String) request.getAttribute("error");
+    <%
+        Map<Integer, String> detailedDescriptions = (Map<Integer, String>) request.getAttribute("detailedDescriptions");
+        Map<Integer, String> imageNames = (Map<Integer, String>) request.getAttribute("imageNames");
+        String error = (String) request.getAttribute("error");
         if (error != null) { %>
     <div class="alert alert-danger"><%= error %></div>
     <% } %>
@@ -57,6 +60,13 @@
         } else {
             for (Service service : serviceList) {
                 String modalId = "serviceDetailModal-" + service.getServiceId();
+                String fullDescription = (detailedDescriptions != null && detailedDescriptions.containsKey(service.getServiceId()))
+                        ? detailedDescriptions.get(service.getServiceId())
+                        : service.getDescription();
+
+                String serviceImageName = (imageNames != null && imageNames.containsKey(service.getServiceId()))
+                        ? imageNames.get(service.getServiceId())
+                        : "service-placeholder.jpg";
         %>
         <div class="col-lg-4 col-md-6">
             <div class="card service-card h-100">
@@ -94,7 +104,7 @@
                     <div class="modal-body">
                         <div class="row g-4">
                             <div class="col-md-5">
-                                <img src="<%= request.getContextPath() %>/images/service-placeholder.jpg"
+                                <img src="<%= request.getContextPath() %>/images/<%= serviceImageName %>"
                                      alt="<%= service.getServiceName() %>"
                                      class="modal-service-image">
                             </div>
@@ -106,7 +116,7 @@
                                     <strong>Duration:</strong> <%= service.getDurationMinutes() %> minutes
                                 </p>
                                 <hr>
-                                <p class="text-muted"><%= service.getDescription() %></p>
+                                <p class="text-muted"><%= fullDescription %></p>
                             </div>
                         </div>
                     </div>
