@@ -1,9 +1,14 @@
 package com.petcaresystem.dao;
 
 import com.petcaresystem.enities.*;
+import com.petcaresystem.enities.enu.PaymentStatus;
 import com.petcaresystem.utils.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import com.petcaresystem.enities.enu.PaymentMethod;
+import com.petcaresystem.enities.Payment;
+import com.petcaresystem.enities.Invoice;
+
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -11,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import org.hibernate.query.Query;
+import java.util.UUID;
 
 public class PaymentDAO {
 
@@ -22,18 +28,33 @@ public class PaymentDAO {
             Invoice inv = s.get(Invoice.class, invoiceId);
             if (inv == null) throw new IllegalArgumentException("Invoice not found");
 
+            LocalDateTime now = LocalDateTime.now();
+            BigDecimal safeAmount = (amount == null ? BigDecimal.ZERO : amount);
+
+            // map string -> enum; DEFAULT = OTHER (vì enum của bạn: CASH, CREDIT_CARD, DEBIT_CARD, BANK_TRANSFER, OTHER)
+            PaymentMethod methodEnum = PaymentMethod.OTHER;
+            if (method != null && !method.isBlank()) {
+                try { methodEnum = PaymentMethod.valueOf(method.trim().toUpperCase()); }
+                catch (IllegalArgumentException ignore) { /* giữ OTHER */ }
+            }
+
             Payment p = new Payment();
             p.setInvoice(inv);
             p.setCustomer(inv.getCustomer());
-            p.setAmount(amount);
-            p.setPaymentDate(LocalDateTime.now());
+            p.setAmount(safeAmount);
+            p.setPaymentDate(now);
             p.setNotes(notes);
-            // Default method if enum exists, set via controller/service
 
-            inv.addPayment(p);
+            // các cột thường NOT NULL
+            p.setPaymentNumber("PAY-" + System.currentTimeMillis());
+            p.setPaymentMethod(methodEnum);                 // ✅ enum
+            p.setStatus(PaymentStatus.PENDING);           // ✅ enum
+            p.setTransactionId("TRX-" + UUID.randomUUID());
+            p.setReferenceNumber("REF-" + inv.getInvoiceId());
+            p.setCreatedAt(now);
+            p.setUpdatedAt(now);
+
             s.persist(p);
-            s.merge(inv);
-
             tx.commit();
             return p;
         } catch (Exception e) {
