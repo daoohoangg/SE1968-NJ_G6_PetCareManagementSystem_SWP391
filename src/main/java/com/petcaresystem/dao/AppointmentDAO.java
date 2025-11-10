@@ -89,6 +89,55 @@ public class AppointmentDAO {
             return readOne(s, hql, Appointment.class, Map.of("id", id));
         }
     }
+    public List<Appointment> getTasksForStaff(Long staffAccountId) {
+        List<AppointmentStatus> statuses = List.of(
+                AppointmentStatus.CONFIRMED,
+                AppointmentStatus.IN_PROGRESS,
+                AppointmentStatus.SCHEDULED,
+                AppointmentStatus.CHECKED_IN
+        );
+
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = """
+                    select distinct a
+                    from Appointment a
+                    join fetch a.customer c
+                    join fetch a.pet p
+                    left join fetch a.services sv
+                    join fetch a.staff st
+                    where st.accountId = :staffId 
+                      and a.status in (:statuses)
+                    order by a.appointmentDate asc
+                    """;
+
+            return s.createQuery(hql, Appointment.class)
+                    .setParameter("staffId", staffAccountId)
+                    .setParameterList("statuses", statuses)
+                    .setReadOnly(true)
+                    .getResultList();
+        }
+    }
+    public boolean updateTaskStatus(Long appointmentId, Long staffAccountId, AppointmentStatus newStatus, String notes) {
+        Transaction tx = null;
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            tx = s.beginTransaction();
+            Appointment a = s.get(Appointment.class, appointmentId);
+            if (a == null || a.getStaff() == null || !a.getStaff().getAccountId().equals(staffAccountId)) {
+                if (tx != null) tx.rollback();
+                return false;
+            }
+            a.setStatus(newStatus);
+            a.setNotes(notes);
+
+            s.merge(a);
+            tx.commit();
+            return true;
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     private Receptionist getDefaultReceptionist(Session s) {
         String hql = "from Receptionist r order by r.accountId asc";
