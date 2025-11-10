@@ -6,12 +6,7 @@ import com.petcaresystem.dao.PetDAO;
 import com.petcaresystem.dao.PetServiceHistoryDAO;
 import com.petcaresystem.dto.dashboard.RecentActivityView;
 import com.petcaresystem.dto.dashboard.ScheduleItemView;
-import com.petcaresystem.enities.Appointment;
-import com.petcaresystem.enities.Customer;
-import com.petcaresystem.enities.Pet;
-import com.petcaresystem.enities.PetServiceHistory;
-import com.petcaresystem.enities.Service;
-import com.petcaresystem.enities.Staff;
+import com.petcaresystem.enities.*;
 import com.petcaresystem.enities.enu.AppointmentStatus;
 
 import java.time.LocalDate;
@@ -50,6 +45,14 @@ public class DashboardMetricsService {
 
     public long countPetsInCareToday() {
         return appointmentDAO.countPetsInCareOn(LocalDate.now());
+    }
+
+    /**
+     * Get emergency contact admin account
+     * Returns admin account for emergency contact display
+     */
+    public Account getEmergencyContactAdmin() {
+        return accountDAO.getEmergencyContactAdmin();
     }
 
     public double getTodayWeatherCelsius() {

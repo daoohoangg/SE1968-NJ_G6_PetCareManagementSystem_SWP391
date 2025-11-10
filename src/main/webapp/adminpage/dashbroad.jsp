@@ -418,8 +418,7 @@
                     <p>Welcome back! Here's a snapshot of operations across PetCare.</p>
                 </div>
                 <div class="quick-actions">
-                    <a class="action-btn primary" href="/PetCareManagementSystem/customer/appointments.jsp"><i class="ri-add-line"></i>New Appointment</a>
-                    <a class="action-btn success" href="accounts"><i class="ri-user-add-line"></i>Add Customer</a>
+                    <a class="action-btn success" href="accounts"><i class="ri-user-add-line"></i>Add Accounts</a>
                     <a class="action-btn secondary" href="reports"><i class="ri-bar-chart-line"></i>View Reports</a>
                 </div>
             </div>
@@ -454,8 +453,22 @@
                     <div class="stat-icon"><i class="ri-nurse-line"></i></div>
                     <div class="stat-meta">
                         <span class="stat-label">Emergency Contact</span>
-                        <span class="stat-value">Dr. Sarah Wilson</span>
-                        <span class="stat-sub">(858) 132-4567</span>
+                        <span class="stat-value">
+                            <c:choose>
+                                <c:when test="${not empty emergencyContact}">
+                                    <c:out value="${emergencyContact.fullName}" default="Admin"/>
+                                </c:when>
+                                <c:otherwise>No Admin Available</c:otherwise>
+                            </c:choose>
+                        </span>
+                        <span class="stat-sub">
+                            <c:choose>
+                                <c:when test="${not empty emergencyContact and not empty emergencyContact.phone}">
+                                    <c:out value="${emergencyContact.phone}"/>
+                                </c:when>
+                                <c:otherwise>No contact available</c:otherwise>
+                            </c:choose>
+                        </span>
                     </div>
                 </div>
                 <div class="card stat-card warning">
@@ -471,21 +484,6 @@
                             </c:choose>
                         </span>
                         <span class="stat-sub">Registered customers</span>
-                    </div>
-                </div>
-                <div class="card stat-card">
-                    <div class="stat-icon"><i class="ri-hearts-line"></i></div>
-                    <div class="stat-meta">
-                        <span class="stat-label">Happy Pets</span>
-                        <span class="stat-value">
-                            <c:choose>
-                                <c:when test="${not empty happyPets}">
-                                    <fmt:formatNumber value="${happyPets}" type="number" groupingUsed="true"/>
-                                </c:when>
-                                <c:otherwise>0</c:otherwise>
-                            </c:choose>
-                        </span>
-                        <span class="stat-sub">Pets under our care</span>
                     </div>
                 </div>
                 <div class="card stat-card care">

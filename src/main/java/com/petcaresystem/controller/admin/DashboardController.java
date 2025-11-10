@@ -25,6 +25,7 @@ public class DashboardController extends HttpServlet {
         req.setAttribute("weatherSummary", dashboardMetricsService.getWeatherSummary());
         req.setAttribute("recentActivities", dashboardMetricsService.getRecentActivities());
         req.setAttribute("upcomingSchedule", dashboardMetricsService.getUpcomingSchedule());
+        req.setAttribute("emergencyContact", dashboardMetricsService.getEmergencyContactAdmin());
 
         req.getRequestDispatcher("/adminpage/dashbroad.jsp").forward(req, resp);
     }
