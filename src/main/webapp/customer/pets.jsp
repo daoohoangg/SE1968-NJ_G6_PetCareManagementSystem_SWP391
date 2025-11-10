@@ -96,10 +96,19 @@
         %>
 
         <div class="row-line align-items-center">
-            <input class="form-control" type="text" value="<%= p.getName()==null? "" : p.getName() %>" readonly>
-            <input class="form-control" type="text" value="<%= p.getBreed()==null? "" : p.getBreed() %>" readonly>
+            <input class="form-control" type="text"
+                   value="<%= p.getName()==null? "" : p.getName() %>" readonly>
+            <input class="form-control" type="text"
+                   value="<%= p.getBreed()==null? "" : p.getBreed() %>" readonly>
+
             <div class="d-flex align-items-center" style="gap:8px;">
-                <select class="form-select <%= cls %>" disabled><option><%= label %></option></select>
+                <% if ("AVERAGE".equalsIgnoreCase(hs)) { %>
+                <span class="badge bg-warning text-dark px-3 py-2">Average</span>
+                <% } else if ("SICK".equalsIgnoreCase(hs)) { %>
+                <span class="badge bg-danger px-3 py-2">Sick</span>
+                <% } else { %>
+                <span class="badge bg-success px-3 py-2">Healthy</span>
+                <% } %>
 
                 <!-- Edit -->
                 <button
@@ -113,13 +122,15 @@
                 </button>
 
                 <!-- Delete -->
-                <form method="post" action="<%= ctx %>/customer/pets" onsubmit="return confirm('Delete this pet?');">
+                <form method="post" action="<%= ctx %>/customer/pets"
+                      onsubmit="return confirm('Delete this pet?');">
                     <input type="hidden" name="action" value="delete">
                     <input type="hidden" name="petId" value="<%= p.getIdpet() %>">
                     <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
                 </form>
             </div>
         </div>
+
 
         <%
                 } // end for
@@ -198,7 +209,6 @@
 </div>
 
 <!-- Bootstrap JS & tiny script để đổ data vào Edit modal -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const editModal = document.getElementById('modalEditPet');
     editModal.addEventListener('show.bs.modal', function (event) {
