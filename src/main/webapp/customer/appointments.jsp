@@ -4,11 +4,9 @@
 <%@ page import="com.petcaresystem.dao.PetDAO, com.petcaresystem.dao.ServiceDAO, com.petcaresystem.dao.AppointmentDAO" %>
 
 <%
-    // ===== Context & session =====
     String ctx = request.getContextPath();
     Account acc = (Account) session.getAttribute("account");
 
-    // ===== Data possibly provided by servlet =====
     List<Appointment> appointments = (List<Appointment>) request.getAttribute("appointments");
     List<Pet>         pets         = (List<Pet>)         request.getAttribute("pets");
     List<Service>     services     = (List<Service>)     request.getAttribute("services");
@@ -38,7 +36,6 @@
     String created   = request.getParameter("created");
     String cancelled = request.getParameter("cancelled");
 
-    // ===== Sort services by Category name then Service name (null-safe) =====
     List<Service> sortedServices = new ArrayList<>(services == null ? Collections.<Service>emptyList() : services);
     Collections.sort(sortedServices, new Comparator<Service>() {
         @Override public int compare(Service a, Service b) {
@@ -61,7 +58,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
-
     <style>
         body { background-color:#f5f7fb; font-family:'Segoe UI',sans-serif; }
         .page-container { max-width:1050px; margin:40px auto; }
@@ -71,6 +67,7 @@
         .required::after { content:"*"; color:#dc3545; margin-left:4px; }
         .btn-primary { font-weight:600; }
         .badge { letter-spacing:.3px; }
+        body.modal-open .page-container { filter: blur(3px); transition: filter .2s ease; }
     </style>
 </head>
 
@@ -79,7 +76,6 @@
 
 <div class="page-container">
 
-    <!-- Alerts -->
     <%
         if ("1".equals(created)) {
     %>
@@ -94,15 +90,16 @@
     <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i><%= error %></div>
     <%
         }
+        java.time.format.DateTimeFormatter df =
+                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        List<Appointment> apps = (appointments == null) ? Collections.emptyList() : appointments;
     %>
 
-    <!-- ===== Booking form ===== -->
     <div class="card mb-4">
         <div class="card-header"><i class="bi bi-calendar-plus-fill me-2"></i>BOOK A NEW APPOINTMENT</div>
         <div class="card-body">
             <form method="post" action="<%= ctx %>/customer/appointments">
                 <div class="row g-3">
-                    <!-- PET -->
                     <div class="col-md-6">
                         <label class="form-label required">Pet</label>
                         <% if (pets == null || pets.isEmpty()) { %>
@@ -121,7 +118,6 @@
                         <% } %>
                     </div>
 
-                    <!-- SERVICES -->
                     <div class="col-md-6">
                         <label class="form-label required">Services</label>
                         <select id="serviceIds" name="serviceIds" class="form-select" multiple required>
@@ -159,13 +155,11 @@
                         <small id="totalPriceText" class="text-muted d-block mt-1">Services total: 0 đ</small>
                     </div>
 
-                    <!-- TIME -->
                     <div class="col-md-6">
                         <label class="form-label required">Start date & time</label>
                         <input type="datetime-local" name="startAt" class="form-control" required>
                     </div>
 
-                    <!-- NOTES -->
                     <div class="col-12">
                         <label class="form-label">Notes</label>
                         <textarea name="notes" rows="3" class="form-control"
@@ -185,14 +179,6 @@
         </div>
     </div>
 
-    <%
-
-        java.time.format.DateTimeFormatter df =
-                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-        List<Appointment> apps = (appointments == null) ? Collections.emptyList() : appointments;
-    %>
-
-    <!-- ===== My Appointments ===== -->
     <div class="card">
         <div class="card-header"><i class="bi bi-list-check me-2"></i>MY APPOINTMENTS</div>
         <div class="card-body">
@@ -222,7 +208,6 @@
                             String petName = (a.getPet()!=null && a.getPet().getName()!=null)
                                     ? a.getPet().getName() : "(N/A)";
 
-
                             StringBuilder svNames = new StringBuilder();
                             List<Service> svs = a.getServices();
                             if (svs != null) {
@@ -238,6 +223,12 @@
                             String endTxt   = (a.getEndDate()!=null)       ? a.getEndDate().format(df)       : "—";
                             String totalTxt = (a.getTotalAmount()!=null)   ? a.getTotalAmount().toPlainString() + " đ" : "0 đ";
                             String status   = (a.getStatus()!=null)        ? a.getStatus().name() : "PENDING";
+
+                            boolean canPay =
+                                    !"CANCELLED".equals(status) &&
+                                            !"COMPLETED".equals(status) &&
+                                            a.getTotalAmount() != null &&
+                                            a.getTotalAmount().longValue() > 0L;
                     %>
                     <tr>
                         <td><%= i + 1 %></td>
@@ -262,73 +253,99 @@
                             <% } %>
                         </td>
                         <td class="text-end">
-                            <div class="d-inline-flex flex-wrap justify-content-end align-items-center gap-2"
-                                 style="min-width:220px">
-                                <%
-                                    boolean canPay =
-                                            !"CANCELLED".equals(status) &&
-                                                    !"COMPLETED".equals(status) &&
-                                                    a.getTotalAmount() != null &&
-                                                    a.getTotalAmount().longValue() > 0L;
+                            <% if (canPay) { %>
+                            <button type="button"
+                                    class="btn btn-success btn-sm me-1 js-open-qr"
+                                    data-app-id="<%= a.getAppointmentId() %>"
+                                    data-amount="<%= a.getTotalAmount()!=null ? a.getTotalAmount().toPlainString() : "0" %>">
+                                <i class="bi bi-qr-code-scan"></i> Pay
+                            </button>
+                            <% } %>
 
-                                    boolean canCancel =
-                                            !"CANCELLED".equals(status) &&
-                                                    !"COMPLETED".equals(status);
-                                %>
-
-                                <% if (canPay) { %>
-                                <a href="<%= ctx %>/customer/payments/mock?appointmentId=<%= a.getAppointmentId() %>"
-                                   class="btn btn-success btn-sm d-flex align-items-center">
-                                    <i class="bi bi-qr-code-scan me-1"></i> Pay (Mock QR)
-                                </a>
-                                <% } %>
-
-                                <% if (canCancel) { %>
-                                <a href="<%= ctx %>/customer/appointments?action=cancel&id=<%= a.getAppointmentId() %>"
-                                   class="btn btn-outline-danger btn-sm d-flex align-items-center"
-                                   onclick="return confirm('Cancel this appointment?');">
-                                    <i class="bi bi-x-circle me-1"></i> Cancel
-                                </a>
-                                <% } %>
-                            </div>
+                            <% if (!"CANCELLED".equals(status) && !"COMPLETED".equals(status)) { %>
+                            <a href="<%= ctx %>/customer/appointments?action=cancel&id=<%= a.getAppointmentId() %>"
+                               class="btn btn-outline-danger btn-sm"
+                               onclick="return confirm('Cancel this appointment?');">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <% } %>
                         </td>
-
-
                     </tr>
-                    <% } // for %>
+                    <% } %>
                     </tbody>
                 </table>
             </div>
             <% } %>
         </div>
     </div>
+</div>
 
+<!-- QR MODAL -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:16px;">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-qr-code me-2"></i>Scan to pay</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="small text-muted mb-2">Appointment: <span id="mAppId">—</span></div>
+                <div class="fw-semibold mb-3">Amount: <span id="mAmount">0</span> đ</div>
+                <div id="qrBox" class="mx-auto" style="width:260px;height:260px;padding:10px;border:1px dashed #dee2e6;border-radius:12px;"></div>
+                <div class="text-muted mt-2">Scan QR.</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const el = document.getElementById('serviceIds');
-        if (el) new Choices(el, { removeItemButton:true, searchEnabled:true, shouldSort:false,
-            placeholder:true, placeholderValue:'Select services...',
-            noResultsText:'No services found', itemSelectText:'' });
-
         const totalText = document.getElementById('totalPriceText');
-        if (!el || !totalText) return;
-
-        const prices = {};
-        el.querySelectorAll('option').forEach(opt => {
-            const txt = opt.textContent || '';
-            const m = txt.match(/\(([\d.]+)\s*đ\)/);
-            if (m) prices[opt.value] = parseFloat(m[1]);
-        });
-
-        function updateTotal(){
-            let sum = 0;
-            Array.from(el.selectedOptions).forEach(opt => { if (prices[opt.value]) sum += prices[opt.value]; });
-            totalText.textContent = 'Services total: ' + sum.toFixed(2) + ' đ';
+        if (el) {
+            new Choices(el, { removeItemButton:true, searchEnabled:true, shouldSort:false,
+                placeholder:true, placeholderValue:'Select services...',
+                noResultsText:'No services found', itemSelectText:'' });
+            if (totalText) {
+                const prices = {};
+                el.querySelectorAll('option').forEach(opt => {
+                    const txt = opt.textContent || '';
+                    const m = txt.match(/\(([\d.]+)\s*đ\)/);
+                    if (m) prices[opt.value] = parseFloat(m[1]);
+                });
+                function updateTotal(){
+                    let sum = 0;
+                    Array.from(el.selectedOptions).forEach(opt => { if (prices[opt.value]) sum += prices[opt.value]; });
+                    totalText.textContent = 'Services total: ' + sum.toFixed(2) + ' đ';
+                }
+                el.addEventListener('change', updateTotal);
+            }
         }
-        el.addEventListener('change', updateTotal);
+
+        const modalEl = document.getElementById('qrModal');
+        const qrModal = new bootstrap.Modal(modalEl);
+        const box = document.getElementById('qrBox');
+        const labId = document.getElementById('mAppId');
+        const labAm = document.getElementById('mAmount');
+
+        document.querySelectorAll('.js-open-qr').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const appId  = btn.getAttribute('data-app-id');
+                const amount = btn.getAttribute('data-amount') || '0';
+                labId.textContent = appId;
+                labAm.textContent = Number(amount).toLocaleString('vi-VN');
+                box.innerHTML = '';
+                const payload = `PETCARE|APP=${appId}|AMOUNT=${amount}`;
+                new QRCode(box, { text: payload, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M });
+                qrModal.show();
+            });
+        });
     });
 </script>
 </body>
