@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <title>Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
@@ -543,11 +544,31 @@
                         <canvas id="serviceChart"></canvas>
                     </div>
                     <ul class="legend">
-                        <li><span class="dot grooming"></span>Grooming <strong>35%</strong></li>
-                        <li><span class="dot veterinary"></span>Veterinary <strong>28%</strong></li>
-                        <li><span class="dot training"></span>Training <strong>18%</strong></li>
-                        <li><span class="dot boarding"></span>Boarding <strong>12%</strong></li>
-                        <li><span class="dot daycare"></span>Daycare <strong>7%</strong></li>
+                        <c:choose>
+                            <c:when test="${not empty serviceDistribution}">
+                                <c:forEach var="item" items="${serviceDistribution}" varStatus="status">
+                                    <c:set var="categoryName" value="${item.categoryName}"/>
+                                    <c:set var="percentage" value="${item.percentage}"/>
+                                    <c:set var="categoryLower" value="${fn:toLowerCase(categoryName)}"/>
+                                    <li>
+                                        <span class="dot 
+                                            <c:choose>
+                                                <c:when test="${fn:contains(categoryLower, 'groom')}">grooming</c:when>
+                                                <c:when test="${fn:contains(categoryLower, 'vet') || fn:contains(categoryLower, 'medical')}">veterinary</c:when>
+                                                <c:when test="${fn:contains(categoryLower, 'train')}">training</c:when>
+                                                <c:when test="${fn:contains(categoryLower, 'board')}">boarding</c:when>
+                                                <c:when test="${fn:contains(categoryLower, 'daycare') || fn:contains(categoryLower, 'day care')}">daycare</c:when>
+                                                <c:otherwise>grooming</c:otherwise>
+                                            </c:choose>
+                                        "></span>
+                                        <c:out value="${categoryName}"/> <strong><fmt:formatNumber value="${percentage}" minFractionDigits="1" maxFractionDigits="1"/>%</strong>
+                                    </li>
+                                </c:forEach>
+                            </c:when>
+                            <c:otherwise>
+                                <li><span class="dot grooming"></span>No data available</li>
+                            </c:otherwise>
+                        </c:choose>
                     </ul>
                 </div>
             </div>
@@ -748,26 +769,73 @@
 
     const serviceCtx = document.getElementById('serviceChart');
     if (serviceCtx) {
-        new Chart(serviceCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Grooming', 'Veterinary', 'Training', 'Boarding', 'Daycare'],
-                datasets: [{
-                    data: [35, 28, 18, 12, 7],
-                    backgroundColor: ['#2563eb', '#16a34a', '#f97316', '#f59e0b', '#ef4444'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { callbacks: { label: (tooltipItem) => tooltipItem.label + ': ' + tooltipItem.parsed + '%' } }
-                },
-                cutout: '62%'
-            }
-        });
+        <c:choose>
+            <c:when test="${not empty serviceDistribution}">
+                const serviceDistribution = [
+                    <c:forEach var="item" items="${serviceDistribution}" varStatus="status">
+                        {
+                            name: '<c:out value="${item.categoryName}"/>',
+                            percentage: ${item.percentage}
+                        }<c:if test="${!status.last}">,</c:if>
+                    </c:forEach>
+                ];
+                
+                const labels = serviceDistribution.map(item => item.name);
+                const data = serviceDistribution.map(item => item.percentage);
+                const colors = ['#2563eb', '#16a34a', '#f97316', '#f59e0b', '#ef4444', '#a855f7', '#ec4899', '#14b8a6'];
+                
+                new Chart(serviceCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colors.slice(0, data.length),
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { 
+                                callbacks: { 
+                                    label: (tooltipItem) => {
+                                        const label = tooltipItem.label || '';
+                                        const value = tooltipItem.parsed || 0;
+                                        return label + ': ' + value.toFixed(1) + '%';
+                                    }
+                                } 
+                            }
+                        },
+                        cutout: '62%'
+                    }
+                });
+            </c:when>
+            <c:otherwise>
+                new Chart(serviceCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['No Data'],
+                        datasets: [{
+                            data: [100],
+                            backgroundColor: ['#e5e7eb'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false }
+                        },
+                        cutout: '62%'
+                    }
+                });
+            </c:otherwise>
+        </c:choose>
     }
 </script>
 <jsp:include page="../inc/chatbox.jsp" />

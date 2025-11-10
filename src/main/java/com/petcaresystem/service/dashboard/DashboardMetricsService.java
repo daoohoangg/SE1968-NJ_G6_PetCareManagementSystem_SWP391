@@ -14,10 +14,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 public class DashboardMetricsService {
 
@@ -53,6 +50,15 @@ public class DashboardMetricsService {
      */
     public Account getEmergencyContactAdmin() {
         return accountDAO.getEmergencyContactAdmin();
+    }
+
+    /**
+     * Get service distribution by category (percentage of total services)
+     * Returns list of maps with category name, count, and percentage
+     */
+    public List<Map<String, Object>> getServiceDistributionByCategory() {
+        com.petcaresystem.dao.ServiceDAO serviceDAO = new com.petcaresystem.dao.ServiceDAO();
+        return serviceDAO.getServiceDistributionByCategory();
     }
 
     public double getTodayWeatherCelsius() {
