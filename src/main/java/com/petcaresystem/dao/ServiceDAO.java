@@ -11,6 +11,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import com.petcaresystem.enities.ServiceCategory;
 
 public class ServiceDAO {
 
@@ -567,6 +568,73 @@ public class ServiceDAO {
 
         public double getScore() {
             return score;
+        }
+    }
+
+    /**
+     * Get service distribution by category (percentage of total services)
+     * Lấy từ database: đếm số service theo category và tính phần trăm
+     * Returns list of maps with category name, count, and percentage
+     */
+    public List<Map<String, Object>> getServiceDistributionByCategory() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            // Đếm tổng số service active từ database
+            Long totalServices = session.createQuery(
+                    "SELECT COUNT(s.serviceId) FROM Service s WHERE s.isActive = true",
+                    Long.class
+            ).uniqueResult();
+            
+            if (totalServices == null || totalServices == 0) {
+                LOGGER.info("No active services found in database");
+                return Collections.emptyList();
+            }
+            
+            LOGGER.info("Total active services from database: " + totalServices);
+            
+            // Đếm số service theo từng category từ database
+            // Query lấy: categoryId, categoryName, và số lượng service trong category đó
+            String hql = """
+                SELECT c.categoryId, c.name, COUNT(s.serviceId) as serviceCount
+                FROM Service s
+                INNER JOIN s.category c
+                WHERE s.isActive = true
+                GROUP BY c.categoryId, c.name
+                ORDER BY serviceCount DESC
+                """;
+            
+            @SuppressWarnings("unchecked")
+            List<Object[]> results = session.createQuery(hql, Object[].class).list();
+            
+            LOGGER.info("Found " + results.size() + " categories with services");
+            
+            // Tính toán phần trăm cho mỗi category
+            // Phần trăm = (số service trong category / tổng số service) * 100
+            List<Map<String, Object>> distribution = new ArrayList<>();
+            for (Object[] row : results) {
+                Integer categoryId = (Integer) row[0];
+                String categoryName = (String) row[1];
+                Long count = ((Number) row[2]).longValue();
+                
+                // Tính phần trăm: (số service category / tổng số service) * 100
+                double percentage = totalServices > 0 ? (count * 100.0 / totalServices) : 0.0;
+                percentage = Math.round(percentage * 10.0) / 10.0; // Làm tròn 1 chữ số thập phân
+                
+                Map<String, Object> item = new HashMap<>();
+                item.put("categoryId", categoryId);
+                item.put("categoryName", categoryName);
+                item.put("count", count);
+                item.put("percentage", percentage);
+                
+                LOGGER.fine("Category: " + categoryName + ", Count: " + count + ", Percentage: " + percentage + "%");
+                
+                distribution.add(item);
+            }
+            
+            return distribution;
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to get service distribution by category from database", e);
+            e.printStackTrace();
+            return Collections.emptyList();
         }
     }
 }
