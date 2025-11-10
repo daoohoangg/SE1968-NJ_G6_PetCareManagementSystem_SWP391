@@ -602,4 +602,193 @@ public class AppointmentDAO {
             return ordered;
         }
     }
+
+    /** Update appointment */
+    public boolean updateAppointment(Appointment appointment) {
+        Transaction tx = null;
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            tx = s.beginTransaction();
+            appointment.setUpdatedAt(LocalDateTime.now());
+            s.merge(appointment);
+            tx.commit();
+            return true;
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /** Delete appointment */
+    public boolean deleteAppointment(Long appointmentId) {
+        Transaction tx = null;
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            tx = s.beginTransaction();
+            Appointment a = s.get(Appointment.class, appointmentId);
+            if (a != null) {
+                s.remove(a);
+                tx.commit();
+                return true;
+            }
+            if (tx != null) tx.rollback();
+            return false;
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /** Check if service is available at given time */
+    public boolean isServiceAvailableAtTime(Long serviceId, LocalDateTime startTime, LocalDateTime endTime) {
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            // Check if there are any staff available for this service
+            String hql = """
+                    select count(st.accountId) from Staff st
+                    where st.isAvailable = true
+                    and st.accountId not in (
+                        select a.staff.accountId from Appointment a
+                        where a.status in ('SCHEDULED', 'CONFIRMED', 'IN_PROGRESS')
+                        and (
+                            (a.appointmentDate <= :start and a.endDate > :start)
+                            or (a.appointmentDate < :end and a.endDate >= :end)
+                            or (a.appointmentDate >= :start and a.endDate <= :end)
+                        )
+                    )
+                    """;
+            
+            Long availableStaffCount = s.createQuery(hql, Long.class)
+                    .setParameter("start", startTime)
+                    .setParameter("end", endTime)
+                    .uniqueResult();
+            
+            return availableStaffCount != null && availableStaffCount > 0;
+        }
+    }
+
+    /** Assign staff to appointment based on specialization and availability */
+    public boolean assignStaffToAppointment(Long appointmentId, Long staffId) {
+        Transaction tx = null;
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            tx = s.beginTransaction();
+            
+            Appointment appointment = s.get(Appointment.class, appointmentId);
+            Staff staff = s.get(Staff.class, staffId);
+            
+            if (appointment == null || staff == null) {
+                if (tx != null) tx.rollback();
+                return false;
+            }
+            
+            // Check if staff is available at appointment time
+            if (!staff.getIsAvailable()) {
+                if (tx != null) tx.rollback();
+                return false;
+            }
+            
+            // Check for time conflicts
+            String hql = """
+                    select count(a.appointmentId) from Appointment a
+                    where a.staff.accountId = :staffId
+                    and a.appointmentId != :appointmentId
+                    and a.status in ('SCHEDULED', 'CONFIRMED', 'IN_PROGRESS')
+                    and (
+                        (a.appointmentDate <= :start and a.endDate > :start)
+                        or (a.appointmentDate < :end and a.endDate >= :end)
+                        or (a.appointmentDate >= :start and a.endDate <= :end)
+                    )
+                    """;
+            
+            Long conflictCount = s.createQuery(hql, Long.class)
+                    .setParameter("staffId", staffId)
+                    .setParameter("appointmentId", appointmentId)
+                    .setParameter("start", appointment.getAppointmentDate())
+                    .setParameter("end", appointment.getEndDate() != null ? 
+                            appointment.getEndDate() : appointment.getAppointmentDate().plusHours(2))
+                    .uniqueResult();
+            
+            if (conflictCount != null && conflictCount > 0) {
+                if (tx != null) tx.rollback();
+                return false;
+            }
+            
+            // Assign staff to appointment
+            appointment.setStaff(staff);
+            appointment.setUpdatedAt(LocalDateTime.now());
+            s.merge(appointment);
+            
+            tx.commit();
+            return true;
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /** Auto-assign best available staff for appointment */
+    public boolean autoAssignStaff(Long appointmentId) {
+        Transaction tx = null;
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            tx = s.beginTransaction();
+            
+            Appointment appointment = s.get(Appointment.class, appointmentId);
+            if (appointment == null) {
+                if (tx != null) tx.rollback();
+                return false;
+            }
+            
+            LocalDateTime startTime = appointment.getAppointmentDate();
+            LocalDateTime endTime = appointment.getEndDate() != null ? 
+                    appointment.getEndDate() : startTime.plusHours(2);
+            
+            // Find available staff (prioritize by workload)
+            String hql = """
+                    select s from Staff s
+                    where s.isAvailable = true
+                    and s.accountId not in (
+                        select a.staff.accountId from Appointment a
+                        where a.status in ('SCHEDULED', 'CONFIRMED', 'IN_PROGRESS')
+                        and (
+                            (a.appointmentDate <= :start and a.endDate > :start)
+                            or (a.appointmentDate < :end and a.endDate >= :end)
+                            or (a.appointmentDate >= :start and a.endDate <= :end)
+                        )
+                    )
+                    order by (
+                        select count(a2.appointmentId) from Appointment a2
+                        where a2.staff.accountId = s.accountId
+                        and a2.appointmentDate >= :dayStart
+                        and a2.appointmentDate < :dayEnd
+                    ) asc
+                    """;
+            
+            LocalDateTime dayStart = startTime.toLocalDate().atStartOfDay();
+            LocalDateTime dayEnd = dayStart.plusDays(1);
+            
+            List<Staff> availableStaff = s.createQuery(hql, Staff.class)
+                    .setParameter("start", startTime)
+                    .setParameter("end", endTime)
+                    .setParameter("dayStart", dayStart)
+                    .setParameter("dayEnd", dayEnd)
+                    .setMaxResults(1)
+                    .list();
+            
+            if (availableStaff.isEmpty()) {
+                if (tx != null) tx.rollback();
+                return false;
+            }
+            
+            appointment.setStaff(availableStaff.get(0));
+            appointment.setUpdatedAt(LocalDateTime.now());
+            s.merge(appointment);
+            
+            tx.commit();
+            return true;
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

@@ -3,8 +3,10 @@ package com.petcaresystem.controller.customer;
 import com.petcaresystem.dao.AppointmentDAO;
 import com.petcaresystem.dao.PetDAO;
 import com.petcaresystem.dao.ServiceDAO;
+import com.petcaresystem.dao.StaffDAO;
 import com.petcaresystem.enities.Account;
 import com.petcaresystem.enities.Pet;
+import com.petcaresystem.enities.Staff;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -28,12 +30,14 @@ public class Appointments extends HttpServlet {
     private AppointmentDAO appointmentDAO;
     private PetDAO petDAO;
     private ServiceDAO serviceDAO;
+    private StaffDAO staffDAO;
 
     @Override
     public void init() {
         appointmentDAO = new AppointmentDAO();
         petDAO = new PetDAO();
         serviceDAO = new ServiceDAO();
+        staffDAO = new StaffDAO();
     }
 
     /* ===================== Helpers ===================== */
@@ -89,6 +93,10 @@ public class Appointments extends HttpServlet {
                     }
                 }
                 resp.sendRedirect(req.getContextPath() + "/customer/appointments?cancelled=1");
+                return;
+            }
+            case "checkAvailability": {
+                checkAvailability(req, resp);
                 return;
             }
             case "list":
@@ -188,5 +196,41 @@ public class Appointments extends HttpServlet {
             forward(req, resp);
         }
 
+    }
+
+    /* ===================== Check Availability ===================== */
+    
+    private void checkAvailability(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+        try {
+            String startTimeStr = req.getParameter("startTime");
+            String endTimeStr = req.getParameter("endTime");
+            
+            if (startTimeStr == null || endTimeStr == null) {
+                resp.setContentType("application/json");
+                resp.getWriter().write("{\"available\": false, \"message\": \"Invalid time parameters\"}");
+                return;
+            }
+            
+            LocalDateTime startTime = LocalDateTime.parse(startTimeStr, ISO_LOCAL);
+            LocalDateTime endTime = endTimeStr.isEmpty() ? startTime.plusHours(2) : LocalDateTime.parse(endTimeStr, ISO_LOCAL);
+            
+            // Check if there are available staff at this time
+            List<Staff> availableStaff = staffDAO.getAvailableStaffAtTime(startTime, endTime);
+            
+            resp.setContentType("application/json");
+            resp.setCharacterEncoding("UTF-8");
+            
+            if (availableStaff.isEmpty()) {
+                resp.getWriter().write("{\"available\": false, \"message\": \"No staff available at this time. Please choose another time.\"}");
+            } else {
+                resp.getWriter().write("{\"available\": true, \"count\": " + availableStaff.size() + 
+                        ", \"message\": \"" + availableStaff.size() + " staff member(s) available for your booking.\"}");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            resp.setContentType("application/json");
+            resp.getWriter().write("{\"available\": false, \"message\": \"Error checking availability\"}");
+        }
     }
 }

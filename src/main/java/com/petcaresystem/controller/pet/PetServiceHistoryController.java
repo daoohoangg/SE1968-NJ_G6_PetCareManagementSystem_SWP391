@@ -74,6 +74,9 @@ public class PetServiceHistoryController extends HttpServlet {
             case "add":
                 addHistory(request, response);
                 break;
+            case "update":
+                updateHistory(request, response);
+                break;
             default:
                 listHistories(request, response);
                 break;
@@ -263,6 +266,47 @@ public class PetServiceHistoryController extends HttpServlet {
             request.getSession().setAttribute("error", "Failed to add service history: " + e.getMessage());
             response.sendRedirect("petServiceHistory?action=add");
         }
+    }
+
+    // Cập nhật lịch sử dịch vụ (description và rating)
+    private void updateHistory(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        try {
+            int id = Integer.parseInt(request.getParameter("id"));
+            String description = request.getParameter("description");
+            String ratingParam = request.getParameter("rating");
+            
+            PetServiceHistory history = historyDAO.getHistoryById(id);
+            if (history == null) {
+                request.getSession().setAttribute("error", "Service history not found.");
+                response.sendRedirect("petServiceHistory?action=list");
+                return;
+            }
+            
+            // Update description
+            if (description != null) {
+                history.setDescription(description);
+            }
+            
+            // Update rating
+            if (ratingParam != null && !ratingParam.isEmpty()) {
+                try {
+                    int rating = Integer.parseInt(ratingParam);
+                    if (rating >= 1 && rating <= 5) {
+                        history.setRating(rating);
+                    }
+                } catch (NumberFormatException e) {
+                    // Invalid rating, skip
+                }
+            }
+            
+            petServiceHistoryDAO.updateHistory(history);
+            request.getSession().setAttribute("success", "Service history updated successfully!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.getSession().setAttribute("error", "Failed to update service history: " + e.getMessage());
+        }
+        response.sendRedirect("petServiceHistory?action=list");
     }
 
     // Xóa lịch sử dịch vụ

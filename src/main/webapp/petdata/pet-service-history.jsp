@@ -105,6 +105,30 @@
 
         .empty{padding:40px;text-align:center;color:#6b7280;border:1px dashed #ddd;border-radius:8px;margin:20px 0}
 
+        /* Modal */
+        .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.5);align-items:center;justify-content:center}
+        .modal.show{display:flex}
+        .modal-content{background:#fff;border-radius:14px;padding:24px;max-width:500px;width:90%;box-shadow:0 20px 25px -5px rgba(0,0,0,.1)}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .modal-header h3{margin:0;font-size:20px}
+        .modal-close{background:none;border:none;font-size:24px;cursor:pointer;color:#6b7280;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px}
+        .modal-close:hover{background:#f3f4f6}
+        .modal-body{margin-bottom:20px}
+        .form-field{margin-bottom:16px}
+        .form-field label{display:block;font-size:14px;font-weight:600;color:#374151;margin-bottom:6px}
+        .form-field input,.form-field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit}
+        .form-field textarea{min-height:100px;resize:vertical}
+        .form-field input:focus,.form-field textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+        .star-rating{display:flex;gap:4px;font-size:24px;cursor:pointer}
+        .star-rating .star{color:#d1d5db;transition:.2s}
+        .star-rating .star.active,.star-rating .star:hover{color:#fbbf24}
+        .modal-footer{display:flex;gap:10px;justify-content:flex-end}
+        .btn-modal{padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;border:none}
+        .btn-modal.primary{background:var(--primary);color:#fff}
+        .btn-modal.primary:hover{filter:brightness(.96)}
+        .btn-modal.secondary{background:#f3f4f6;color:#374151;border:1px solid var(--line)}
+        .btn-modal.secondary:hover{background:#e5e7eb}
+
         @media (max-width:900px){.content{padding:22px}}
     </style>
 </head>
@@ -233,6 +257,13 @@
                                     <c:if test="${h.rating == null}">-</c:if>
                                 </td>
                                 <td class="actions">
+                                    <button class="icon-btn edit-history-btn" 
+                                            data-id="${h.id}" 
+                                            data-description="<c:out value='${h.description}'/>" 
+                                            data-rating="${h.rating != null ? h.rating : 0}" 
+                                            title="Edit">
+                                        <i class="ri-edit-line"></i>
+                                    </button>
                                     <a class="icon-btn" href="${pageContext.request.contextPath}/petServiceHistory?action=view&id=${h.id}" title="View"><i class="ri-eye-line"></i></a>
                                     <form method="get" action="${pageContext.request.contextPath}/petServiceHistory" style="display:inline">
                                         <input type="hidden" name="action" value="delete"/>
@@ -294,6 +325,108 @@
         </c:if>
     </main>
 </div>
+
+<!-- Edit History Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Edit Service History</h3>
+            <button class="modal-close" onclick="closeEditModal()">×</button>
+        </div>
+        <form method="post" action="${pageContext.request.contextPath}/petServiceHistory">
+            <input type="hidden" name="action" value="update"/>
+            <input type="hidden" name="id" id="editHistoryId"/>
+            <div class="modal-body">
+                <div class="form-field">
+                    <label for="editDescription">Description</label>
+                    <textarea id="editDescription" name="description" placeholder="Enter service description..."></textarea>
+                </div>
+                <div class="form-field">
+                    <label>Rating</label>
+                    <div class="star-rating" id="starRating">
+                        <span class="star" data-value="1">★</span>
+                        <span class="star" data-value="2">★</span>
+                        <span class="star" data-value="3">★</span>
+                        <span class="star" data-value="4">★</span>
+                        <span class="star" data-value="5">★</span>
+                    </div>
+                    <input type="hidden" name="rating" id="editRating" value="0"/>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modal secondary" onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="btn-modal primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Star rating functionality
+let selectedRating = 0;
+const stars = document.querySelectorAll('.star-rating .star');
+
+stars.forEach(star => {
+    star.addEventListener('click', function() {
+        selectedRating = parseInt(this.getAttribute('data-value'));
+        document.getElementById('editRating').value = selectedRating;
+        updateStars();
+    });
+    
+    star.addEventListener('mouseenter', function() {
+        const value = parseInt(this.getAttribute('data-value'));
+        stars.forEach((s, idx) => {
+            if (idx < value) {
+                s.classList.add('active');
+            } else {
+                s.classList.remove('active');
+            }
+        });
+    });
+});
+
+document.querySelector('.star-rating').addEventListener('mouseleave', function() {
+    updateStars();
+});
+
+function updateStars() {
+    stars.forEach((s, idx) => {
+        if (idx < selectedRating) {
+            s.classList.add('active');
+        } else {
+            s.classList.remove('active');
+        }
+    });
+}
+
+// Edit modal functionality
+document.querySelectorAll('.edit-history-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const id = this.getAttribute('data-id');
+        const description = this.getAttribute('data-description');
+        const rating = parseInt(this.getAttribute('data-rating'));
+        
+        document.getElementById('editHistoryId').value = id;
+        document.getElementById('editDescription').value = description || '';
+        selectedRating = rating;
+        document.getElementById('editRating').value = rating;
+        updateStars();
+        
+        document.getElementById('editModal').classList.add('show');
+    });
+});
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('show');
+}
+
+// Close modal when clicking outside
+document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeEditModal();
+    }
+});
+</script>
 
 <jsp:include page="../inc/chatbox.jsp" />
 <jsp:include page="../inc/footer.jsp" />

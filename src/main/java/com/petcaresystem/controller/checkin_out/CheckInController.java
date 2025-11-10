@@ -25,6 +25,16 @@ public class CheckInController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        
+        String action = request.getParameter("action");
+        
+        if ("delete".equals(action)) {
+            deleteAppointment(request, response);
+            return;
+        } else if ("view".equals(action)) {
+            viewAppointment(request, response);
+            return;
+        }
 
         // Lấy ngày hiện tại
         LocalDate today = LocalDate.now();
@@ -76,6 +86,14 @@ public class CheckInController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
+        String action = request.getParameter("action");
+        
+        if ("update".equals(action)) {
+            updateAppointment(request, response);
+            return;
+        }
+        
+        // Default action: check-in
         try {
             Long appointmentId = Long.parseLong(request.getParameter("appointmentId"));
             boolean success = appointmentDAO.checkIn(appointmentId);
@@ -88,6 +106,87 @@ public class CheckInController extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace();
             request.getSession().setAttribute("error", "Failed to check-in: " + e.getMessage());
+        }
+        response.sendRedirect(request.getContextPath() + "/reception/checkin");
+    }
+
+    private void viewAppointment(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        try {
+            Long appointmentId = Long.parseLong(request.getParameter("id"));
+            Appointment appointment = appointmentDAO.findById(appointmentId);
+            
+            if (appointment == null) {
+                request.getSession().setAttribute("error", "Appointment not found.");
+                response.sendRedirect(request.getContextPath() + "/reception/checkin");
+                return;
+            }
+            
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            appointment.setFormattedDate(appointment.getAppointmentDate().format(formatter));
+            
+            request.setAttribute("appointment", appointment);
+            request.getRequestDispatcher("/checkin_out/appointment-detail.jsp").forward(request, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.getSession().setAttribute("error", "Failed to view appointment: " + e.getMessage());
+            response.sendRedirect(request.getContextPath() + "/reception/checkin");
+        }
+    }
+
+    private void updateAppointment(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        try {
+            Long appointmentId = Long.parseLong(request.getParameter("appointmentId"));
+            String notes = request.getParameter("notes");
+            String appointmentDateStr = request.getParameter("appointmentDate");
+            
+            Appointment appointment = appointmentDAO.findById(appointmentId);
+            if (appointment == null) {
+                request.getSession().setAttribute("error", "Appointment not found.");
+                response.sendRedirect(request.getContextPath() + "/reception/checkin");
+                return;
+            }
+            
+            // Update fields
+            if (notes != null) {
+                appointment.setNotes(notes);
+            }
+            
+            if (appointmentDateStr != null && !appointmentDateStr.isEmpty()) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+                LocalDateTime newDate = LocalDateTime.parse(appointmentDateStr, formatter);
+                appointment.setAppointmentDate(newDate);
+            }
+            
+            boolean success = appointmentDAO.updateAppointment(appointment);
+            
+            if (success) {
+                request.getSession().setAttribute("success", "Appointment updated successfully!");
+            } else {
+                request.getSession().setAttribute("error", "Failed to update appointment.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.getSession().setAttribute("error", "Failed to update appointment: " + e.getMessage());
+        }
+        response.sendRedirect(request.getContextPath() + "/reception/checkin");
+    }
+
+    private void deleteAppointment(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        try {
+            Long appointmentId = Long.parseLong(request.getParameter("id"));
+            boolean success = appointmentDAO.deleteAppointment(appointmentId);
+            
+            if (success) {
+                request.getSession().setAttribute("success", "Appointment deleted successfully!");
+            } else {
+                request.getSession().setAttribute("error", "Failed to delete appointment.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.getSession().setAttribute("error", "Failed to delete appointment: " + e.getMessage());
         }
         response.sendRedirect(request.getContextPath() + "/reception/checkin");
     }
