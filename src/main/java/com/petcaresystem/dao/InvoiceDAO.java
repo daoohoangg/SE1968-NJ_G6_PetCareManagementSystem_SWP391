@@ -27,7 +27,29 @@ public class InvoiceDAO {
                     .getResultList();
         }
     }
-    
+    public void applyPayment(Long invoiceId, BigDecimal addAmount) {
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = s.beginTransaction();
+            Invoice inv = s.get(Invoice.class, invoiceId);
+            if (inv != null) {
+                BigDecimal paid = inv.getAmountPaid() == null ? BigDecimal.ZERO : inv.getAmountPaid();
+                BigDecimal due = inv.getAmountDue() == null ? inv.getTotalAmount() : inv.getAmountDue();
+
+                inv.setAmountPaid(paid.add(addAmount));
+                inv.setAmountDue(due.subtract(addAmount));
+
+                if (inv.getAmountDue().signum() <= 0) {
+                    inv.setStatus(com.petcaresystem.enities.enu.InvoiceStatus.PAID);
+                }
+
+                inv.setUpdatedAt(LocalDateTime.now());
+                s.merge(inv);
+            }
+            tx.commit();
+        }
+    }
+
+
     // Overload: without pagination (backward compatibility)
     public List<Invoice> findAll() {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {

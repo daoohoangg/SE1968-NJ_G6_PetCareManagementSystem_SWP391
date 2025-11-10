@@ -20,10 +20,6 @@
         <c:when test="${fn:contains(requestUri, '/staff/schedule')}">
             <c:set var="activePage" value="my-schedule" />
         </c:when>
-        <%-- Job Assignment page --%>
-        <c:when test="${fn:contains(requestUri, '/staff/jobassignment')}">
-            <c:set var="activePage" value="job-assignment" />
-        </c:when>
     </c:choose>
 </c:if>
 
@@ -151,10 +147,6 @@
         <a href="${pageContext.request.contextPath}/staff/schedule"
            class="menu-item ${activePage == 'my-schedule' ? 'active' : ''}">
             <i class="ri-calendar-todo-line"></i> My Schedule
-        </a>
-        <a href="${pageContext.request.contextPath}/staff/jobassignment"
-           class="menu-item ${activePage == 'job-assignment' ? 'active' : ''}">
-            <i class="ri-user-settings-line"></i> Job Assignment
         </a>
     </nav>
 </aside>
