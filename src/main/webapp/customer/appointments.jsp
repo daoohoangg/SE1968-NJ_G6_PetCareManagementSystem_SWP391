@@ -295,6 +295,9 @@
                 <div class="text-muted mt-2">Scan QR.</div>
             </div>
             <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="mPaid">
+                    <i class="bi bi-cash-coin me-1"></i> Paid
+                </button>
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -328,11 +331,13 @@
             }
         }
 
+        const ctx = '<%= ctx %>';
         const modalEl = document.getElementById('qrModal');
         const qrModal = new bootstrap.Modal(modalEl);
         const box = document.getElementById('qrBox');
         const labId = document.getElementById('mAppId');
         const labAm = document.getElementById('mAmount');
+        const btnPaid = document.getElementById('mPaid');
 
         document.querySelectorAll('.js-open-qr').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -346,6 +351,31 @@
                 qrModal.show();
             });
         });
+
+        if (btnPaid) {
+            btnPaid.addEventListener('click', async () => {
+                const appId = (labId.textContent || '').trim();
+                // chỉ giữ số và dấu .
+                const rawAmount = (labAm.textContent || '0').replace(/[^\d.]/g, '');
+
+                try {
+                    const res = await fetch(ctx + '/customer/payments/mark-paid', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                        body: new URLSearchParams({
+                            appointmentId: appId,
+                            amount: rawAmount,
+                            method: 'MOCK_QR'
+                        })
+                    });
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    location.reload();
+                } catch (e) {
+                    alert('Cannot Paid. Try Again!');
+                }
+            });
+        }
+
     });
 </script>
 </body>

@@ -64,6 +64,18 @@ public class AppointmentDAO {
             return readList(s, hql, Appointment.class, params);
         }
     }
+    public void updateStatus(Long id, AppointmentStatus status) {
+        try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction tx = s.beginTransaction();
+            Appointment a = s.get(Appointment.class, id);
+            if (a != null) {
+                a.setStatus(status);
+                a.setUpdatedAt(LocalDateTime.now());
+                s.merge(a);
+            }
+            tx.commit();
+        }
+    }
 
     public Appointment findById(Long id) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
