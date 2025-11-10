@@ -53,6 +53,31 @@
 
         .empty{padding:40px;text-align:center;color:#6b7280;border:1px dashed #ddd;border-radius:8px;margin:20px 0}
 
+        .icon-btn{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1px solid var(--line);border-radius:8px;cursor:pointer;color:#4b5563;transition:.15s;text-decoration:none}
+        .icon-btn:hover{border-color:#c7cbd1;color:var(--text);background:#f9fafb}
+        .icon-btn.delete:hover{color:#dc2626;border-color:#fecaca;background:#fff}
+
+        /* Modal */
+        .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.5);align-items:center;justify-content:center}
+        .modal.show{display:flex}
+        .modal-content{background:#fff;border-radius:14px;padding:24px;max-width:500px;width:90%;box-shadow:0 20px 25px -5px rgba(0,0,0,.1)}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .modal-header h3{margin:0;font-size:20px}
+        .modal-close{background:none;border:none;font-size:24px;cursor:pointer;color:#6b7280;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px}
+        .modal-close:hover{background:#f3f4f6}
+        .modal-body{margin-bottom:20px}
+        .form-field{margin-bottom:16px}
+        .form-field label{display:block;font-size:14px;font-weight:600;color:#374151;margin-bottom:6px}
+        .form-field input,.form-field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit}
+        .form-field textarea{min-height:100px;resize:vertical}
+        .form-field input:focus,.form-field textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+        .modal-footer{display:flex;gap:10px;justify-content:flex-end}
+        .btn-modal{padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;border:none}
+        .btn-modal.primary{background:var(--primary);color:#fff}
+        .btn-modal.primary:hover{filter:brightness(.96)}
+        .btn-modal.secondary{background:#f3f4f6;color:#374151;border:1px solid var(--line)}
+        .btn-modal.secondary:hover{background:#e5e7eb}
+
         /* Filter Form */
         .filter-form{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:20px;display:flex;gap:12px;align-items:end;flex-wrap:wrap}
         .form-group{flex:1;min-width:200px}
@@ -125,7 +150,7 @@
                     <th>Appointment Date</th>
                     <th>Services</th>
                     <th>Status</th>
-                    <th style="width:140px">Actions</th>
+                    <th style="width:240px">Actions</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -147,21 +172,33 @@
                                 </td>
                                 <td><span class="status ${apt.status == 'SCHEDULED' ? 'pending' : 'checked-in'}">${apt.status}</span></td>
                                 <td>
-                                    <c:choose>
-                                        <c:when test="${apt.status == 'SCHEDULED'}">
-                                            <form method="post" action="${pageContext.request.contextPath}/reception/checkin" style="display:inline">
-                                                <input type="hidden" name="appointmentId" value="${apt.appointmentId}"/>
-                                                <button type="submit" class="btn-checkin" onclick="return confirm('Confirm check-in for ${apt.customer.fullName}?');">
-                                                    <i class="ri-login-box-line"></i> Check In
-                                                </button>
-                                            </form>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <span style="color:#10b981;font-weight:600;font-size:13px">
-                                                <i class="ri-checkbox-circle-fill"></i> Checked In
-                                            </span>
-                                        </c:otherwise>
-                                    </c:choose>
+                                    <div style="display:flex;gap:6px;align-items:center">
+                                        <c:choose>
+                                            <c:when test="${apt.status == 'SCHEDULED'}">
+                                                <form method="post" action="${pageContext.request.contextPath}/reception/checkin" style="display:inline">
+                                                    <input type="hidden" name="appointmentId" value="${apt.appointmentId}"/>
+                                                    <button type="submit" class="btn-checkin" onclick="return confirm('Confirm check-in for ${apt.customer.fullName}?');">
+                                                        <i class="ri-login-box-line"></i> Check In
+                                                    </button>
+                                                </form>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span style="color:#10b981;font-weight:600;font-size:13px">
+                                                    <i class="ri-checkbox-circle-fill"></i> Checked In
+                                                </span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                        <button class="icon-btn" onclick="openEditModal(${apt.appointmentId}, '${apt.notes}', '${apt.appointmentDate}')" title="Edit">
+                                            <i class="ri-edit-line"></i>
+                                        </button>
+                                        <a class="icon-btn" href="${pageContext.request.contextPath}/reception/checkin?action=view&id=${apt.appointmentId}" title="View">
+                                            <i class="ri-eye-line"></i>
+                                        </a>
+                                        <a class="icon-btn delete" href="${pageContext.request.contextPath}/reception/checkin?action=delete&id=${apt.appointmentId}" 
+                                           onclick="return confirm('Delete this appointment?');" title="Delete">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         </c:forEach>
@@ -209,6 +246,63 @@
         </c:if>
     </main>
 </div>
+
+<!-- Edit Appointment Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Edit Appointment</h3>
+            <button class="modal-close" onclick="closeEditModal()">×</button>
+        </div>
+        <form method="post" action="${pageContext.request.contextPath}/reception/checkin">
+            <input type="hidden" name="action" value="update"/>
+            <input type="hidden" name="appointmentId" id="editAppointmentId"/>
+            <div class="modal-body">
+                <div class="form-field">
+                    <label for="editAppointmentDate">Appointment Date & Time</label>
+                    <input type="datetime-local" id="editAppointmentDate" name="appointmentDate" required/>
+                </div>
+                <div class="form-field">
+                    <label for="editNotes">Notes</label>
+                    <textarea id="editNotes" name="notes" placeholder="Enter appointment notes..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modal secondary" onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="btn-modal primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEditModal(appointmentId, notes, appointmentDate) {
+    document.getElementById('editAppointmentId').value = appointmentId;
+    document.getElementById('editNotes').value = notes || '';
+    
+    // Convert Java LocalDateTime format to HTML datetime-local format
+    if (appointmentDate) {
+        // Parse the date string and format it for datetime-local input
+        var dateStr = appointmentDate.toString();
+        // Expected format from Java: yyyy-MM-ddTHH:mm:ss or similar
+        var formattedDate = dateStr.substring(0, 16); // Get yyyy-MM-ddTHH:mm
+        document.getElementById('editAppointmentDate').value = formattedDate;
+    }
+    
+    document.getElementById('editModal').classList.add('show');
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('show');
+}
+
+// Close modal when clicking outside
+document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeEditModal();
+    }
+});
+</script>
 
 <jsp:include page="../inc/chatbox.jsp" />
 <jsp:include page="../inc/footer.jsp" />
