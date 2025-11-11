@@ -67,6 +67,8 @@
         .required::after { content:"*"; color:#dc3545; margin-left:4px; }
         .btn-primary { font-weight:600; }
         .badge { letter-spacing:.3px; }
+        .actions-cell { width: 160px; }
+        .actions-cell .btn { white-space: nowrap; }
         body.modal-open .page-container { filter: blur(3px); transition: filter .2s ease; }
     </style>
 </head>
@@ -225,10 +227,10 @@
                             String status   = (a.getStatus()!=null)        ? a.getStatus().name() : "PENDING";
 
                             boolean canPay =
-                                    !"CANCELLED".equals(status) &&
-                                            !"COMPLETED".equals(status) &&
+                                    ("PENDING".equals(status) || "SCHEDULED".equals(status)) &&
                                             a.getTotalAmount() != null &&
-                                            a.getTotalAmount().longValue() > 0L;
+                                            a.getTotalAmount().compareTo(java.math.BigDecimal.ZERO) > 0;
+
                     %>
                     <tr>
                         <td><%= i + 1 %></td>
@@ -249,30 +251,34 @@
                             <% } else if ("PENDING".equals(status)) { %>
                             <span class="badge" style="background-color:#6f42c1;">PENDING</span>
 
+
                             <% } else if ("NO_SHOW".equals(status)) { %>
                             <span class="badge bg-dark">NO SHOW</span>
                             <% } else { %>
                             <span class="badge bg-warning text-dark"><%= status %></span>
                             <% } %>
                         </td>
-                        <td class="text-end">
-                            <% if (canPay) { %>
-                            <button type="button"
-                                    class="btn btn-success btn-sm me-1 js-open-qr"
-                                    data-app-id="<%= a.getAppointmentId() %>"
-                                    data-amount="<%= a.getTotalAmount()!=null ? a.getTotalAmount().toPlainString() : "0" %>">
-                                <i class="bi bi-qr-code-scan"></i> Pay
-                            </button>
-                            <% } %>
+                        <td class="text-end actions-cell">
+                            <div class="d-flex justify-content-end align-items-center gap-2 flex-wrap">
+                                <% if (canPay) { %>
+                                <button type="button"
+                                        class="btn btn-success btn-sm js-open-qr"
+                                        data-app-id="<%= a.getAppointmentId() %>"
+                                        data-amount="<%= a.getTotalAmount()!=null ? a.getTotalAmount().toPlainString() : "0" %>">
+                                    <i class="bi bi-qr-code-scan"></i> Pay
+                                </button>
+                                <% } %>
 
-                            <% if (!"CANCELLED".equals(status) && !"COMPLETED".equals(status)) { %>
-                            <a href="<%= ctx %>/customer/appointments?action=cancel&id=<%= a.getAppointmentId() %>"
-                               class="btn btn-outline-danger btn-sm"
-                               onclick="return confirm('Cancel this appointment?');">
-                                <i class="bi bi-x-circle"></i> Cancel
-                            </a>
-                            <% } %>
+                                <% if ("PENDING".equals(status) || "SCHEDULED".equals(status)) { %>
+                                <a href="<%= ctx %>/customer/appointments?action=cancel&id=<%= a.getAppointmentId() %>"
+                                   class="btn btn-outline-danger btn-sm"
+                                   onclick="return confirm('Cancel this appointment?');">
+                                    <i class="bi bi-x-circle"></i> Cancel
+                                </a>
+                                <% } %>
+                            </div>
                         </td>
+
                     </tr>
                     <% } %>
                     </tbody>

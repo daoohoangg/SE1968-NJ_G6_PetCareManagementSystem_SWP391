@@ -34,6 +34,13 @@ public class CustomerPaymentMarkPaidServlet extends HttpServlet {
                 return;
             }
 
+            // (Khuyến nghị) không cho thanh toán khi đã cancel/complete
+            if (app.getStatus() == AppointmentStatus.CANCELLED || app.getStatus() == AppointmentStatus.COMPLETED) {
+                resp.setStatus(HttpServletResponse.SC_CONFLICT);
+                resp.getWriter().write("{\"ok\":false,\"error\":\"INVALID_STATE\"}");
+                return;
+            }
+
             // Lấy/tạo invoice nhưng KHÔNG cộng tiền
             InvoiceDAO invDao = new InvoiceDAO();
             Invoice invoice = invDao.findByAppointmentId(appId);
@@ -47,7 +54,7 @@ public class CustomerPaymentMarkPaidServlet extends HttpServlet {
                 );
             }
 
-            // Amount: dùng server là chính; nếu client gửi thì sanitize
+            // Amount: ưu tiên server; làm sạch nếu client gửi
             BigDecimal amount = app.getTotalAmount();
             String amountStr = req.getParameter("amount");
             if (amountStr != null && !amountStr.isBlank()) {
@@ -58,20 +65,24 @@ public class CustomerPaymentMarkPaidServlet extends HttpServlet {
             String method = req.getParameter("method");
             if (method == null || method.isBlank()) method = "MOCK_QR";
 
-            // Tạo payment PENDING (chỉ ghi nhận yêu cầu thanh toán)
+            // Tạo payment record (tùy bạn có PaymentStatus không; giữ logic cũ)
             PaymentDAO payDao = new PaymentDAO();
             payDao.create(
                     invoice.getInvoiceId(),
                     amount,
                     method,
-                    "Khách bấm Paid (QR mock) — ghi nhận chờ xác nhận"
+                    "Paid(QR Mock)"
             );
 
-            // Chuyển trạng thái Appointment → PENDING để “chờ xử lý”
-            appDao.updateStatus(appId, AppointmentStatus.PENDING);
+            // 🔷 Cập nhật trạng thái lịch hẹn thành CONFIRMED
+            appDao.updateStatus(appId, AppointmentStatus.CONFIRMED);
+
+            // (Tuỳ chọn) cập nhật updatedAt nếu DAO chưa làm
+            // app.setUpdatedAt(LocalDateTime.now());
+            // appDao.merge(app);
 
             resp.setStatus(HttpServletResponse.SC_OK);
-            resp.getWriter().write("{\"ok\":true,\"appointmentStatus\":\"PENDING\"}");
+            resp.getWriter().write("{\"ok\":true,\"appointmentStatus\":\"CONFIRMED\"}");
         } catch (Exception e) {
             e.printStackTrace();
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
