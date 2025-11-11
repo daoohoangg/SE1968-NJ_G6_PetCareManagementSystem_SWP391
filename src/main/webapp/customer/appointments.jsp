@@ -361,61 +361,257 @@
         const el = document.getElementById('serviceIds');
         const totalText = document.getElementById('totalPriceText');
         if (el) {
-            new Choices(el, { removeItemButton:true, searchEnabled:true, shouldSort:false,
-                placeholder:true, placeholderValue:'Select services...',
-                noResultsText:'No services found', itemSelectText:'' });
-            if (totalText) {
-                const prices = {};
-                el.querySelectorAll('option').forEach(opt => {
-                    const txt = opt.textContent || '';
-                    const m = txt.match(/\(([\d.]+)\s*đ\)/);
-                    if (m) prices[opt.value] = parseFloat(m[1]);
-                });
-                function updateTotal(){
-                    let sum = 0;
-                    Array.from(el.selectedOptions).forEach(opt => { if (prices[opt.value]) sum += prices[opt.value]; });
+            // Extract prices from options before Choices.js transforms the select
+            const prices = {};
+            el.querySelectorAll('option').forEach(opt => {
+                const txt = opt.textContent || '';
+                const m = txt.match(/\(([\d.]+)\s*đ\)/);
+                if (m) prices[opt.value] = parseFloat(m[1]);
+            });
+
+            // Initialize Choices.js
+            const choices = new Choices(el, { 
+                removeItemButton: true, 
+                searchEnabled: true, 
+                shouldSort: false,
+                placeholder: true, 
+                placeholderValue: 'Select services...',
+                noResultsText: 'No services found', 
+                itemSelectText: '' 
+            });
+
+            // Function to update total
+            function updateTotal() {
+                let sum = 0;
+                const selectedValues = choices.getValue(true); // Get array of selected values
+                if (selectedValues && Array.isArray(selectedValues)) {
+                    selectedValues.forEach(value => {
+                        if (prices[value]) {
+                            sum += prices[value];
+                        }
+                    });
+                }
+                if (totalText) {
                     totalText.textContent = 'Services total: ' + sum.toFixed(2) + ' đ';
                 }
-                el.addEventListener('change', updateTotal);
+                
+                // Update pricing breakdown
+                if (typeof updatePricing === 'function') {
+                    updatePricing(sum);
+                }
             }
+
+            // Listen to Choices.js events - use the element after Choices initialization
+            // Choices.js triggers custom events on the original element
+            el.addEventListener('addItem', function(event) {
+                setTimeout(updateTotal, 0); // Small delay to ensure Choices has updated
+            });
+            el.addEventListener('removeItem', function(event) {
+                setTimeout(updateTotal, 0);
+            });
+            el.addEventListener('change', updateTotal);
+            
+            // Also listen to the Choices instance directly if available
+            if (choices && typeof choices.passedElement === 'object') {
+                const passedElement = choices.passedElement.element;
+                if (passedElement) {
+                    passedElement.addEventListener('change', updateTotal);
+                }
+            }
+            
+            // Initial update
+            updateTotal();
+        }
+
+        // Voucher handling
+        let currentVoucher = null;
+        let currentSubtotal = 0;
+
+        function updatePricing(subtotal) {
+            currentSubtotal = subtotal;
+            const subtotalEl = document.getElementById('subtotalAmount');
+            const finalTotalEl = document.getElementById('finalTotalAmount');
+            const discountRow = document.getElementById('discountRow');
+            
+            if (subtotalEl) {
+                subtotalEl.textContent = subtotal.toFixed(2) + ' đ';
+            }
+            
+            if (currentVoucher) {
+                applyVoucherCalculation(subtotal, currentVoucher);
+            } else {
+                if (finalTotalEl) {
+                    finalTotalEl.textContent = subtotal.toFixed(2) + ' đ';
+                }
+                if (discountRow) {
+                    discountRow.style.display = 'none';
+                }
+            }
+        }
+
+        function applyVoucherCalculation(subtotal, voucher) {
+            let discount = 0;
+            const discountType = voucher.discountType;
+            const discountValue = parseFloat(voucher.discountValue);
+
+            if (discountType === 'PERCENTAGE') {
+                discount = (subtotal * discountValue) / 100;
+            } else if (discountType === 'FIXED') {
+                discount = Math.min(discountValue, subtotal);
+            }
+
+            const finalTotal = Math.max(0, subtotal - discount);
+            
+            const discountAmountEl = document.getElementById('discountAmount');
+            const discountRow = document.getElementById('discountRow');
+            const finalTotalEl = document.getElementById('finalTotalAmount');
+            
+            if (discountAmountEl) {
+                discountAmountEl.textContent = '-' + discount.toFixed(2) + ' đ';
+            }
+            if (discountRow) {
+                discountRow.style.display = 'flex';
+            }
+            if (finalTotalEl) {
+                finalTotalEl.textContent = finalTotal.toFixed(2) + ' đ';
+            }
+        }
+
+        const voucherCodeInput = document.getElementById('voucherCode');
+        const applyVoucherBtn = document.getElementById('applyVoucherBtn');
+        const voucherMessage = document.getElementById('voucherMessage');
+        const voucherInfo = document.getElementById('voucherInfo');
+        const voucherDiscountText = document.getElementById('voucherDiscountText');
+        const voucherIdInput = document.getElementById('voucherId');
+
+        if (applyVoucherBtn && voucherCodeInput) {
+            applyVoucherBtn.addEventListener('click', async function() {
+                const code = (voucherCodeInput.value || '').trim().toUpperCase();
+                
+                if (!code) {
+                    if (voucherMessage) {
+                        voucherMessage.textContent = 'Please enter a voucher code';
+                        voucherMessage.className = 'text-danger d-block mt-1';
+                    }
+                    if (voucherInfo) voucherInfo.style.display = 'none';
+                    currentVoucher = null;
+                    if (voucherIdInput) voucherIdInput.value = '';
+                    updatePricing(currentSubtotal);
+                    return;
+                }
+
+                if (currentSubtotal <= 0) {
+                    if (voucherMessage) {
+                        voucherMessage.textContent = 'Please select services first';
+                        voucherMessage.className = 'text-warning d-block mt-1';
+                    }
+                    return;
+                }
+
+                applyVoucherBtn.disabled = true;
+                applyVoucherBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Checking...';
+
+                try {
+                    const response = await fetch(ctx + '/customer/vouchers/validate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+                        },
+                        body: new URLSearchParams({
+                            code: code,
+                            subtotal: currentSubtotal.toString()
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success && data.voucher) {
+                        currentVoucher = data.voucher;
+                        if (voucherIdInput) voucherIdInput.value = data.voucher.voucherId;
+                        
+                        const discountType = data.voucher.discountType;
+                        const discountValue = parseFloat(data.voucher.discountValue);
+                        let discountText = '';
+                        
+                        if (discountType === 'PERCENTAGE') {
+                            discountText = discountValue + '% off';
+                        } else if (discountType === 'FIXED') {
+                            discountText = discountValue.toFixed(2) + ' đ off';
+                        }
+                        
+                        if (voucherDiscountText) {
+                            voucherDiscountText.textContent = 'Voucher "' + code + '" applied: ' + discountText;
+                        }
+                        if (voucherInfo) voucherInfo.style.display = 'block';
+                        if (voucherMessage) {
+                            voucherMessage.textContent = '';
+                            voucherMessage.className = 'text-muted d-block mt-1';
+                        }
+                        
+                        applyVoucherCalculation(currentSubtotal, currentVoucher);
+                    } else {
+                        currentVoucher = null;
+                        if (voucherIdInput) voucherIdInput.value = '';
+                        if (voucherInfo) voucherInfo.style.display = 'none';
+                        if (voucherMessage) {
+                            voucherMessage.textContent = data.message || 'Invalid voucher code';
+                            voucherMessage.className = 'text-danger d-block mt-1';
+                        }
+                        updatePricing(currentSubtotal);
+                    }
+                } catch (error) {
+                    console.error('Error validating voucher:', error);
+                    if (voucherMessage) {
+                        voucherMessage.textContent = 'Error validating voucher. Please try again.';
+                        voucherMessage.className = 'text-danger d-block mt-1';
+                    }
+                    currentVoucher = null;
+                    if (voucherIdInput) voucherIdInput.value = '';
+                    updatePricing(currentSubtotal);
+                } finally {
+                    applyVoucherBtn.disabled = false;
+                    applyVoucherBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Apply';
+                }
+            });
         }
 
         const ctx = '<%= ctx %>';
         const modalEl = document.getElementById('qrModal');
-        const qrModal = new bootstrap.Modal(modalEl);
-        const box = document.getElementById('qrBox');
-        const labId = document.getElementById('mAppId');
-        const labAm = document.getElementById('mAmount');
-        const btnPaid = document.getElementById('mPaid');
+        if (modalEl) {
+            const qrModal = new bootstrap.Modal(modalEl);
+            const box = document.getElementById('qrBox');
+            const labId = document.getElementById('mAppId');
+            const labAm = document.getElementById('mAmount');
+            const btnPaid = document.getElementById('mPaid');
+            
+            if (box && labId && labAm) {
+                document.querySelectorAll('.js-open-qr').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        const appId  = btn.getAttribute('data-app-id');
+                        const amount = btn.getAttribute('data-amount') || '0';
+                        labId.textContent = appId || '';
+                        labAm.textContent = Number(amount).toLocaleString('vi-VN');
 
-            var box   = document.getElementById('qrBox');
-            var labId = document.getElementById('mAppId');
-            var labAm = document.getElementById('mAmount');
-            var btnPaid = document.getElementById('mPaid');
-            if (!modalEl || !box || !labId || !labAm) return;
-
-            document.querySelectorAll('.js-open-qr').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    var appId  = btn.getAttribute('data-app-id');
-                    var amount = btn.getAttribute('data-amount') || '0';
-                    labId.textContent = appId || '';
-                    labAm.textContent = Number(amount).toLocaleString('vi-VN');
-
-                    box.innerHTML = '';
-                    try {
-                        new QRCode(box, {
-                            text: 'PETCARE|APP=' + appId + '|AMOUNT=' + amount,
-                            width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M
-                        });
-                    } catch (e) {}
-                    if (qrModal && qrModal.show) qrModal.show();
+                        box.innerHTML = '';
+                        try {
+                            new QRCode(box, {
+                                text: 'PETCARE|APP=' + appId + '|AMOUNT=' + amount,
+                                width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M
+                            });
+                        } catch (e) {
+                            console.error('Error generating QR code:', e);
+                        }
+                        if (qrModal && qrModal.show) {
+                            qrModal.show();
+                        }
+                    });
                 });
-            });
+            }
 
-            if (btnPaid) {
+            if (btnPaid && labId && labAm) {
                 btnPaid.addEventListener('click', function () {
-                    var appId = (labId.textContent || '').trim();
-                    var rawAmount = (labAm.textContent || '0').replace(/[^\d.]/g, '');
+                    const appId = (labId.textContent || '').trim();
+                    const rawAmount = (labAm.textContent || '0').replace(/[^\d.]/g, '');
 
                     fetch(ctx + '/customer/payments/mark-paid', {
                         method: 'POST',
@@ -435,7 +631,7 @@
                         });
                 });
             }
-        })();
+        }
     });
 </script>
 
