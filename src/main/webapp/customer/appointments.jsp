@@ -246,6 +246,9 @@
                             <span class="badge bg-secondary">CANCELLED</span>
                             <% } else if ("IN_PROGRESS".equals(status)) { %>
                             <span class="badge bg-info text-dark">IN&nbsp;PROGRESS</span>
+                            <% } else if ("PENDING".equals(status)) { %>
+                            <span class="badge" style="background-color:#6f42c1;">PENDING</span>
+
                             <% } else if ("NO_SHOW".equals(status)) { %>
                             <span class="badge bg-dark">NO SHOW</span>
                             <% } else { %>
@@ -305,7 +308,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {

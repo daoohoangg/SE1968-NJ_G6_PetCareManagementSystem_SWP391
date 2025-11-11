@@ -172,12 +172,10 @@ public class AppointmentDAO {
                 throw new IllegalArgumentException("Không tìm thấy hồ sơ khách hàng (accountId=" + customerAccountId + ").");
             }
             if (pet == null || pet.getCustomer() == null
-                    || !java.util.Objects.equals(pet.getCustomer().getCustomerId(), customer.getCustomerId())) {
+                    || !Objects.equals(pet.getCustomer().getCustomerId(), customer.getCustomerId())) {
                 throw new IllegalArgumentException("Thú cưng không tồn tại hoặc không thuộc tài khoản của bạn.");
             }
-            if (start == null) {
-                throw new IllegalArgumentException("Vui lòng chọn thời gian bắt đầu.");
-            }
+            if (start == null) throw new IllegalArgumentException("Vui lòng chọn thời gian bắt đầu.");
             if (end != null && !end.isAfter(start)) {
                 throw new IllegalArgumentException("Thời gian kết thúc phải sau thời gian bắt đầu.");
             }
@@ -192,13 +190,12 @@ public class AppointmentDAO {
             a.setEndDate(end);
             a.setNotes(notes);
 
-            for (Long sid : serviceIds) {
+            // Lọc trùng serviceIds (khuyến nghị)
+            for (Long sid : new LinkedHashSet<>(serviceIds)) {
                 Service sv = s.get(Service.class, sid);
                 if (sv != null) a.getServices().add(sv);
             }
             a.calculateTotalAmount();
-
-
 
             Staff staff = getDefaultStaff(s);
             Receptionist recep = getDefaultReceptionist(s);
@@ -206,18 +203,15 @@ public class AppointmentDAO {
             a.setStaff(staff);
             if (recep != null) a.setReceptionist(recep);
 
-            a.setStatus(AppointmentStatus.SCHEDULED);
+            // 🔸 Quan trọng: set trạng thái PENDING khi vừa tạo
+            a.setStatus(AppointmentStatus.PENDING);
             a.setCreatedAt(LocalDateTime.now());
             a.setUpdatedAt(LocalDateTime.now());
 
-            s.persist(a);
-
-
-
-
-            s.persist(a);
+            s.persist(a);            // ← chỉ cần 1 lần
             tx.commit();
             return true;
+
         } catch (Exception e) {
             if (tx != null) {
                 try {
@@ -227,15 +221,14 @@ public class AppointmentDAO {
                             org.hibernate.resource.transaction.spi.TransactionStatus.MARKED_ROLLBACK))) {
                         tx.rollback();
                     }
-                } catch (Exception ignore) {  }
+                } catch (Exception ignore) {}
             }
             throw e;
         } finally {
-            if (s != null && s.isOpen()) {
-                try { s.close(); } catch (Exception ignore) {}
-            }
+            if (s != null && s.isOpen()) try { s.close(); } catch (Exception ignore) {}
         }
     }
+
 
     public boolean cancelIfOwnedBy(Long appointmentId, Long customerAccountId) {
         Transaction tx = null;
