@@ -217,10 +217,11 @@
                     <th>ID</th>
                     <th>Pet Name</th>
                     <th>Service Type</th>
-                    <th>Description</th>
+                    <th>Note</th>
                     <th>Service Date</th>
                     <th>Cost</th>
                     <th>Staff</th>
+                    <th>Status</th>
                     <c:if test="${userRole != 'STAFF'}">
                         <th>Rating</th>
                     </c:if>
@@ -247,12 +248,15 @@
                                         <c:otherwise><span class="tag">${h.serviceType}</span></c:otherwise>
                                     </c:choose>
                                 </td>
-                                <td><c:out value="${h.description}" default="-"/></td>
+                                <td><c:out value="${h.notes}" default="-"/></td>
                                 <td>${h.formattedDate}</td>
                                 <td>$<fmt:formatNumber value="${h.cost}" minFractionDigits="2" maxFractionDigits="2"/></td>
                                 <td>${h.staff != null ? h.staff.fullName : '-'}</td>
                                     <c:if test="${userRole != 'STAFF'}">
                                 <td>
+                                <td>
+                                   <span class="tag medical">Completed</span>
+                                </td>
                                     <c:if test="${h.rating != null}">
                                             <span class="rating">
                                                 <c:forEach begin="1" end="${h.rating}">★</c:forEach>
@@ -292,7 +296,6 @@
             </table>
         </div>
 
-        <!-- Pagination -->
         <c:if test="${totalPages != null && totalPages > 1}">
             <div class="pagination">
                 <c:set var="currentPageNum" value="${currentPage != null ? currentPage : 1}"/>
@@ -345,7 +348,6 @@
             <h3>Edit Service History</h3>
             <button class="modal-close" onclick="closeModal('customerAdminModal')">×</button>
         </div>
-        <%-- Form này action="update" --%>
         <form method="post" action="${pageContext.request.contextPath}/petServiceHistory">
             <input type="hidden" name="action" value="update"/>
             <input type="hidden" name="id" id="editHistoryId"/>
