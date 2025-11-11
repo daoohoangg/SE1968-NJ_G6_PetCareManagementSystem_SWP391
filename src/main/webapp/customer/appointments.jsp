@@ -159,7 +159,7 @@
 
                     <div class="col-md-6">
                         <label class="form-label required">Start date & time</label>
-                        <input type="datetime-local" name="startAt" class="form-control" required>
+                        <input type="datetime-local" id="startAt" name="startAt" class="form-control" required>
                     </div>
 
                     <div class="col-12">
@@ -317,57 +317,114 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const el = document.getElementById('serviceIds');
-        const totalText = document.getElementById('totalPriceText');
-        if (el) {
-            new Choices(el, { removeItemButton:true, searchEnabled:true, shouldSort:false,
-                placeholder:true, placeholderValue:'Select services...',
-                noResultsText:'No services found', itemSelectText:'' });
-            if (totalText) {
-                const prices = {};
-                el.querySelectorAll('option').forEach(opt => {
-                    const txt = opt.textContent || '';
-                    const m = txt.match(/\(([\d.]+)\s*đ\)/);
-                    if (m) prices[opt.value] = parseFloat(m[1]);
-                });
-                function updateTotal(){
-                    let sum = 0;
-                    Array.from(el.selectedOptions).forEach(opt => { if (prices[opt.value]) sum += prices[opt.value]; });
-                    totalText.textContent = 'Services total: ' + sum.toFixed(2) + ' đ';
-                }
-                el.addEventListener('change', updateTotal);
-            }
-        }
+        /* =======================
+         * 1) Chặn chọn ngày quá khứ
+         * ======================= */
+        (function limitStartAt() {
+            var startAt = document.getElementById('startAt') ||
+                document.querySelector('input[name="startAt"]');
+            if (!startAt) return;
 
-        const ctx = '<%= ctx %>';
-        const modalEl = document.getElementById('qrModal');
-        const qrModal = new bootstrap.Modal(modalEl);
-        const box = document.getElementById('qrBox');
-        const labId = document.getElementById('mAppId');
-        const labAm = document.getElementById('mAmount');
-        const btnPaid = document.getElementById('mPaid');
+            var pad = function(n){ return String(n).padStart(2,'0'); };
+            var fmt = function(d){
+                return d.getFullYear() + '-' +
+                    pad(d.getMonth()+1) + '-' +
+                    pad(d.getDate()) + 'T' +
+                    pad(d.getHours()) + ':' +
+                    pad(d.getMinutes());
+            };
 
-        document.querySelectorAll('.js-open-qr').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const appId  = btn.getAttribute('data-app-id');
-                const amount = btn.getAttribute('data-amount') || '0';
-                labId.textContent = appId;
-                labAm.textContent = Number(amount).toLocaleString('vi-VN');
-                box.innerHTML = '';
-                const payload = `PETCARE|APP=${appId}|AMOUNT=${amount}`;
-                new QRCode(box, { text: payload, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M });
-                qrModal.show();
+            // Cho phép từ 00:00 hôm nay trở đi (muốn chặn cả giờ đã qua -> dùng const minLocal = new Date();)
+            var minLocal = new Date(); minLocal.setHours(0,0,0,0);
+            startAt.min = fmt(minLocal);
+            startAt.step = 900; // 15 phút
+
+            startAt.addEventListener('change', function () {
+                if (!startAt.value) return;
+                var v = new Date(startAt.value);
+                startAt.setCustomValidity(v < minLocal ? 'Chỉ được đặt lịch từ hôm nay trở đi.' : '');
             });
-        });
+        })();
 
-        if (btnPaid) {
-            btnPaid.addEventListener('click', async () => {
-                const appId = (labId.textContent || '').trim();
-                // chỉ giữ số và dấu .
-                const rawAmount = (labAm.textContent || '0').replace(/[^\d.]/g, '');
+        /* =======================
+         * 2) Multiselect services + tính tổng
+         * ======================= */
+        (function initServices() {
+            var el = document.getElementById('serviceIds');
+            var totalText = document.getElementById('totalPriceText');
+            if (!el) return;
 
-                try {
-                    const res = await fetch(ctx + '/customer/payments/mark-paid', {
+            try {
+                new Choices(el, {
+                    removeItemButton: true,
+                    searchEnabled: true,
+                    shouldSort: false,
+                    placeholder: true,
+                    placeholderValue: 'Select services...',
+                    noResultsText: 'No services found',
+                    itemSelectText: ''
+                });
+            } catch (e) { /* Nếu chưa load Choices cũng không crash */ }
+
+            if (!totalText) return;
+
+            var prices = {};
+            el.querySelectorAll('option').forEach(function (opt) {
+                var txt = opt.textContent || '';
+                var m = txt.match(/\(([\d.]+)\s*đ\)/);
+                if (m) prices[opt.value] = parseFloat(m[1]);
+            });
+
+            function updateTotal() {
+                var sum = 0;
+                Array.prototype.slice.call(el.selectedOptions).forEach(function (opt) {
+                    var val = prices[opt.value];
+                    if (!isNaN(val)) sum += val;
+                });
+                totalText.textContent = 'Services total: ' + sum.toFixed(2) + ' đ';
+            }
+            el.addEventListener('change', updateTotal);
+        })();
+
+        /* =======================
+         * 3) QR modal + xử lý Paid
+         * ======================= */
+        (function initQR() {
+            var ctx = '<%= ctx %>';
+            var modalEl = document.getElementById('qrModal');
+            var qrModal = null;
+            try { qrModal = new bootstrap.Modal(modalEl); } catch (e) {}
+
+            var box   = document.getElementById('qrBox');
+            var labId = document.getElementById('mAppId');
+            var labAm = document.getElementById('mAmount');
+            var btnPaid = document.getElementById('mPaid');
+            if (!modalEl || !box || !labId || !labAm) return;
+
+            document.querySelectorAll('.js-open-qr').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var appId  = btn.getAttribute('data-app-id');
+                    var amount = btn.getAttribute('data-amount') || '0';
+                    labId.textContent = appId || '';
+                    labAm.textContent = Number(amount).toLocaleString('vi-VN');
+
+                    box.innerHTML = '';
+                    try {
+                        new QRCode(box, {
+                            text: 'PETCARE|APP=' + appId + '|AMOUNT=' + amount,
+                            width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M
+                        });
+                    } catch (e) {}
+                    if (qrModal && qrModal.show) qrModal.show();
+                });
+            });
+
+            if (btnPaid) {
+                btnPaid.addEventListener('click', function () {
+                    var appId = (labId.textContent || '').trim();
+                    var rawAmount = (labAm.textContent || '0').replace(/[^\d.]/g, '');
+
+                    fetch(ctx + '/customer/payments/mark-paid', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
                         body: new URLSearchParams({
@@ -375,16 +432,19 @@
                             amount: rawAmount,
                             method: 'MOCK_QR'
                         })
-                    });
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-                    location.reload();
-                } catch (e) {
-                    alert('Cannot Paid. Try Again!');
-                }
-            });
-        }
-
+                    })
+                        .then(function (res) {
+                            if (!res.ok) throw new Error('HTTP ' + res.status);
+                            location.reload();
+                        })
+                        .catch(function () {
+                            alert('Cannot Paid. Try Again!');
+                        });
+                });
+            }
+        })();
     });
 </script>
+
 </body>
 </html>
