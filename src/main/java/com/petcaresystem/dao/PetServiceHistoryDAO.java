@@ -10,31 +10,73 @@ import java.util.List;
 public class PetServiceHistoryDAO {
 
     private static final int DEFAULT_PAGE_SIZE = 10;
-    public List<PetServiceHistory> getHistoriesByStaffId(long staffId, int page, int pageSize) {
+    public List<PetServiceHistory> getHistoriesByStaffId(long staffId, String searchTerm, String serviceType, int page, int pageSize) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery(
-                            "select h from PetServiceHistory h " +
-                                    "join fetch h.pet p " +
-                                    "join fetch h.staff s " +
-                                    "where s.accountId = :staffId " +
-                                    "order by h.serviceDate desc",
-                            PetServiceHistory.class)
-                    .setParameter("staffId", staffId)
-                    .setFirstResult((page - 1) * pageSize)
+
+            StringBuilder hql = new StringBuilder(
+                    "select h from PetServiceHistory h " +
+                            "join fetch h.pet p " +
+                            "join fetch h.staff s " +
+                            "where s.accountId = :staffId ");
+            if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+                hql.append("and (lower(p.name) like lower(:term) " +
+                        "or lower(h.description) like lower(:term) " +
+                        "or lower(h.notes) like lower(:term)) ");
+            }
+            if (serviceType != null && !serviceType.trim().isEmpty() && !serviceType.equals("All")) {
+                hql.append("and h.serviceType = :type ");
+            }
+
+            hql.append("order by h.serviceDate desc");
+
+            var query = session.createQuery(hql.toString(), PetServiceHistory.class);
+
+            query.setParameter("staffId", staffId);
+
+            if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+                query.setParameter("term", "%" + searchTerm + "%");
+            }
+
+            if (serviceType != null && !serviceType.trim().isEmpty() && !serviceType.equals("All")) {
+                query.setParameter("type", serviceType);
+            }
+
+            return query.setFirstResult((page - 1) * pageSize)
                     .setMaxResults(pageSize)
                     .list();
         }
     }
-
-    public long countHistoriesByStaffId(long staffId) {
+    public long countHistoriesByStaffId(long staffId, String searchTerm, String serviceType) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery(
-                            "select count(h) from PetServiceHistory h " +
-                                    "join h.staff s " +
-                                    "where s.accountId = :staffId",
-                            Long.class)
-                    .setParameter("staffId", staffId)
-                    .uniqueResult();
+            StringBuilder hql = new StringBuilder(
+                    "select count(h) from PetServiceHistory h " +
+                            "join h.pet p " +
+                            "join h.staff s " +
+                            "where s.accountId = :staffId ");
+
+            if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+                hql.append("and (lower(p.name) like lower(:term) " +
+                        "or lower(h.description) like lower(:term) " +
+                        "or lower(h.notes) like lower(:term)) ");
+            }
+
+            if (serviceType != null && !serviceType.trim().isEmpty() && !serviceType.equals("All")) {
+                hql.append("and h.serviceType = :type ");
+            }
+
+            var query = session.createQuery(hql.toString(), Long.class);
+
+            query.setParameter("staffId", staffId);
+
+            if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+                query.setParameter("term", "%" + searchTerm + "%");
+            }
+
+            if (serviceType != null && !serviceType.trim().isEmpty() && !serviceType.equals("All")) {
+                query.setParameter("type", serviceType);
+            }
+
+            return query.uniqueResult();
         }
     }
     public boolean updateNoteOnly(int historyId, long staffId, String notes) {
