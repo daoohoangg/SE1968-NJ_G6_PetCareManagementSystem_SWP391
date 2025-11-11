@@ -12,13 +12,11 @@
 <c:if test="${empty activePage}">
     <c:set var="requestUri" value="${pageContext.request.requestURI}" />
     <c:choose>
-        <%-- Trang /petServiceHistory mà LoginController đang trỏ đến --%>
-        <c:when test="${fn:contains(requestUri, '/petServiceHistory')}">
+        <c:when test="${fn:contains(requestUri, '/staff/task')}">
             <c:set var="activePage" value="my-tasks" />
         </c:when>
-        <%-- Thêm một trang lịch làm việc (ví dụ) --%>
-        <c:when test="${fn:contains(requestUri, '/staff/schedule')}">
-            <c:set var="activePage" value="my-schedule" />
+        <c:when test="${fn:contains(requestUri, '/petServiceHistory')}">
+            <c:set var="activePage" value="pet-data" />
         </c:when>
     </c:choose>
 </c:if>
@@ -144,9 +142,9 @@
            class="menu-item ${activePage == 'my-tasks' ? 'active' : ''}">
             <i class="ri-task-line"></i> My Tasks
         </a>
-        <a href="${pageContext.request.contextPath}/staff/schedule"
-           class="menu-item ${activePage == 'my-schedule' ? 'active' : ''}">
-            <i class="ri-calendar-todo-line"></i> My Schedule
+        <a href="${pageContext.request.contextPath}/petServiceHistory"
+           class="menu-item ${activePage == 'pet-data' ? 'active' : ''}">
+            <i class="ri-task-line"></i> Pet Service History
         </a>
     </nav>
 </aside>

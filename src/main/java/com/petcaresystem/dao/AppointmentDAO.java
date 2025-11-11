@@ -93,10 +93,9 @@ public class AppointmentDAO {
     }
     public List<Appointment> getTasksForStaff(Long staffAccountId) {
         List<AppointmentStatus> statuses = List.of(
-                AppointmentStatus.CONFIRMED,
-                AppointmentStatus.IN_PROGRESS,
                 AppointmentStatus.SCHEDULED,
-                AppointmentStatus.CHECKED_IN
+                AppointmentStatus.IN_PROGRESS
+
         );
 
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {

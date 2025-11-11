@@ -10,6 +10,61 @@ import java.util.List;
 public class PetServiceHistoryDAO {
 
     private static final int DEFAULT_PAGE_SIZE = 10;
+    public List<PetServiceHistory> getHistoriesByStaffId(long staffId, int page, int pageSize) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                            "select h from PetServiceHistory h " +
+                                    "join fetch h.pet p " +
+                                    "join fetch h.staff s " +
+                                    "where s.accountId = :staffId " +
+                                    "order by h.serviceDate desc",
+                            PetServiceHistory.class)
+                    .setParameter("staffId", staffId)
+                    .setFirstResult((page - 1) * pageSize)
+                    .setMaxResults(pageSize)
+                    .list();
+        }
+    }
+
+    public long countHistoriesByStaffId(long staffId) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                            "select count(h) from PetServiceHistory h " +
+                                    "join h.staff s " +
+                                    "where s.accountId = :staffId",
+                            Long.class)
+                    .setParameter("staffId", staffId)
+                    .uniqueResult();
+        }
+    }
+    public boolean updateNoteOnly(int historyId, long staffId, String notes) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+
+            PetServiceHistory history = session.createQuery(
+                            "from PetServiceHistory h join fetch h.staff s " +
+                                    "where h.id = :id and s.accountId = :staffId",
+                            PetServiceHistory.class)
+                    .setParameter("id", historyId)
+                    .setParameter("staffId", staffId)
+                    .uniqueResult();
+
+            if (history != null) {
+                history.setNotes(notes);
+                session.merge(history);
+                tx.commit();
+                return true;
+            } else {
+                if (tx != null) tx.rollback();
+                return false;
+            }
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     // ✅ UC-PD-01: View Records with Pagination
     public List<PetServiceHistory> getAllHistories(int page, int pageSize) {
