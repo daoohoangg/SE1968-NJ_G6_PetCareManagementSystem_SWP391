@@ -76,6 +76,10 @@ public class Appointment {
     @OneToOne(mappedBy = "appointment", cascade = CascadeType.ALL, orphanRemoval = true)
     private Invoice invoice;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "voucher_id") // Optional, appointment có thể không có voucher
+    private Voucher voucher;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -99,9 +103,64 @@ public class Appointment {
     }
 
     public void calculateTotalAmount() {
-        this.totalAmount = services.stream()
+        // Tính tổng giá trị services
+        BigDecimal subtotal = services.stream()
                 .map(Service::getPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        // Áp dụng discount từ voucher nếu có
+        if (voucher != null && voucher.isActive()) {
+            BigDecimal discount = calculateDiscount(subtotal, voucher);
+            this.totalAmount = subtotal.subtract(discount);
+        } else {
+            this.totalAmount = subtotal;
+        }
+    }
+    
+    /**
+     * Tính discount dựa trên voucher
+     * @param subtotal Tổng tiền trước discount
+     * @param voucher Voucher được áp dụng
+     * @return Số tiền được giảm
+     */
+    private BigDecimal calculateDiscount(BigDecimal subtotal, Voucher voucher) {
+        if (voucher == null || !voucher.isActive()) {
+            return BigDecimal.ZERO;
+        }
+        
+        // Kiểm tra expiry date
+        if (voucher.getExpiryDate() != null && LocalDateTime.now().isAfter(voucher.getExpiryDate())) {
+            return BigDecimal.ZERO;
+        }
+        
+        // Kiểm tra max uses
+        if (voucher.getMaxUses() != null && voucher.getTimesUsed() >= voucher.getMaxUses()) {
+            return BigDecimal.ZERO;
+        }
+        
+        String discountType = voucher.getDiscountType();
+        BigDecimal discountValue = voucher.getDiscountValue();
+        
+        if ("PERCENTAGE".equalsIgnoreCase(discountType)) {
+            // Discount theo phần trăm
+            BigDecimal discount = subtotal.multiply(discountValue).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+            // Đảm bảo discount không vượt quá subtotal
+            return discount.compareTo(subtotal) > 0 ? subtotal : discount;
+        } else if ("FIXED".equalsIgnoreCase(discountType)) {
+            // Discount cố định
+            return discountValue.compareTo(subtotal) > 0 ? subtotal : discountValue;
+        }
+        
+        return BigDecimal.ZERO;
+    }
+    
+    /**
+     * Áp dụng voucher cho appointment
+     * @param voucher Voucher cần áp dụng (có thể null để xóa voucher)
+     */
+    public void applyVoucher(Voucher voucher) {
+        this.voucher = voucher;
+        calculateTotalAmount();
     }
 
     public void confirm() {

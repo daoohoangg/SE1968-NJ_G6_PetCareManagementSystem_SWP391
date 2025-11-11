@@ -170,8 +170,19 @@ public class Appointments extends HttpServlet {
             /* --- 4) Ghi chú --- */
             String notes = Optional.ofNullable(req.getParameter("notes")).orElse(null);
 
-            /* --- 5) Lưu DB: truyền vào account_id (NOT customer_id PK) --- */
-            boolean success = appointmentDAO.create(customerAid, petId, serviceIds, startAt, endAt, notes);
+            /* --- 5) Lấy voucherId nếu có --- */
+            Long voucherId = null;
+            String voucherIdStr = req.getParameter("voucherId");
+            if (voucherIdStr != null && !voucherIdStr.isBlank()) {
+                try {
+                    voucherId = Long.parseLong(voucherIdStr.trim());
+                } catch (NumberFormatException ignored) {
+                    // Nếu voucherId không hợp lệ, bỏ qua
+                }
+            }
+
+            /* --- 6) Lưu DB: truyền vào account_id (NOT customer_id PK) --- */
+            boolean success = appointmentDAO.create(customerAid, petId, serviceIds, startAt, endAt, notes, voucherId);
 
             if (!success) {
                 req.setAttribute("error", "Không thể tạo lịch hẹn. Vui lòng thử lại.");

@@ -85,6 +85,7 @@ public class AppointmentDAO {
                     left join fetch a.customer
                     left join fetch a.pet
                     left join fetch a.services
+                    left join fetch a.voucher
                     where a.appointmentId = :id
                     """;
             return readOne(s, hql, Appointment.class, Map.of("id", id));
@@ -156,6 +157,16 @@ public class AppointmentDAO {
                           LocalDateTime start,
                           LocalDateTime end,
                           String notes) {
+        return create(customerAccountId, petId, serviceIds, start, end, notes, null);
+    }
+    
+    public boolean create(Long customerAccountId,
+                          Long petId,
+                          List<Long> serviceIds,
+                          LocalDateTime start,
+                          LocalDateTime end,
+                          String notes,
+                          Long voucherId) {
         Session s = null;
         Transaction tx = null;
         try {
@@ -196,6 +207,15 @@ public class AppointmentDAO {
                 Service sv = s.get(Service.class, sid);
                 if (sv != null) a.getServices().add(sv);
             }
+            
+            // Áp dụng voucher nếu có
+            if (voucherId != null) {
+                Voucher voucher = s.get(Voucher.class, voucherId);
+                if (voucher != null) {
+                    a.setVoucher(voucher);
+                }
+            }
+            
             a.calculateTotalAmount();
 
             Staff staff = getDefaultStaff(s);
