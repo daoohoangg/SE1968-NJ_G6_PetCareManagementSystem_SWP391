@@ -254,9 +254,9 @@
                                 <td>${h.staff != null ? h.staff.fullName : '-'}</td>
                                     <c:if test="${userRole != 'STAFF'}">
                                 <td>
-                                <td>
-                                   <span class="tag medical">Completed</span>
+                                    <span class="tag medical">Completed</span>
                                 </td>
+                                <td>
                                     <c:if test="${h.rating != null}">
                                             <span class="rating">
                                                 <c:forEach begin="1" end="${h.rating}">★</c:forEach>
