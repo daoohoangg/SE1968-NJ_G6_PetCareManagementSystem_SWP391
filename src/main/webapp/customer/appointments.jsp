@@ -160,7 +160,7 @@
                     <div class="col-md-6">
                         <label class="form-label">Voucher Code</label>
                         <div class="input-group">
-                            <input type="text" id="voucherCode" name="voucherCode" class="form-control" 
+                            <input type="text" id="voucherCode" name="voucherCode" class="form-control"
                                    placeholder="Enter voucher code" maxlength="20">
                             <input type="hidden" id="voucherId" name="voucherId">
                             <button type="button" id="applyVoucherBtn" class="btn btn-outline-primary">
@@ -178,7 +178,7 @@
 
                     <div class="col-md-6">
                         <label class="form-label required">Start date & time</label>
-                        <input type="datetime-local" name="startAt" class="form-control" required>
+                        <input type="datetime-local" id="startAt" name="startAt" class="form-control" required>
                     </div>
 
                     <div class="col-12">
@@ -375,130 +375,9 @@
                     let sum = 0;
                     Array.from(el.selectedOptions).forEach(opt => { if (prices[opt.value]) sum += prices[opt.value]; });
                     totalText.textContent = 'Services total: ' + sum.toFixed(2) + ' đ';
-                    updatePricing(sum);
                 }
                 el.addEventListener('change', updateTotal);
             }
-        }
-
-        // Voucher handling
-        let currentVoucher = null;
-        let currentSubtotal = 0;
-
-        function updatePricing(subtotal) {
-            currentSubtotal = subtotal;
-            document.getElementById('subtotalAmount').textContent = subtotal.toFixed(2) + ' đ';
-            
-            if (currentVoucher) {
-                applyVoucherCalculation(subtotal, currentVoucher);
-            } else {
-                document.getElementById('finalTotalAmount').textContent = subtotal.toFixed(2) + ' đ';
-                document.getElementById('discountRow').style.display = 'none';
-            }
-        }
-
-        function applyVoucherCalculation(subtotal, voucher) {
-            let discount = 0;
-            const discountType = voucher.discountType;
-            const discountValue = parseFloat(voucher.discountValue);
-
-            if (discountType === 'PERCENTAGE') {
-                discount = (subtotal * discountValue) / 100;
-            } else if (discountType === 'FIXED') {
-                discount = Math.min(discountValue, subtotal);
-            }
-
-            const finalTotal = Math.max(0, subtotal - discount);
-            
-            document.getElementById('discountAmount').textContent = '-' + discount.toFixed(2) + ' đ';
-            document.getElementById('discountRow').style.display = 'flex';
-            document.getElementById('finalTotalAmount').textContent = finalTotal.toFixed(2) + ' đ';
-        }
-
-        const voucherCodeInput = document.getElementById('voucherCode');
-        const applyVoucherBtn = document.getElementById('applyVoucherBtn');
-        const voucherMessage = document.getElementById('voucherMessage');
-        const voucherInfo = document.getElementById('voucherInfo');
-        const voucherDiscountText = document.getElementById('voucherDiscountText');
-        const voucherIdInput = document.getElementById('voucherId');
-
-        if (applyVoucherBtn) {
-            applyVoucherBtn.addEventListener('click', async function() {
-                const code = (voucherCodeInput.value || '').trim().toUpperCase();
-                
-                if (!code) {
-                    voucherMessage.textContent = 'Please enter a voucher code';
-                    voucherMessage.className = 'text-danger d-block mt-1';
-                    voucherInfo.style.display = 'none';
-                    currentVoucher = null;
-                    voucherIdInput.value = '';
-                    updatePricing(currentSubtotal);
-                    return;
-                }
-
-                if (currentSubtotal <= 0) {
-                    voucherMessage.textContent = 'Please select services first';
-                    voucherMessage.className = 'text-warning d-block mt-1';
-                    return;
-                }
-
-                applyVoucherBtn.disabled = true;
-                applyVoucherBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Checking...';
-
-                try {
-                    const response = await fetch(ctx + '/customer/vouchers/validate', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-                        },
-                        body: new URLSearchParams({
-                            code: code,
-                            subtotal: currentSubtotal.toString()
-                        })
-                    });
-
-                    const data = await response.json();
-
-                    if (data.success && data.voucher) {
-                        currentVoucher = data.voucher;
-                        voucherIdInput.value = data.voucher.voucherId;
-                        
-                        const discountType = data.voucher.discountType;
-                        const discountValue = parseFloat(data.voucher.discountValue);
-                        let discountText = '';
-                        
-                        if (discountType === 'PERCENTAGE') {
-                            discountText = discountValue + '% off';
-                        } else if (discountType === 'FIXED') {
-                            discountText = discountValue.toFixed(2) + ' đ off';
-                        }
-                        
-                        voucherDiscountText.textContent = 'Voucher "' + code + '" applied: ' + discountText;
-                        voucherInfo.style.display = 'block';
-                        voucherMessage.textContent = '';
-                        voucherMessage.className = 'text-muted d-block mt-1';
-                        
-                        applyVoucherCalculation(currentSubtotal, currentVoucher);
-                    } else {
-                        currentVoucher = null;
-                        voucherIdInput.value = '';
-                        voucherInfo.style.display = 'none';
-                        voucherMessage.textContent = data.message || 'Invalid voucher code';
-                        voucherMessage.className = 'text-danger d-block mt-1';
-                        updatePricing(currentSubtotal);
-                    }
-                } catch (error) {
-                    console.error('Error validating voucher:', error);
-                    voucherMessage.textContent = 'Error validating voucher. Please try again.';
-                    voucherMessage.className = 'text-danger d-block mt-1';
-                    currentVoucher = null;
-                    voucherIdInput.value = '';
-                    updatePricing(currentSubtotal);
-                } finally {
-                    applyVoucherBtn.disabled = false;
-                    applyVoucherBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Apply';
-                }
-            });
         }
 
         const ctx = '<%= ctx %>';
@@ -509,27 +388,36 @@
         const labAm = document.getElementById('mAmount');
         const btnPaid = document.getElementById('mPaid');
 
-        document.querySelectorAll('.js-open-qr').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const appId  = btn.getAttribute('data-app-id');
-                const amount = btn.getAttribute('data-amount') || '0';
-                labId.textContent = appId;
-                labAm.textContent = Number(amount).toLocaleString('vi-VN');
-                box.innerHTML = '';
-                const payload = `PETCARE|APP=${appId}|AMOUNT=${amount}`;
-                new QRCode(box, { text: payload, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M });
-                qrModal.show();
+            var box   = document.getElementById('qrBox');
+            var labId = document.getElementById('mAppId');
+            var labAm = document.getElementById('mAmount');
+            var btnPaid = document.getElementById('mPaid');
+            if (!modalEl || !box || !labId || !labAm) return;
+
+            document.querySelectorAll('.js-open-qr').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var appId  = btn.getAttribute('data-app-id');
+                    var amount = btn.getAttribute('data-amount') || '0';
+                    labId.textContent = appId || '';
+                    labAm.textContent = Number(amount).toLocaleString('vi-VN');
+
+                    box.innerHTML = '';
+                    try {
+                        new QRCode(box, {
+                            text: 'PETCARE|APP=' + appId + '|AMOUNT=' + amount,
+                            width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M
+                        });
+                    } catch (e) {}
+                    if (qrModal && qrModal.show) qrModal.show();
+                });
             });
-        });
 
-        if (btnPaid) {
-            btnPaid.addEventListener('click', async () => {
-                const appId = (labId.textContent || '').trim();
-                // chỉ giữ số và dấu .
-                const rawAmount = (labAm.textContent || '0').replace(/[^\d.]/g, '');
+            if (btnPaid) {
+                btnPaid.addEventListener('click', function () {
+                    var appId = (labId.textContent || '').trim();
+                    var rawAmount = (labAm.textContent || '0').replace(/[^\d.]/g, '');
 
-                try {
-                    const res = await fetch(ctx + '/customer/payments/mark-paid', {
+                    fetch(ctx + '/customer/payments/mark-paid', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
                         body: new URLSearchParams({
@@ -537,16 +425,19 @@
                             amount: rawAmount,
                             method: 'MOCK_QR'
                         })
-                    });
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-                    location.reload();
-                } catch (e) {
-                    alert('Cannot Paid. Try Again!');
-                }
-            });
-        }
-
+                    })
+                        .then(function (res) {
+                            if (!res.ok) throw new Error('HTTP ' + res.status);
+                            location.reload();
+                        })
+                        .catch(function () {
+                            alert('Cannot Paid. Try Again!');
+                        });
+                });
+            }
+        })();
     });
 </script>
+
 </body>
 </html>
