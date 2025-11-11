@@ -338,20 +338,40 @@
                 <h5 class="modal-title"><i class="bi bi-qr-code me-2"></i>Scan to pay</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+
             <div class="modal-body text-center">
                 <div class="small text-muted mb-2">Appointment: <span id="mAppId">—</span></div>
                 <div class="fw-semibold mb-3">Amount: <span id="mAmount">0</span> đ</div>
-                <div id="qrBox" class="mx-auto" style="width:260px;height:260px;padding:10px;border:1px dashed #dee2e6;border-radius:12px;"></div>
-                <div class="text-muted mt-2">Scan QR.</div>
+
+                <!-- QR -->
+                <div id="qrBox" class="mx-auto"
+                     style="width:230px;height:230px;padding:10px;border:1px dashed #ced4da;border-radius:12px;transition:opacity .2s;"></div>
+                <div id="qrNote" class="text-muted mt-2">Scan QR below to pay.</div>
+
+                <!-- Cash message -->
+                <div id="cashNote" class="mt-3 text-success fw-semibold d-none">
+                    💵 Please make your payment at the counter.
+                </div>
+
+                <!-- Payment method -->
+                <div class="mt-4">
+                    <select id="mMethod" class="form-select text-center fw-semibold" style="max-width:220px;margin:auto;">
+                        <option value="MOCK_QR" selected>VNPay QR</option>
+                        <option value="CASH">Cash tại quầy</option>
+                    </select>
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" id="mPaid">
+
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-primary px-4" id="mPaid">
                     <i class="bi bi-cash-coin me-1"></i> Paid
                 </button>
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
+</div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
@@ -395,6 +415,29 @@
                     const m = txt.match(/\(([\d.]+)\s*đ\)/);
                     if (m) prices[opt.value] = parseFloat(m[1]);
                 });
+            // Khi người dùng đổi phương thức thanh toán
+            const methodSel = document.getElementById('mMethod');
+            if (methodSel) {
+                methodSel.addEventListener('change', () => {
+                    const val = methodSel.value;
+                    const qrBox = document.getElementById('qrBox');
+                    const qrNote = document.getElementById('qrNote');
+                    const cashNote = document.getElementById('cashNote');
+                    const btnPaid = document.getElementById('mPaid');
+
+                    if (val === 'CASH') {
+                        qrBox.classList.add('d-none');
+                        qrNote.classList.add('d-none');
+                        cashNote.classList.remove('d-none');
+                        btnPaid.innerHTML = '<i class="bi bi-check-circle me-1"></i> OK';
+                    } else {
+                        qrBox.classList.remove('d-none');
+                        qrNote.classList.remove('d-none');
+                        cashNote.classList.add('d-none');
+                        btnPaid.innerHTML = '<i class="bi bi-cash-coin me-1"></i> Paid';
+                    }
+                });
+            }
 
             // Initialize Choices.js
             choicesInstance = new Choices(el, { 
@@ -659,30 +702,56 @@
             });
         });
             }
+// === Handle payment method toggle ===
+            const methodSel = document.getElementById('mMethod');
+            if (methodSel) {
+                methodSel.addEventListener('change', () => {
+                    const val = methodSel.value;
+                    const qrBox = document.getElementById('qrBox');
+                    const qrNote = document.getElementById('qrNote');
+                    const cashNote = document.getElementById('cashNote');
+                    const btnPaid = document.getElementById('mPaid');
 
-            if (btnPaid && labId && labAm) {
-                btnPaid.addEventListener('click', function () {
-                const appId = (labId.textContent || '').trim();
-                const rawAmount = (labAm.textContent || '0').replace(/[^\d.]/g, '');
-
-                    fetch(ctx + '/customer/payments/mark-paid', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-                        body: new URLSearchParams({
-                            appointmentId: appId,
-                            amount: rawAmount,
-                            method: 'MOCK_QR'
-                        })
-                    })
-                        .then(function (res) {
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-                    location.reload();
-                        })
-                        .catch(function () {
-                    alert('Cannot Paid. Try Again!');
-                        });
+                    if (val === 'CASH') {
+                        qrBox.style.opacity = '0.3';
+                        qrNote.classList.add('d-none');
+                        cashNote.classList.remove('d-none');
+                        btnPaid.innerHTML = '<i class="bi bi-check-circle me-1"></i> OK';
+                    } else {
+                        qrBox.style.opacity = '1';
+                        qrNote.classList.remove('d-none');
+                        cashNote.classList.add('d-none');
+                        btnPaid.innerHTML = '<i class="bi bi-cash-coin me-1"></i> Paid';
+                    }
                 });
-                }
+            }
+
+            if (btnPaid) {
+                btnPaid.addEventListener('click', async () => {
+                    const appId = (labId.textContent || '').trim();
+                    const rawAmount = (labAm.textContent || '0').replace(/[^\d.]/g, '');
+                    const methodSel = document.getElementById('mMethod');
+                    const selectedMethod = methodSel ? methodSel.value : 'MOCK_QR';
+
+                    try {
+                        const res = await fetch(ctx + '/customer/payments/mark-paid', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                            body: new URLSearchParams({
+                                appointmentId: appId,
+                                amount: rawAmount,
+                                method: selectedMethod
+                            })
+                        });
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        location.reload();
+                    } catch (e) {
+                        alert('Cannot Paid. Try Again!');
+                    }
+                });
+            }
+
+
         }
     });
 </script>
