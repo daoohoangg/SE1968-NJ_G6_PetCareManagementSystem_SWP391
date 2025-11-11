@@ -1,8 +1,9 @@
 package com.petcaresystem.controller.staff;
-
+import com.petcaresystem.dao.PetServiceHistoryDAO;
 import com.petcaresystem.dao.AppointmentDAO;
 import com.petcaresystem.enities.Account;
 import com.petcaresystem.enities.Appointment;
+import com.petcaresystem.enities.PetServiceHistory;
 import com.petcaresystem.enities.enu.AccountRoleEnum;
 import com.petcaresystem.enities.enu.AppointmentStatus;
 import jakarta.servlet.ServletException;
@@ -13,14 +14,16 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 @WebServlet(name = "StaffTaskController", urlPatterns = {"/staff/task"})
 public class StaffTaskController extends HttpServlet {
 
     private AppointmentDAO appointmentDAO;
-
+    private PetServiceHistoryDAO historyDAO;
     @Override
     public void init() throws ServletException {
         appointmentDAO = new AppointmentDAO();
+        historyDAO = new PetServiceHistoryDAO();
     }
 
     @Override
@@ -77,19 +80,42 @@ public class StaffTaskController extends HttpServlet {
 
             AppointmentStatus newStatus = null;
             String successMessage = "";
-
+            boolean isCompleting = false;
             if ("start".equals(action)) {
                 newStatus = AppointmentStatus.IN_PROGRESS;
                 successMessage = "Task #" + appointmentId + " started / note saved.";
             } else if ("complete".equals(action)) {
                 newStatus = AppointmentStatus.COMPLETED;
                 successMessage = "Task #" + appointmentId + " completed.";
+                isCompleting = true;
             }
 
             if (newStatus != null) {
+                Appointment app = null;
+                if (isCompleting) {
+                    app = appointmentDAO.findById(appointmentId);
+                }
                 boolean success = appointmentDAO.updateTaskStatus(appointmentId, staffId, newStatus, notes);
-
                 if (success) {
+                    if (isCompleting && app != null) {
+                        try {
+                            String serviceNames = app.getServices().stream()
+                                    .map(s -> s.getServiceName())
+                                    .collect(Collectors.joining(", "));
+                            PetServiceHistory history = new PetServiceHistory();
+                            history.setPet(app.getPet());
+                            history.setStaff(app.getStaff());
+                            history.setServiceDate(app.getAppointmentDate().toLocalDate()); // Ngày hẹn
+                            history.setCost(app.getTotalAmount().doubleValue());
+                            history.setNotes(notes);
+                            history.setServiceType(serviceNames);
+                            historyDAO.addHistory(history);
+
+                        } catch (Exception e_hist) {
+                            System.err.println("CRITICAL: Failed to create history record for Appt ID: " + appointmentId);
+                            e_hist.printStackTrace();
+                        }
+                    }
                     request.getSession().setAttribute("success", successMessage);
                 } else {
                     request.getSession().setAttribute("error", "Error: You do not have permission for this task.");

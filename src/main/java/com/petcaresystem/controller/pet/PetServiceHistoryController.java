@@ -97,10 +97,19 @@ public class PetServiceHistoryController extends HttpServlet {
             page = Integer.parseInt(request.getParameter("page"));
             if (page < 1) page = 1;
         } catch (NumberFormatException e) { page = 1; }
+
+        // 1. ✅ LẤY THAM SỐ TÌM KIẾM (BỊ THIẾU)
+        String searchTerm = request.getParameter("search");
+        String serviceType = request.getParameter("serviceType");
+
         long staffId = staffAccount.getAccountId();
-        List<PetServiceHistory> histories = historyDAO.getHistoriesByStaffId(staffId, page, PAGE_SIZE);
-        long totalRecords = historyDAO.countHistoriesByStaffId(staffId);
+
+        // 2. ✅ TRUYỀN THAM SỐ TÌM KIẾM VÀO DAO
+        List<PetServiceHistory> histories = historyDAO.getHistoriesByStaffId(staffId, searchTerm, serviceType, page, PAGE_SIZE);
+        long totalRecords = historyDAO.countHistoriesByStaffId(staffId, searchTerm, serviceType);
+
         int totalPages = (int) Math.ceil((double) totalRecords / PAGE_SIZE);
+
         List<String> serviceTypes = historyDAO.getDistinctServiceTypes();
 
         request.setAttribute("historyList", histories);
@@ -108,6 +117,8 @@ public class PetServiceHistoryController extends HttpServlet {
         request.setAttribute("totalPages", totalPages);
         request.setAttribute("totalRecords", totalRecords);
         request.setAttribute("serviceTypes", serviceTypes);
+        request.setAttribute("searchTerm", searchTerm);
+        request.setAttribute("selectedServiceType", serviceType);
 
         request.getRequestDispatcher("/petdata/pet-service-history.jsp").forward(request, response);
     }
