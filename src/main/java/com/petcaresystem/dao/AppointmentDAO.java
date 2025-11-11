@@ -560,23 +560,22 @@ public class AppointmentDAO {
             return result != null ? Long.parseLong(result.toString()) : 0L;
         }
     }
+    /**
+     * Count appointments with status PENDING
+     */
     public long countPendingAppointments() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            List<AppointmentStatus> pendingStatuses = List.of(
-                    AppointmentStatus.SCHEDULED,
-                    AppointmentStatus.CONFIRMED,
-                    AppointmentStatus.CHECKED_IN,
-                    AppointmentStatus.IN_PROGRESS
-            );
-
             Query<Long> query = session.createQuery(
-                    "select count(a.appointmentId) from Appointment a where a.status in (:statuses)",
+                    "select count(a.appointmentId) from Appointment a where a.status = :status",
                     Long.class
             );
-            query.setParameterList("statuses", pendingStatuses);
+            query.setParameter("status", AppointmentStatus.PENDING);
 
             Long result = query.uniqueResult();
             return result != null ? result : 0L;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0L;
         }
     }
 

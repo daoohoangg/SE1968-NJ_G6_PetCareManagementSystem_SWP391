@@ -348,13 +348,41 @@ public class AccountDAO {
         }
     }
 
+    /**
+     * Count total customers (accounts with role CUSTOMER and not deleted)
+     */
     public long countCustomers() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            // Count accounts with role CUSTOMER and not deleted
             Long count = session.createQuery(
-                    "select count(c.accountId) from Customer c where c.isDeleted = false",
+                    "select count(a.accountId) from Account a where a.role = :role and a.isDeleted = false",
                     Long.class
-            ).uniqueResult();
+            ).setParameter("role", com.petcaresystem.enities.enu.AccountRoleEnum.CUSTOMER)
+            .uniqueResult();
             return count != null ? count : 0L;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0L;
+        }
+    }
+
+    /**
+     * Get first active admin account for emergency contact
+     * Returns null if no active admin found
+     */
+    public Account getEmergencyContactAdmin() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            // Get first active admin account (not deleted and active)
+            Administration admin = session.createQuery(
+                    "from Administration a where a.isDeleted = false and a.isActive = true order by a.accountId asc",
+                    Administration.class
+            ).setMaxResults(1)
+            .uniqueResult();
+            
+            return admin;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 

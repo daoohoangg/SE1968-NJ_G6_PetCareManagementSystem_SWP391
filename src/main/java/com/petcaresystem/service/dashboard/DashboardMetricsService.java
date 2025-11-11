@@ -6,12 +6,7 @@ import com.petcaresystem.dao.PetDAO;
 import com.petcaresystem.dao.PetServiceHistoryDAO;
 import com.petcaresystem.dto.dashboard.RecentActivityView;
 import com.petcaresystem.dto.dashboard.ScheduleItemView;
-import com.petcaresystem.enities.Appointment;
-import com.petcaresystem.enities.Customer;
-import com.petcaresystem.enities.Pet;
-import com.petcaresystem.enities.PetServiceHistory;
-import com.petcaresystem.enities.Service;
-import com.petcaresystem.enities.Staff;
+import com.petcaresystem.enities.*;
 import com.petcaresystem.enities.enu.AppointmentStatus;
 
 import java.time.LocalDate;
@@ -19,10 +14,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 public class DashboardMetricsService {
 
@@ -50,6 +42,23 @@ public class DashboardMetricsService {
 
     public long countPetsInCareToday() {
         return appointmentDAO.countPetsInCareOn(LocalDate.now());
+    }
+
+    /**
+     * Get emergency contact admin account
+     * Returns admin account for emergency contact display
+     */
+    public Account getEmergencyContactAdmin() {
+        return accountDAO.getEmergencyContactAdmin();
+    }
+
+    /**
+     * Get service distribution by category (percentage of total services)
+     * Returns list of maps with category name, count, and percentage
+     */
+    public List<Map<String, Object>> getServiceDistributionByCategory() {
+        com.petcaresystem.dao.ServiceDAO serviceDAO = new com.petcaresystem.dao.ServiceDAO();
+        return serviceDAO.getServiceDistributionByCategory();
     }
 
     public double getTodayWeatherCelsius() {
