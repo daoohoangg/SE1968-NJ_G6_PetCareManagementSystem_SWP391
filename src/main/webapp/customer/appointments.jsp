@@ -356,8 +356,8 @@
                 <!-- Payment method -->
                 <div class="mt-4">
                     <select id="mMethod" class="form-select text-center fw-semibold" style="max-width:220px;margin:auto;">
-                        <option value="MOCK_QR" selected>VNPay QR</option>
-                        <option value="CASH">Cash tại quầy</option>
+                        <option value="MOCK_QR" selected>Scan QR</option>
+                        <option value="CASH">Cash</option>
                     </select>
                 </div>
             </div>
