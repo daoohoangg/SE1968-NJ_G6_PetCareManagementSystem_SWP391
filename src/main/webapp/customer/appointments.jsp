@@ -358,74 +358,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const el = document.getElementById('serviceIds');
-        const totalText = document.getElementById('totalPriceText');
-        if (el) {
-            // Extract prices from options before Choices.js transforms the select
-            const prices = {};
-            el.querySelectorAll('option').forEach(opt => {
-                const txt = opt.textContent || '';
-                const m = txt.match(/\(([\d.]+)\s*đ\)/);
-                if (m) prices[opt.value] = parseFloat(m[1]);
-            });
-
-            // Initialize Choices.js
-            const choices = new Choices(el, { 
-                removeItemButton: true, 
-                searchEnabled: true, 
-                shouldSort: false,
-                placeholder: true, 
-                placeholderValue: 'Select services...',
-                noResultsText: 'No services found', 
-                itemSelectText: '' 
-            });
-
-            // Function to update total
-            function updateTotal() {
-                let sum = 0;
-                const selectedValues = choices.getValue(true); // Get array of selected values
-                if (selectedValues && Array.isArray(selectedValues)) {
-                    selectedValues.forEach(value => {
-                        if (prices[value]) {
-                            sum += prices[value];
-                        }
-                    });
-                }
-                if (totalText) {
-                    totalText.textContent = 'Services total: ' + sum.toFixed(2) + ' đ';
-                }
-                
-                // Update pricing breakdown
-                if (typeof updatePricing === 'function') {
-                    updatePricing(sum);
-                }
-            }
-
-            // Listen to Choices.js events - use the element after Choices initialization
-            // Choices.js triggers custom events on the original element
-            el.addEventListener('addItem', function(event) {
-                setTimeout(updateTotal, 0); // Small delay to ensure Choices has updated
-            });
-            el.addEventListener('removeItem', function(event) {
-                setTimeout(updateTotal, 0);
-            });
-            el.addEventListener('change', updateTotal);
-            
-            // Also listen to the Choices instance directly if available
-            if (choices && typeof choices.passedElement === 'object') {
-                const passedElement = choices.passedElement.element;
-                if (passedElement) {
-                    passedElement.addEventListener('change', updateTotal);
-                }
-            }
-            
-            // Initial update
-            updateTotal();
-        }
-
-        // Voucher handling
+        // Voucher handling - declare first so it's available everywhere
         let currentVoucher = null;
         let currentSubtotal = 0;
+        let choicesInstance = null;
 
         function updatePricing(subtotal) {
             currentSubtotal = subtotal;
@@ -447,6 +383,122 @@
                     discountRow.style.display = 'none';
                 }
             }
+        }
+
+        const el = document.getElementById('serviceIds');
+        const totalText = document.getElementById('totalPriceText');
+        if (el) {
+            // Extract prices from options before Choices.js transforms the select
+                const prices = {};
+                el.querySelectorAll('option').forEach(opt => {
+                    const txt = opt.textContent || '';
+                    const m = txt.match(/\(([\d.]+)\s*đ\)/);
+                    if (m) prices[opt.value] = parseFloat(m[1]);
+                });
+
+            // Initialize Choices.js
+            choicesInstance = new Choices(el, { 
+                removeItemButton: true, 
+                searchEnabled: true, 
+                shouldSort: false,
+                placeholder: true, 
+                placeholderValue: 'Select services...',
+                noResultsText: 'No services found', 
+                itemSelectText: '' 
+            });
+            
+            // Store reference to updateTotal for use in event handlers
+            window.updateAppointmentTotal = updateTotal;
+
+            // Function to update total
+            function updateTotal() {
+                    let sum = 0;
+                try {
+                    const selectedValues = choicesInstance.getValue(true); // Get array of selected values
+                    if (selectedValues && Array.isArray(selectedValues)) {
+                        selectedValues.forEach(value => {
+                            if (prices[value]) {
+                                sum += prices[value];
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error getting selected values:', e);
+                    // Fallback: try to get from original select element
+                    const selectedOptions = el.selectedOptions || el.options;
+                    for (let i = 0; i < selectedOptions.length; i++) {
+                        const opt = selectedOptions[i];
+                        if (opt.selected && prices[opt.value]) {
+                            sum += prices[opt.value];
+                        }
+                    }
+                }
+                
+                if (totalText) {
+                    totalText.textContent = 'Services total: ' + sum.toFixed(2) + ' đ';
+                }
+                
+                // Update pricing breakdown
+                updatePricing(sum);
+            }
+
+            // Listen to Choices.js events - multiple event types for reliability
+            function triggerUpdate() {
+                setTimeout(updateTotal, 100);
+            }
+            
+            // Method 1: Choices.js custom events
+            el.addEventListener('addItem', triggerUpdate);
+            el.addEventListener('removeItem', triggerUpdate);
+            el.addEventListener('change', triggerUpdate);
+            el.addEventListener('input', triggerUpdate);
+            
+            // Method 2: Watch for clicks on Choices container (after it's created)
+            setTimeout(function() {
+                const choicesContainer = el.parentElement;
+                if (choicesContainer && choicesContainer.classList.contains('choices')) {
+                    // Watch for clicks anywhere in the choices container
+                    choicesContainer.addEventListener('click', function(e) {
+                        // Only update if clicking on items or remove buttons
+                        if (e.target.classList.contains('choices__item') || 
+                            e.target.classList.contains('choices__button') ||
+                            e.target.closest('.choices__list--multiple')) {
+                            setTimeout(updateTotal, 150);
+                        }
+                    });
+                    
+                    // Also watch for keyboard events
+                    choicesContainer.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            setTimeout(updateTotal, 150);
+                        }
+                    });
+                }
+            }, 300);
+            
+            // Method 3: Periodic check as fallback (only if no items selected yet)
+            let checkInterval = setInterval(function() {
+                try {
+                    const values = choicesInstance.getValue(true);
+                    if (values && values.length > 0) {
+                        // Once we have selections, rely on events
+                        clearInterval(checkInterval);
+                    } else {
+                        // Keep checking until something is selected
+                        updateTotal();
+                    }
+                } catch (e) {
+                    // Ignore
+                }
+            }, 1000);
+            
+            // Clear interval after 30 seconds to avoid infinite polling
+            setTimeout(function() {
+                if (checkInterval) clearInterval(checkInterval);
+            }, 30000);
+            
+            // Initial update
+            setTimeout(updateTotal, 300);
         }
 
         function applyVoucherCalculation(subtotal, voucher) {
@@ -578,21 +630,21 @@
         const ctx = '<%= ctx %>';
         const modalEl = document.getElementById('qrModal');
         if (modalEl) {
-            const qrModal = new bootstrap.Modal(modalEl);
-            const box = document.getElementById('qrBox');
-            const labId = document.getElementById('mAppId');
-            const labAm = document.getElementById('mAmount');
-            const btnPaid = document.getElementById('mPaid');
-            
+        const qrModal = new bootstrap.Modal(modalEl);
+        const box = document.getElementById('qrBox');
+        const labId = document.getElementById('mAppId');
+        const labAm = document.getElementById('mAmount');
+        const btnPaid = document.getElementById('mPaid');
+
             if (box && labId && labAm) {
                 document.querySelectorAll('.js-open-qr').forEach(function (btn) {
                     btn.addEventListener('click', function () {
-                        const appId  = btn.getAttribute('data-app-id');
-                        const amount = btn.getAttribute('data-amount') || '0';
+                const appId  = btn.getAttribute('data-app-id');
+                const amount = btn.getAttribute('data-amount') || '0';
                         labId.textContent = appId || '';
-                        labAm.textContent = Number(amount).toLocaleString('vi-VN');
+                labAm.textContent = Number(amount).toLocaleString('vi-VN');
 
-                        box.innerHTML = '';
+                box.innerHTML = '';
                         try {
                             new QRCode(box, {
                                 text: 'PETCARE|APP=' + appId + '|AMOUNT=' + amount,
@@ -602,16 +654,16 @@
                             console.error('Error generating QR code:', e);
                         }
                         if (qrModal && qrModal.show) {
-                            qrModal.show();
+                qrModal.show();
                         }
-                    });
-                });
+            });
+        });
             }
 
             if (btnPaid && labId && labAm) {
                 btnPaid.addEventListener('click', function () {
-                    const appId = (labId.textContent || '').trim();
-                    const rawAmount = (labAm.textContent || '0').replace(/[^\d.]/g, '');
+                const appId = (labId.textContent || '').trim();
+                const rawAmount = (labAm.textContent || '0').replace(/[^\d.]/g, '');
 
                     fetch(ctx + '/customer/payments/mark-paid', {
                         method: 'POST',
@@ -623,14 +675,14 @@
                         })
                     })
                         .then(function (res) {
-                            if (!res.ok) throw new Error('HTTP ' + res.status);
-                            location.reload();
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    location.reload();
                         })
                         .catch(function () {
-                            alert('Cannot Paid. Try Again!');
+                    alert('Cannot Paid. Try Again!');
                         });
                 });
-            }
+                }
         }
     });
 </script>

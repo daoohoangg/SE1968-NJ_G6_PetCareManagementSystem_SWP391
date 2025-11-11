@@ -138,7 +138,7 @@
         <p>Staff Portal</p>
     </div>
     <nav class="menu">
-        <a href="${pageContext.request.contextPath}/petServiceHistory"
+        <a href="${pageContext.request.contextPath}/staff/task"
            class="menu-item ${activePage == 'my-tasks' ? 'active' : ''}">
             <i class="ri-task-line"></i> My Tasks
         </a>
