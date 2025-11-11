@@ -1,5 +1,5 @@
 package com.petcaresystem.controller.pet;
-
+import com.petcaresystem.enities.Account;
 import com.petcaresystem.dao.PetServiceHistoryDAO;
 import com.petcaresystem.dao.PetDAO;
 import com.petcaresystem.dao.StaffDAO;
@@ -11,7 +11,8 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
+import com.petcaresystem.enities.enu.AccountRoleEnum;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
@@ -20,75 +21,126 @@ public class PetServiceHistoryController extends HttpServlet {
 
     private static final int PAGE_SIZE = 10;
     private PetServiceHistoryDAO historyDAO;
-    private PetServiceHistoryDAO petServiceHistoryDAO;
     private PetDAO petDAO;
     private StaffDAO staffDAO;
 
     @Override
     public void init() throws ServletException {
         historyDAO = new PetServiceHistoryDAO();
-        petServiceHistoryDAO = new PetServiceHistoryDAO();
         petDAO = new PetDAO();
         staffDAO = new StaffDAO();
     }
 
-    // ------------------- XỬ LÝ GET -------------------
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
+        HttpSession session = request.getSession(false);
+        Account account = (session != null) ? (Account) session.getAttribute("account") : null;
+        if (account == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+        if (account.getRole() != AccountRoleEnum.STAFF) {
+            if (account.getRole() == AccountRoleEnum.ADMIN) {
+                response.sendRedirect(request.getContextPath() + "/admin/dashboard");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/home");
+            }
+            return;
+        }
+        request.setAttribute("userRole", account.getRole().name());
         String action = request.getParameter("action");
         if (action == null) action = "list";
 
         switch (action) {
-            case "add":
-                showAddForm(request, response);
-                break;
             case "view":
-                viewDetail(request, response); // UC-PD-04
-                break;
-            case "delete":
-                deleteHistory(request, response);
-                break;
-            case "viewByPet":
-                viewByPet(request, response);
+                viewDetail(request, response);
                 break;
             case "export":
-                exportRecords(request, response); // UC-PD-05
+                exportRecords(request, response);
                 break;
             default:
-                listHistories(request, response); // UC-PD-01, UC-PD-02
+                listStaffHistory(request, response, account);
                 break;
         }
     }
 
-    // ------------------- XỬ LÝ POST -------------------
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        request.setCharacterEncoding("UTF-8");
+        HttpSession session = request.getSession(false);
+        Account account = (session != null) ? (Account) session.getAttribute("account") : null;
+        if (account == null || account.getRole() != AccountRoleEnum.STAFF) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
 
         String action = request.getParameter("action");
         if (action == null) action = "list";
 
         switch (action) {
-            case "add":
-                addHistory(request, response);
-                break;
-            case "update":
-                updateHistory(request, response);
+            case "updateNote":
+                updateNote(request, response, account);
                 break;
             default:
-                listHistories(request, response);
+                listStaffHistory(request, response, account);
                 break;
         }
     }
 
     // ------------------- CÁC HÀM XỬ LÝ -------------------
+    private void listStaffHistory(HttpServletRequest request, HttpServletResponse response, Account staffAccount)
+            throws ServletException, IOException {
+        int page = 1;
+        try {
+            page = Integer.parseInt(request.getParameter("page"));
+            if (page < 1) page = 1;
+        } catch (NumberFormatException e) { page = 1; }
+        long staffId = staffAccount.getAccountId();
+        List<PetServiceHistory> histories = historyDAO.getHistoriesByStaffId(staffId, page, PAGE_SIZE);
+        long totalRecords = historyDAO.countHistoriesByStaffId(staffId);
+        int totalPages = (int) Math.ceil((double) totalRecords / PAGE_SIZE);
+        List<String> serviceTypes = historyDAO.getDistinctServiceTypes();
 
+        request.setAttribute("historyList", histories);
+        request.setAttribute("currentPage", page);
+        request.setAttribute("totalPages", totalPages);
+        request.setAttribute("totalRecords", totalRecords);
+        request.setAttribute("serviceTypes", serviceTypes);
+
+        request.getRequestDispatcher("/petdata/pet-service-history.jsp").forward(request, response);
+    }
+    private void updateNote(HttpServletRequest request, HttpServletResponse response, Account staffAccount)
+            throws IOException {
+        if (staffAccount.getRole() != AccountRoleEnum.STAFF) {
+            request.getSession().setAttribute("error", "Permission denied.");
+            response.sendRedirect("petServiceHistory?action=list");
+            return;
+        }
+
+        try {
+            int id = Integer.parseInt(request.getParameter("id"));
+            String notes = request.getParameter("notes");
+            long staffId = staffAccount.getAccountId();
+
+            boolean success = historyDAO.updateNoteOnly(id, staffId, notes);
+
+            if (success) {
+                request.getSession().setAttribute("success", "Note updated successfully!");
+            } else {
+                request.getSession().setAttribute("error", "Failed to update note. Record not found or permission denied.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.getSession().setAttribute("error", "Failed to update note: " + e.getMessage());
+        }
+        response.sendRedirect("petServiceHistory?action=list");
+    }
     // ✅ UC-PD-01 & UC-PD-02: List with Search/Filter and Pagination
     private void listHistories(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         // Get pagination parameters
         int page = 1;
         try {
@@ -100,13 +152,13 @@ public class PetServiceHistoryController extends HttpServlet {
         } catch (NumberFormatException e) {
             page = 1;
         }
-        
+
         // Get search/filter parameters
         String searchTerm = request.getParameter("search");
         String serviceType = request.getParameter("serviceType");
         String petIdParam = request.getParameter("petId");
         Integer petId = null;
-        
+
         if (petIdParam != null && !petIdParam.isEmpty()) {
             try {
                 petId = Integer.parseInt(petIdParam);
@@ -114,12 +166,12 @@ public class PetServiceHistoryController extends HttpServlet {
                 // Ignore invalid petId
             }
         }
-        
+
         // Get filtered/searched results with pagination
         List<PetServiceHistory> histories;
         long totalRecords;
-        
-        if ((searchTerm != null && !searchTerm.trim().isEmpty()) || 
+
+        if ((searchTerm != null && !searchTerm.trim().isEmpty()) ||
             (serviceType != null && !serviceType.equals("All")) ||
             (petId != null && petId > 0)) {
             // Search/Filter mode
@@ -130,13 +182,13 @@ public class PetServiceHistoryController extends HttpServlet {
             histories = historyDAO.getAllHistories(page, PAGE_SIZE);
             totalRecords = historyDAO.countAllHistories();
         }
-        
+
         // Calculate pagination
         int totalPages = (int) Math.ceil((double) totalRecords / PAGE_SIZE);
-        
+
         // Get service types for filter dropdown
         List<String> serviceTypes = historyDAO.getDistinctServiceTypes();
-        
+
         // Set attributes
         request.setAttribute("historyList", histories);
         request.setAttribute("currentPage", page);
@@ -146,7 +198,7 @@ public class PetServiceHistoryController extends HttpServlet {
         request.setAttribute("searchTerm", searchTerm);
         request.setAttribute("selectedServiceType", serviceType);
         request.setAttribute("selectedPetId", petId);
-        
+
         request.getRequestDispatcher("/petdata/pet-service-history.jsp").forward(request, response);
     }
 
@@ -258,7 +310,7 @@ public class PetServiceHistoryController extends HttpServlet {
                 //newHistory.setStaff(staff);
             }
 
-            petServiceHistoryDAO.addHistory(newHistory);
+            historyDAO.addHistory(newHistory);
             request.getSession().setAttribute("success", "Service history added successfully!");
             response.sendRedirect("petServiceHistory?action=list");
         } catch (Exception e) {
@@ -300,7 +352,7 @@ public class PetServiceHistoryController extends HttpServlet {
                 }
             }
             
-            petServiceHistoryDAO.updateHistory(history);
+            historyDAO.updateHistory(history);
             request.getSession().setAttribute("success", "Service history updated successfully!");
         } catch (Exception e) {
             e.printStackTrace();
@@ -314,7 +366,7 @@ public class PetServiceHistoryController extends HttpServlet {
             throws IOException {
         try {
             int id = Integer.parseInt(request.getParameter("idhistory"));
-            petServiceHistoryDAO.deleteHistory(id);
+            historyDAO.deleteHistory(id);
             request.getSession().setAttribute("success", "Service history deleted successfully!");
         } catch (Exception e) {
             e.printStackTrace();

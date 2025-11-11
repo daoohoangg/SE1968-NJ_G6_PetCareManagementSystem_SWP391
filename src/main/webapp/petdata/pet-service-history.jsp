@@ -2,6 +2,7 @@
 <%@ taglib prefix="c"   uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn"  uri="jakarta.tags.functions" %>
+<c:set var="userRole" value="${requestScope.userRole}" />
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -142,71 +143,72 @@
         <div class="topbar">
             <div class="title-wrap">
                 <h2>Pet Service History</h2>
-                <p class="subtitle">Records of past spa/grooming services for pets</p>
+                <c:choose>
+                    <c:when test="${userRole == 'STAFF'}">
+                        <p class="subtitle">Records of services you have completed.</p>
+                    </c:when>
+                    <c:when test="${userRole == 'CUSTOMER'}">
+                        <p class="subtitle">History of services for your pets.</p>
+                    </c:when>
+                    <c:otherwise>
+                        <p class="subtitle">All service records in the system.</p>
+                    </c:otherwise>
+                </c:choose>
             </div>
             <div style="display:flex;gap:8px">
-                <a class="btn-export" href="${pageContext.request.contextPath}/petServiceHistory?action=export&search=${searchTerm}&serviceType=${selectedServiceType}&petId=${selectedPetId}">
-                    <i class="ri-download-2-line"></i> Export CSV
-                </a>
-                <a class="btn-add" href="${pageContext.request.contextPath}/petServiceHistory?action=add">
-                    <i class="ri-add-line"></i> Add Record
-                </a>
+                <c:if test="${userRole != 'CUSTOMER'}">
+                    <a class="btn-export" href="${pageContext.request.contextPath}/petServiceHistory?action=export&search=${searchTerm}&serviceType=${selectedServiceType}&petId=${selectedPetId}">
+                        <i class="ri-download-2-line"></i> Export CSV
+                    </a>
+                </c:if>
+                <c:if test="${userRole != 'STAFF' && userRole != 'CUSTOMER'}">
+                    <a class="btn-add" href="${pageContext.request.contextPath}/petServiceHistory?action=add">
+                        <i class="ri-add-line"></i> Add Record
+                    </a>
+                </c:if>
             </div>
         </div>
 
         <c:if test="${not empty sessionScope.success}">
-            <div style="margin:8px 0;color:#065f46;background:#d1fae5;border:1px solid #a7f3d0;padding:10px;border-radius:8px">${sessionScope.success}</div>
+            <div class="alert alert-success">${sessionScope.success}</div>
             <c:remove var="success" scope="session"/>
         </c:if>
         <c:if test="${not empty sessionScope.error}">
-            <div style="margin:8px 0;color:#991b1b;background:#fee2e2;border:1px solid #fecaca;padding:10px;border-radius:8px">${sessionScope.error}</div>
+            <div class="alert alert-error">${sessionScope.error}</div>
             <c:remove var="error" scope="session"/>
         </c:if>
 
-        <!-- Search & Filter -->
-        <div class="filter-card">
-            <form method="get" action="${pageContext.request.contextPath}/petServiceHistory">
-                <div class="filter-row">
-                    <div class="filter-group">
-                        <label class="filter-label">Search</label>
-                        <input type="text" name="search" class="filter-input" 
-                               placeholder="Pet name, description, notes..." 
-                               value="${searchTerm}">
+        <c:if test="${userRole != 'STAFF' && userRole != 'CUSTOMER'}">
+            <div class="filter-card">
+                <form method="get" action="${pageContext.request.contextPath}/petServiceHistory">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label class="filter-label">Search</label>
+                            <input type="text" name="search" class="filter-input"
+                                   placeholder="Pet name, description, notes..."
+                                   value="${searchTerm}">
+                        </div>
+                        <div class="filter-group" style="flex:0.8">
+                            <label class="filter-label">Service Type</label>
+                            <select name="serviceType" class="filter-select">
+                                <option value="All" ${selectedServiceType == null || selectedServiceType == 'All' ? 'selected' : ''}>All Services</option>
+                                <c:forEach var="type" items="${serviceTypes}">
+                                    <option value="${type}" ${selectedServiceType == type ? 'selected' : ''}>${type}</option>
+                                </c:forEach>
+                            </select>
+                        </div>
+                        <div style="display:flex;gap:8px">
+                            <button type="submit" class="btn-filter">
+                                <i class="ri-search-line"></i> Search
+                            </button>
+                            <a href="${pageContext.request.contextPath}/petServiceHistory" class="btn-reset">
+                                <i class="ri-refresh-line"></i> Reset
+                            </a>
+                        </div>
                     </div>
-                    <div class="filter-group" style="flex:0.8">
-                        <label class="filter-label">Service Type</label>
-                        <select name="serviceType" class="filter-select">
-                            <option value="All" ${selectedServiceType == null || selectedServiceType == 'All' ? 'selected' : ''}>All Services</option>
-                            <c:forEach var="type" items="${serviceTypes}">
-                                <option value="${type}" ${selectedServiceType == type ? 'selected' : ''}>${type}</option>
-                            </c:forEach>
-                        </select>
-                    </div>
-                    <div style="display:flex;gap:8px">
-                        <button type="submit" class="btn-filter">
-                            <i class="ri-search-line"></i> Search
-                        </button>
-                        <a href="${pageContext.request.contextPath}/petServiceHistory" class="btn-reset">
-                            <i class="ri-refresh-line"></i> Reset
-                        </a>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <!-- Results Info -->
-        <div class="results-info">
-            <span>
-                Showing <span class="results-count">${fn:length(historyList)}</span> of 
-                <span class="results-count">${totalRecords != null ? totalRecords : fn:length(historyList)}</span> records
-                <c:if test="${selectedPet != null}">
-                    for <strong>${selectedPet.name}</strong>
-                </c:if>
-            </span>
-            <c:if test="${totalPages != null && totalPages > 0}">
-                <span>Page ${currentPage != null ? currentPage : 1} of ${totalPages}</span>
-            </c:if>
-        </div>
+                </form>
+            </div>
+        </c:if>
 
         <div class="card">
             <table>
@@ -219,7 +221,9 @@
                     <th>Service Date</th>
                     <th>Cost</th>
                     <th>Staff</th>
-                    <th>Rating</th>
+                    <c:if test="${userRole != 'STAFF'}">
+                        <th>Rating</th>
+                    </c:if>
                     <th style="width:120px">Actions</th>
                 </tr>
                 </thead>
@@ -247,29 +251,38 @@
                                 <td>${h.formattedDate}</td>
                                 <td>$<fmt:formatNumber value="${h.cost}" minFractionDigits="2" maxFractionDigits="2"/></td>
                                 <td>${h.staff != null ? h.staff.fullName : '-'}</td>
+                                    <c:if test="${userRole != 'STAFF'}">
                                 <td>
                                     <c:if test="${h.rating != null}">
-                                        <span class="rating">
-                                            <c:forEach begin="1" end="${h.rating}">â˜…</c:forEach>
-                                            <c:forEach begin="${h.rating + 1}" end="5">â˜†</c:forEach>
-                                        </span>
+                                            <span class="rating">
+                                                <c:forEach begin="1" end="${h.rating}">★</c:forEach>
+                                                <c:forEach begin="${h.rating + 1}" end="5">☆</c:forEach>
+                                            </span>
                                     </c:if>
                                     <c:if test="${h.rating == null}">-</c:if>
                                 </td>
+                                </c:if>
+
                                 <td class="actions">
-                                    <button class="icon-btn edit-history-btn" 
-                                            data-id="${h.id}" 
-                                            data-description="<c:out value='${h.description}'/>" 
-                                            data-rating="${h.rating != null ? h.rating : 0}" 
-                                            title="Edit">
-                                        <i class="ri-edit-line"></i>
-                                    </button>
-                                    <a class="icon-btn" href="${pageContext.request.contextPath}/petServiceHistory?action=view&id=${h.id}" title="View"><i class="ri-eye-line"></i></a>
-                                    <form method="get" action="${pageContext.request.contextPath}/petServiceHistory" style="display:inline">
-                                        <input type="hidden" name="action" value="delete"/>
-                                        <input type="hidden" name="idhistory" value="${h.id}"/>
-                                        <button type="submit" class="icon-btn delete" onclick="return confirm('Delete this record?');"><i class="ri-delete-bin-line"></i></button>
-                                    </form>
+                                    <c:choose>
+                                        <c:when test="${userRole == 'STAFF'}">
+                                            <button class="icon-btn staff-note-btn"
+                                                    data-id="${h.id}"
+                                                    data-notes="<c:out value='${h.notes}'/>"
+                                                    title="View/Edit Note">
+                                                <i class="ri-edit-line"></i>
+                                            </button>
+                                        </c:when>
+                                        <c:when test="${userRole == 'CUSTOMER'}">
+                                            <button class="icon-btn customer-rating-btn"
+                                                    data-id="${h.id}"
+                                                    data-description="<c:out value='${h.description}'/>"
+                                                    data-rating="${h.rating != null ? h.rating : 0}"
+                                                    title="Rate Service">
+                                                <i class="ri-star-line"></i>
+                                            </button>
+                                        </c:when>
+                                    </c:choose>
                                 </td>
                             </tr>
                         </c:forEach>
@@ -326,13 +339,13 @@
     </main>
 </div>
 
-<!-- Edit History Modal -->
-<div id="editModal" class="modal">
+<div id="customerAdminModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
             <h3>Edit Service History</h3>
-            <button class="modal-close" onclick="closeEditModal()">×</button>
+            <button class="modal-close" onclick="closeModal('customerAdminModal')">×</button>
         </div>
+        <%-- Form này action="update" --%>
         <form method="post" action="${pageContext.request.contextPath}/petServiceHistory">
             <input type="hidden" name="action" value="update"/>
             <input type="hidden" name="id" id="editHistoryId"/>
@@ -354,8 +367,32 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-modal secondary" onclick="closeEditModal()">Cancel</button>
+                <button type="button" class="btn-modal secondary" onclick="closeModal('customerAdminModal')">Cancel</button>
                 <button type="submit" class="btn-modal primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="staffNoteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Edit Service Note</h3>
+            <button class="modal-close" onclick="closeModal('staffNoteModal')">×</button>
+        </div>
+        <%-- Form này action="updateNote" --%>
+        <form method="post" action="${pageContext.request.contextPath}/petServiceHistory">
+            <input type="hidden" name="action" value="updateNote"/>
+            <input type="hidden" name="id" id="noteHistoryId"/>
+            <div class="modal-body">
+                <div class="form-field">
+                    <label for="editNote">Note (Optional)</label>
+                    <textarea id="editNote" name="notes" placeholder="Enter final notes for this service..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-modal secondary" onclick="closeModal('staffNoteModal')">Cancel</button>
+                <button type="submit" class="btn-modal primary">Save Note</button>
             </div>
         </form>
     </div>
@@ -398,33 +435,37 @@ function updateStars() {
         }
     });
 }
-
-// Edit modal functionality
-document.querySelectorAll('.edit-history-btn').forEach(btn => {
+document.querySelectorAll('.staff-note-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         const id = this.getAttribute('data-id');
-        const description = this.getAttribute('data-description');
-        const rating = parseInt(this.getAttribute('data-rating'));
-        
-        document.getElementById('editHistoryId').value = id;
-        document.getElementById('editDescription').value = description || '';
-        selectedRating = rating;
-        document.getElementById('editRating').value = rating;
-        updateStars();
-        
-        document.getElementById('editModal').classList.add('show');
+        const notes = this.getAttribute('data-notes');
+
+        document.getElementById('noteHistoryId').value = id;
+        document.getElementById('editNote').value = notes || '';
+
+        document.getElementById('staffNoteModal').classList.add('show');
     });
 });
+function openRatingModal(id, description, rating) {
+    document.getElementById('editHistoryId').value = id;
+    document.getElementById('editDescription').value = description || '';
+    selectedRating = rating;
+    document.getElementById('editRating').value = rating;
+    updateStars();
+    document.getElementById('customerAdminModal').classList.add('show');
+}
 
-function closeEditModal() {
-    document.getElementById('editModal').classList.remove('show');
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('show');
 }
 
 // Close modal when clicking outside
-document.getElementById('editModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeEditModal();
-    }
+document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal(this.id);
+        }
+    });
 });
 </script>
 

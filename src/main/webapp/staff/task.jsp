@@ -66,7 +66,6 @@
         <div class="topbar">
             <div>
                 <h2>My Assigned Tasks</h2>
-                <p class="subtitle">Appointments assigned to you by the Receptionist.</p>
             </div>
         </div>
         <% String success = (String) session.getAttribute("success");
@@ -89,7 +88,7 @@
                     <th>Pet</th>
                     <th>Service(s)</th>
                     <th>Status</th>
-                    <th>Action (F_38)</th>
+                    <th>Action</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -118,7 +117,7 @@
                         <form method="post" action="<%= request.getContextPath() %>/staff/task" class="task-form">
                             <input type="hidden" name="appointmentId" value="<%= app.getAppointmentId() %>">
 
-                            <% if (status == AppointmentStatus.CONFIRMED || status == AppointmentStatus.SCHEDULED || status == AppointmentStatus.CHECKED_IN) { %>
+                            <% if (status == AppointmentStatus.SCHEDULED) { %>
                             <label>Notes (Start):</label>
                             <textarea name="notes" placeholder="Update progress, pet condition..."><%= (app.getNotes() != null) ? app.getNotes() : "" %></textarea>
                             <button type="submit" name="action" value="start" class="btn-start">
