@@ -151,6 +151,107 @@ public class AppointmentDAO {
         return s.createQuery(hql, Staff.class).setMaxResults(1).uniqueResult();
     }
 
+    /**
+     * Kiểm tra thời gian booking có thỏa mãn rule_week_days không
+     * @param session Hibernate session
+     * @param startTime Thời gian bắt đầu
+     * @param endTime Thời gian kết thúc (có thể null)
+     * @return null nếu hợp lệ, hoặc thông báo lỗi nếu không hợp lệ
+     */
+    private String validateAppointmentTime(Session session, LocalDateTime startTime, LocalDateTime endTime) {
+        try {
+            // Lấy DayOfWeek từ startTime
+            java.time.DayOfWeek dayOfWeek = startTime.getDayOfWeek();
+            String dayOfWeekStr = dayOfWeek.name(); // MONDAY, TUESDAY, etc.
+            
+            // Query rule_week_days cho CLINIC
+            String sql = """
+                SELECT is_open, open_time, close_time 
+                FROM rule_week_days rwd 
+                JOIN rule_sets rs ON rwd.rule_set_id = rs.rule_set_id 
+                WHERE rs.owner_type = 'CLINIC' AND rs.owner_id = 1 
+                AND rwd.day_of_week = :dayOfWeek
+                """;
+            
+            Query<Object[]> query = session.createNativeQuery(sql);
+            query.setParameter("dayOfWeek", dayOfWeekStr);
+            
+            Object[] result = query.uniqueResult();
+            
+            if (result == null) {
+                // Nếu không tìm thấy rule, cho phép (fallback)
+                return null;
+            }
+            
+            Boolean isOpen = (Boolean) result[0];
+            LocalTime openTime = null;
+            LocalTime closeTime = null;
+            
+            if (result[1] != null) {
+                if (result[1] instanceof java.sql.Time) {
+                    openTime = ((java.sql.Time) result[1]).toLocalTime();
+                } else if (result[1] instanceof LocalTime) {
+                    openTime = (LocalTime) result[1];
+                }
+            }
+            
+            if (result[2] != null) {
+                if (result[2] instanceof java.sql.Time) {
+                    closeTime = ((java.sql.Time) result[2]).toLocalTime();
+                } else if (result[2] instanceof LocalTime) {
+                    closeTime = (LocalTime) result[2];
+                }
+            }
+            
+            // Kiểm tra ngày có mở cửa không
+            if (isOpen == null || !isOpen) {
+                return "Clinic không mở cửa vào " + getDayOfWeekName(dayOfWeek) + ". Vui lòng chọn ngày khác.";
+            }
+            
+            // Kiểm tra thời gian bắt đầu
+            LocalTime startTimeOnly = startTime.toLocalTime();
+            if (openTime != null && startTimeOnly.isBefore(openTime)) {
+                return "Thời gian bắt đầu phải sau " + openTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")) + 
+                       " (giờ mở cửa).";
+            }
+            
+            // Kiểm tra thời gian kết thúc
+            LocalTime endTimeOnly = (endTime != null) ? endTime.toLocalTime() : startTimeOnly.plusHours(2);
+            if (closeTime != null && endTimeOnly.isAfter(closeTime)) {
+                return "Thời gian kết thúc phải trước " + closeTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")) + 
+                       " (giờ đóng cửa).";
+            }
+            
+            // Kiểm tra thời gian bắt đầu không được sau thời gian đóng cửa
+            if (closeTime != null && startTimeOnly.isAfter(closeTime)) {
+                return "Thời gian bắt đầu không được sau giờ đóng cửa (" + 
+                       closeTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")) + ").";
+            }
+            
+            return null; // Hợp lệ
+        } catch (Exception e) {
+            // Nếu có lỗi khi kiểm tra, log và cho phép (fallback)
+            System.err.println("Error validating appointment time: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
+     * Chuyển đổi DayOfWeek sang tên tiếng Việt
+     */
+    private String getDayOfWeekName(java.time.DayOfWeek dayOfWeek) {
+        return switch (dayOfWeek) {
+            case MONDAY -> "Thứ Hai";
+            case TUESDAY -> "Thứ Ba";
+            case WEDNESDAY -> "Thứ Tư";
+            case THURSDAY -> "Thứ Năm";
+            case FRIDAY -> "Thứ Sáu";
+            case SATURDAY -> "Thứ Bảy";
+            case SUNDAY -> "Chủ Nhật";
+        };
+    }
+
     public boolean create(Long customerAccountId,
                           Long petId,
                           List<Long> serviceIds,
@@ -188,11 +289,24 @@ public class AppointmentDAO {
                 throw new IllegalArgumentException("Thú cưng không tồn tại hoặc không thuộc tài khoản của bạn.");
             }
             if (start == null) throw new IllegalArgumentException("Vui lòng chọn thời gian bắt đầu.");
+            
+            // Kiểm tra thời gian không được trước hiện tại
+            LocalDateTime now = LocalDateTime.now();
+            if (start.isBefore(now)) {
+                throw new IllegalArgumentException("Không thể đặt lịch hẹn trong quá khứ. Vui lòng chọn thời gian sau " + now.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            }
+            
             if (end != null && !end.isAfter(start)) {
                 throw new IllegalArgumentException("Thời gian kết thúc phải sau thời gian bắt đầu.");
             }
             if (serviceIds == null || serviceIds.isEmpty()) {
                 throw new IllegalArgumentException("Bạn phải chọn ít nhất một dịch vụ.");
+            }
+            
+            // Kiểm tra thời gian có thỏa mãn rule_week_days không
+            String scheduleError = validateAppointmentTime(s, start, end);
+            if (scheduleError != null) {
+                throw new IllegalArgumentException(scheduleError);
             }
 
             Appointment a = new Appointment();
