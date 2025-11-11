@@ -8,6 +8,7 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -270,23 +271,20 @@ public class AppointmentDAO {
         }
     }
 
-    /** DS đủ điều kiện check-in trong ngày (SCHEDULED/IN_PROGRESS) */
+    /** DS đủ điều kiện check-in (CONFIRMED) - không filter theo date range */
     public List<Appointment> findCheckInEligible(LocalDateTime startOfDay, LocalDateTime endOfDay) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            // Không filter theo date range, chỉ lọc theo status CONFIRMED
             String hql = """
                     select a from Appointment a
                     join fetch a.customer
                     join fetch a.pet
                     left join fetch a.services
-                    where a.appointmentDate >= :start and a.appointmentDate < :end
-                      and (a.status = :scheduled or a.status = :inProgress)
+                    where a.status = :confirmed
                     order by a.appointmentDate asc
                     """;
             return s.createQuery(hql, Appointment.class)
-                    .setParameter("start", startOfDay)
-                    .setParameter("end", endOfDay)
-                    .setParameter("scheduled", AppointmentStatus.SCHEDULED)
-                    .setParameter("inProgress", AppointmentStatus.IN_PROGRESS)
+                    .setParameter("confirmed", AppointmentStatus.CONFIRMED)
                     .setReadOnly(true)
                     .getResultList();
         }
@@ -296,13 +294,13 @@ public class AppointmentDAO {
                                                            String customerName, String petName,
                                                            int page, int pageSize) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
-            // step 1: lấy id theo filter
+            // step 1: lấy id theo filter - lấy appointments có status CONFIRMED
+            // Không filter theo date range, chỉ lọc theo status CONFIRMED
             StringBuilder hql = new StringBuilder("""
                     select a.appointmentId from Appointment a
                     join a.customer c
                     join a.pet p
-                    where a.appointmentDate >= :start and a.appointmentDate < :end
-                      and (a.status = :scheduled or a.status = :inProgress)
+                    where a.status = :confirmed
                     """);
 
             if (customerName != null && !customerName.isBlank()) hql.append("and lower(c.fullName) like :cname ");
@@ -310,10 +308,7 @@ public class AppointmentDAO {
             hql.append("order by a.appointmentDate asc");
 
             var q = s.createQuery(hql.toString(), Long.class)
-                    .setParameter("start", startOfDay)
-                    .setParameter("end", endOfDay)
-                    .setParameter("scheduled", AppointmentStatus.SCHEDULED)
-                    .setParameter("inProgress", AppointmentStatus.IN_PROGRESS)
+                    .setParameter("confirmed", AppointmentStatus.CONFIRMED)
                     .setFirstResult((page - 1) * pageSize)
                     .setMaxResults(pageSize)
                     .setReadOnly(true);
@@ -322,6 +317,10 @@ public class AppointmentDAO {
             if (petName != null && !petName.isBlank())           q.setParameter("pname", "%"+petName.toLowerCase()+"%");
 
             List<Long> ids = q.getResultList();
+            
+            // Debug log
+            System.out.println("AppointmentDAO.findCheckInEligibleWithFilter - Found " + ids.size() + " appointment IDs with CONFIRMED status");
+            
             if (ids.isEmpty()) return new ArrayList<>();
 
             // step 2: fetch đầy đủ
@@ -333,36 +332,39 @@ public class AppointmentDAO {
                     where a.appointmentId in :ids
                     order by a.appointmentDate asc
                     """;
-            return s.createQuery(fetch, Appointment.class)
+            List<Appointment> result = s.createQuery(fetch, Appointment.class)
                     .setParameter("ids", ids)
                     .setReadOnly(true)
                     .getResultList();
+            
+            System.out.println("AppointmentDAO - Fetched " + result.size() + " appointments");
+            return result;
         }
     }
 
     public long countCheckInEligible(LocalDateTime startOfDay, LocalDateTime endOfDay,
                                      String customerName, String petName) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
+            // Không filter theo date range, chỉ đếm appointments có status CONFIRMED
             StringBuilder hql = new StringBuilder("""
                     select count(distinct a.appointmentId) from Appointment a
                     join a.customer c
                     join a.pet p
-                    where a.appointmentDate >= :start and a.appointmentDate < :end
-                      and (a.status = :scheduled or a.status = :inProgress)
+                    where a.status = :confirmed
                     """);
             if (customerName != null && !customerName.isBlank()) hql.append("and lower(c.fullName) like :cname ");
             if (petName != null && !petName.isBlank())           hql.append("and lower(p.name) like :pname ");
 
             var q = s.createQuery(hql.toString(), Long.class)
-                    .setParameter("start", startOfDay)
-                    .setParameter("end", endOfDay)
-                    .setParameter("scheduled", AppointmentStatus.SCHEDULED)
-                    .setParameter("inProgress", AppointmentStatus.IN_PROGRESS)
+                    .setParameter("confirmed", AppointmentStatus.CONFIRMED)
                     .setReadOnly(true);
 
             if (customerName != null && !customerName.isBlank()) q.setParameter("cname", "%"+customerName.toLowerCase()+"%");
             if (petName != null && !petName.isBlank())           q.setParameter("pname", "%"+petName.toLowerCase()+"%");
-            return q.getSingleResult();
+            
+            Long count = q.getSingleResult();
+            System.out.println("AppointmentDAO.countCheckInEligible - Count: " + count);
+            return count;
         }
     }
 
@@ -453,8 +455,18 @@ public class AppointmentDAO {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             tx = s.beginTransaction();
             Appointment a = s.get(Appointment.class, appointmentId);
-            if (a == null || !a.canCheckIn()) { if (tx != null) tx.rollback(); return false; }
-            a.checkIn();
+            if (a == null) { 
+                if (tx != null) tx.rollback(); 
+                return false; 
+            }
+            // Check if status is CONFIRMED, then change to SCHEDULED
+            if (a.getStatus() != AppointmentStatus.CONFIRMED) {
+                if (tx != null) tx.rollback();
+                return false;
+            }
+            // Change status from CONFIRMED to SCHEDULED
+            a.setStatus(AppointmentStatus.SCHEDULED);
+            a.setUpdatedAt(LocalDateTime.now());
             s.merge(a);
             tx.commit();
             return true;
@@ -842,6 +854,262 @@ public class AppointmentDAO {
             if (tx != null) tx.rollback();
             e.printStackTrace();
             return false;
+        }
+    }
+
+    /**
+     * Get monthly revenue from completed appointments for the last 6 months
+     * Returns a list of maps with "month" (format: "MMM") and "revenue" (BigDecimal)
+     */
+    public List<Map<String, Object>> getMonthlyRevenueLast6Months() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            LocalDate now = LocalDate.now();
+            LocalDate sixMonthsAgo = now.minusMonths(5).withDayOfMonth(1); // Start from first day of month 6 months ago
+            LocalDate startOfCurrentMonth = now.withDayOfMonth(1);
+            LocalDate endOfCurrentMonth = now.withDayOfMonth(now.lengthOfMonth());
+
+            // SQL query to get monthly revenue grouped by month (SQL Server compatible)
+            String sql = """
+                SELECT 
+                    FORMAT(COALESCE(appointment_date, created_at), 'yyyy-MM') as month_key,
+                    COALESCE(SUM(total_amount), 0) as revenue
+                FROM appointments
+                WHERE UPPER(status) = 'COMPLETED'
+                  AND COALESCE(appointment_date, created_at) >= :startDate
+                  AND COALESCE(appointment_date, created_at) <= :endDate
+                GROUP BY FORMAT(COALESCE(appointment_date, created_at), 'yyyy-MM')
+                ORDER BY month_key ASC
+                """;
+
+            Query<?> query = session.createNativeQuery(sql);
+            query.setParameter("startDate", Timestamp.valueOf(sixMonthsAgo.atStartOfDay()));
+            query.setParameter("endDate", Timestamp.valueOf(endOfCurrentMonth.atTime(LocalTime.MAX)));
+
+            @SuppressWarnings("unchecked")
+            List<Object[]> results = (List<Object[]>) query.getResultList();
+
+            // Create a map of month_key -> revenue for quick lookup
+            Map<String, BigDecimal> revenueMap = new HashMap<>();
+            for (Object[] row : results) {
+                String monthKey = (String) row[0];
+                Object revenueObj = row[1];
+                BigDecimal revenue = BigDecimal.ZERO;
+                if (revenueObj instanceof BigDecimal) {
+                    revenue = (BigDecimal) revenueObj;
+                } else if (revenueObj instanceof Number) {
+                    revenue = BigDecimal.valueOf(((Number) revenueObj).doubleValue());
+                }
+                revenueMap.put(monthKey, revenue);
+            }
+
+            // Generate list for last 6 months, including months with zero revenue
+            List<Map<String, Object>> monthlyRevenue = new ArrayList<>();
+            LocalDate current = sixMonthsAgo;
+            java.time.format.DateTimeFormatter monthFormatter = java.time.format.DateTimeFormatter.ofPattern("MMM", java.util.Locale.ENGLISH);
+
+            while (!current.isAfter(startOfCurrentMonth)) {
+                Map<String, Object> monthData = new HashMap<>();
+                String monthKey = current.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM"));
+                String monthName = current.format(monthFormatter);
+                
+                monthData.put("month", monthName);
+                monthData.put("revenue", revenueMap.getOrDefault(monthKey, BigDecimal.ZERO));
+                monthlyRevenue.add(monthData);
+                
+                current = current.plusMonths(1);
+            }
+
+            return monthlyRevenue;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Get monthly revenue from completed appointments for a date range
+     * Returns a list of maps with "month" (format: "MMM") and "revenue" (BigDecimal)
+     */
+    public List<Map<String, Object>> getMonthlyRevenueByDateRange(LocalDate startDate, LocalDate endDate) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            LocalDate start = startDate != null ? startDate.withDayOfMonth(1) : LocalDate.now().minusMonths(5).withDayOfMonth(1);
+            LocalDate end = endDate != null ? endDate.withDayOfMonth(endDate.lengthOfMonth()) : LocalDate.now();
+
+            // SQL query to get monthly revenue grouped by month (SQL Server compatible)
+            String sql = """
+                SELECT 
+                    FORMAT(COALESCE(appointment_date, created_at), 'yyyy-MM') as month_key,
+                    COALESCE(SUM(total_amount), 0) as revenue
+                FROM appointments
+                WHERE UPPER(status) = 'COMPLETED'
+                  AND COALESCE(appointment_date, created_at) >= :startDate
+                  AND COALESCE(appointment_date, created_at) <= :endDate
+                GROUP BY FORMAT(COALESCE(appointment_date, created_at), 'yyyy-MM')
+                ORDER BY month_key ASC
+                """;
+
+            Query<?> query = session.createNativeQuery(sql);
+            query.setParameter("startDate", Timestamp.valueOf(start.atStartOfDay()));
+            query.setParameter("endDate", Timestamp.valueOf(end.atTime(LocalTime.MAX)));
+
+            @SuppressWarnings("unchecked")
+            List<Object[]> results = (List<Object[]>) query.getResultList();
+
+            // Create a map of month_key -> revenue for quick lookup
+            Map<String, BigDecimal> revenueMap = new HashMap<>();
+            for (Object[] row : results) {
+                String monthKey = (String) row[0];
+                Object revenueObj = row[1];
+                BigDecimal revenue = BigDecimal.ZERO;
+                if (revenueObj instanceof BigDecimal) {
+                    revenue = (BigDecimal) revenueObj;
+                } else if (revenueObj instanceof Number) {
+                    revenue = BigDecimal.valueOf(((Number) revenueObj).doubleValue());
+                }
+                revenueMap.put(monthKey, revenue);
+            }
+
+            // Generate list for all months in range, including months with zero revenue
+            List<Map<String, Object>> monthlyRevenue = new ArrayList<>();
+            LocalDate current = start;
+            java.time.format.DateTimeFormatter monthFormatter = java.time.format.DateTimeFormatter.ofPattern("MMM", java.util.Locale.ENGLISH);
+
+            while (!current.isAfter(end)) {
+                Map<String, Object> monthData = new HashMap<>();
+                String monthKey = current.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM"));
+                String monthName = current.format(monthFormatter);
+                
+                monthData.put("month", monthName);
+                monthData.put("monthKey", monthKey);
+                monthData.put("revenue", revenueMap.getOrDefault(monthKey, BigDecimal.ZERO));
+                monthlyRevenue.add(monthData);
+                
+                current = current.plusMonths(1);
+            }
+
+            return monthlyRevenue;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Get total revenue from completed appointments
+     * Returns the sum of total_amount from appointments with status COMPLETED
+     */
+    public BigDecimal getTotalRevenueFromAppointments(LocalDate startDate, LocalDate endDate) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            // SQL query to sum total_amount from completed appointments
+            // Handle NULL total_amount values by treating them as 0
+            StringBuilder sql = new StringBuilder(
+                    "SELECT COALESCE(SUM(COALESCE(total_amount, 0)), 0) FROM appointments WHERE UPPER(status) = 'COMPLETED'");
+
+            if (startDate != null) {
+                sql.append(" AND COALESCE(appointment_date, created_at) >= :from");
+            }
+            if (endDate != null) {
+                sql.append(" AND COALESCE(appointment_date, created_at) <= :to");
+            }
+
+            Query<?> query = session.createNativeQuery(sql.toString());
+
+            if (startDate != null) {
+                query.setParameter("from", Timestamp.valueOf(startDate.atStartOfDay()));
+            }
+            if (endDate != null) {
+                query.setParameter("to", Timestamp.valueOf(endDate.atTime(LocalTime.MAX)));
+            }
+
+            Object result = query.getSingleResult();
+            if (result == null) {
+                return BigDecimal.ZERO;
+            }
+            if (result instanceof BigDecimal) {
+                return (BigDecimal) result;
+            }
+            if (result instanceof Number) {
+                return BigDecimal.valueOf(((Number) result).doubleValue());
+            }
+            return new BigDecimal(result.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return BigDecimal.ZERO;
+        }
+    }
+
+    /**
+     * Get staff performance statistics
+     * Returns a list of maps with staff info, completed appointment count, and total revenue
+     * Only includes staff who have at least one completed appointment
+     */
+    public List<Map<String, Object>> getStaffPerformanceStats() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            // SQL query to get staff performance (completed appointments count and total revenue)
+            // Only includes staff who have at least one completed appointment
+            String sql = """
+                SELECT 
+                    s.account_id as staffId,
+                    a.full_name as fullName,
+                    s.specialization,
+                    COUNT(DISTINCT ap.appointment_id) as completedCount,
+                    COALESCE(SUM(ap.total_amount), 0) as totalRevenue
+                FROM staff s
+                INNER JOIN accounts a ON s.account_id = a.account_id
+                INNER JOIN appointments ap ON ap.staff_id = s.account_id AND UPPER(ap.status) = 'COMPLETED'
+                WHERE a.is_deleted = 0
+                GROUP BY s.account_id, a.full_name, s.specialization
+                ORDER BY totalRevenue DESC, completedCount DESC
+                """;
+
+            Query<?> query = session.createNativeQuery(sql);
+            
+            @SuppressWarnings("unchecked")
+            List<Object[]> results = (List<Object[]>) query.getResultList();
+
+            List<Map<String, Object>> staffPerformance = new ArrayList<>();
+            for (Object[] row : results) {
+                Map<String, Object> staffData = new HashMap<>();
+                
+                // staffId
+                Object staffIdObj = row[0];
+                Long staffId = null;
+                if (staffIdObj instanceof Number) {
+                    staffId = ((Number) staffIdObj).longValue();
+                }
+                staffData.put("staffId", staffId);
+                
+                // fullName
+                staffData.put("fullName", row[1] != null ? row[1].toString() : "");
+                
+                // specialization
+                staffData.put("specialization", row[2] != null ? row[2].toString() : "");
+                
+                // completedCount
+                Object countObj = row[3];
+                long completedCount = 0;
+                if (countObj instanceof Number) {
+                    completedCount = ((Number) countObj).longValue();
+                }
+                staffData.put("completedCount", completedCount);
+                
+                // totalRevenue
+                Object revenueObj = row[4];
+                BigDecimal totalRevenue = BigDecimal.ZERO;
+                if (revenueObj instanceof BigDecimal) {
+                    totalRevenue = (BigDecimal) revenueObj;
+                } else if (revenueObj instanceof Number) {
+                    totalRevenue = BigDecimal.valueOf(((Number) revenueObj).doubleValue());
+                }
+                staffData.put("totalRevenue", totalRevenue);
+                
+                staffPerformance.add(staffData);
+            }
+
+            return staffPerformance;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
         }
     }
 }

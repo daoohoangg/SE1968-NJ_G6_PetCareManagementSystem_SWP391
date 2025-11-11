@@ -36,10 +36,10 @@ public class CheckInController extends HttpServlet {
             return;
         }
 
-        // Lấy ngày hiện tại
+        // Lấy phạm vi ngày: từ hôm qua đến 7 ngày tới để bao gồm các appointments CONFIRMED
         LocalDate today = LocalDate.now();
-        LocalDateTime startOfDay = today.atStartOfDay();
-        LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
+        LocalDateTime startOfDay = today.minusDays(1).atStartOfDay(); // Bắt đầu từ hôm qua
+        LocalDateTime endOfDay = today.plusDays(7).atTime(LocalTime.MAX); // Đến 7 ngày sau
 
         // Lấy filter parameters
         String customerName = request.getParameter("customerName");
@@ -65,6 +65,11 @@ public class CheckInController extends HttpServlet {
         // Đếm tổng số records
         long totalRecords = appointmentDAO.countCheckInEligible(startOfDay, endOfDay, customerName, petName);
         int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
+        
+        // Debug: Log để kiểm tra
+        System.out.println("CheckInController - Date range: " + startOfDay + " to " + endOfDay);
+        System.out.println("CheckInController - Found " + appointments.size() + " appointments with CONFIRMED status");
+        System.out.println("CheckInController - Total records: " + totalRecords);
 
         // Format ngày giờ
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");

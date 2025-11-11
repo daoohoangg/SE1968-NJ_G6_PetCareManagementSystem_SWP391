@@ -824,16 +824,26 @@
          
                    // Export to PDF function
           function exportToPDF() {
-              alert('Exporting to PDF...\n\nIn production, this would generate a PDF report with all charts and data.');
-              // In real implementation: Call backend API to generate PDF
-              // Example: window.open('<%= request.getContextPath() %>/admin/reports/export?format=pdf', '_blank');
+              const startDate = document.getElementById('startDate')?.value || '';
+              const endDate = document.getElementById('endDate')?.value || '';
+              
+              let url = '<%= request.getContextPath() %>/admin/reports/export?format=pdf';
+              if (startDate) url += '&startDate=' + encodeURIComponent(startDate);
+              if (endDate) url += '&endDate=' + encodeURIComponent(endDate);
+              
+              window.open(url, '_blank');
           }
           
           // Export to Excel function
           function exportToExcel() {
-              alert('Exporting to Excel...\n\nIn production, this would generate an Excel file with all report data.');
-              // In real implementation: Call backend API to generate Excel
-              // Example: window.open('<%= request.getContextPath() %>/admin/reports/export?format=excel', '_blank');
+              const startDate = document.getElementById('startDate')?.value || '';
+              const endDate = document.getElementById('endDate')?.value || '';
+              
+              let url = '<%= request.getContextPath() %>/admin/reports/export?format=excel';
+              if (startDate) url += '&startDate=' + encodeURIComponent(startDate);
+              if (endDate) url += '&endDate=' + encodeURIComponent(endDate);
+              
+              window.open(url, '_blank');
           }
          
          // Function to update financial charts

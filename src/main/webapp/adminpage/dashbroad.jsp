@@ -667,58 +667,66 @@
                     <p>Highlights from the team</p>
                 </div>
                 <ul class="staff-list">
-                    <li>
-                        <div class="staff-info">
-                            <div class="staff-avatar">SW</div>
-                            <div>
-                                <strong>Dr. Sarah Wilson</strong>
-                                <span>Veterinarian &middot; 23 appointments</span>
-                            </div>
-                        </div>
-                        <div class="staff-meta">
-                            <span class="rating"><i class="ri-star-fill"></i>4.9</span>
-                            <span class="amount">$4,580</span>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="staff-info">
-                            <div class="staff-avatar">MJ</div>
-                            <div>
-                                <strong>Mike Johnson</strong>
-                                <span>Groomer &middot; 18 appointments</span>
-                            </div>
-                        </div>
-                        <div class="staff-meta">
-                            <span class="rating"><i class="ri-star-fill"></i>4.8</span>
-                            <span class="amount">$3,720</span>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="staff-info">
-                            <div class="staff-avatar">ED</div>
-                            <div>
-                                <strong>Emma Davis</strong>
-                                <span>Trainer &middot; 12 appointments</span>
-                            </div>
-                        </div>
-                        <div class="staff-meta">
-                            <span class="rating"><i class="ri-star-fill"></i>4.7</span>
-                            <span class="amount">$2,180</span>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="staff-info">
-                            <div class="staff-avatar">AC</div>
-                            <div>
-                                <strong>Alex Chen</strong>
-                                <span>Caregiver &middot; 8 appointments</span>
-                            </div>
-                        </div>
-                        <div class="staff-meta">
-                            <span class="rating"><i class="ri-star-fill"></i>4.9</span>
-                            <span class="amount">$1,640</span>
-                        </div>
-                    </li>
+                    <c:choose>
+                        <c:when test="${not empty staffPerformance}">
+                            <c:forEach var="staff" items="${staffPerformance}">
+                                <c:set var="fullName" value="${staff.fullName}"/>
+                                <c:set var="specialization" value="${staff.specialization}"/>
+                                <c:set var="completedCount" value="${staff.completedCount}"/>
+                                <c:set var="totalRevenue" value="${staff.totalRevenue}"/>
+                                
+                                <%-- Generate avatar initials from full name --%>
+                                <c:set var="nameParts" value="${fn:split(fullName, ' ')}"/>
+                                <c:set var="initials" value=""/>
+                                <c:choose>
+                                    <c:when test="${fn:length(nameParts) >= 2}">
+                                        <c:set var="initials" value="${fn:substring(nameParts[0], 0, 1)}${fn:substring(nameParts[fn:length(nameParts)-1], 0, 1)}"/>
+                                    </c:when>
+                                    <c:when test="${fn:length(nameParts) == 1}">
+                                        <c:set var="initials" value="${fn:substring(nameParts[0], 0, 1)}"/>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <c:set var="initials" value="ST"/>
+                                    </c:otherwise>
+                                </c:choose>
+                                
+                                <li>
+                                    <div class="staff-info">
+                                        <div class="staff-avatar">${fn:toUpperCase(initials)}</div>
+                                        <div>
+                                            <strong><c:out value="${fullName}"/></strong>
+                                            <span>
+                                                <c:out value="${empty specialization ? 'Staff' : specialization}"/>
+                                                &middot; 
+                                                <fmt:formatNumber value="${completedCount}" type="number"/>
+                                                <c:choose>
+                                                    <c:when test="${completedCount == 1}"> appointment</c:when>
+                                                    <c:otherwise> appointments</c:otherwise>
+                                                </c:choose>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="staff-meta">
+                                        <span class="amount">$<fmt:formatNumber value="${totalRevenue}" type="number" minFractionDigits="2" maxFractionDigits="2" groupingUsed="true"/></span>
+                                    </div>
+                                </li>
+                            </c:forEach>
+                        </c:when>
+                        <c:otherwise>
+                            <li>
+                                <div class="staff-info">
+                                    <div class="staff-avatar">--</div>
+                                    <div>
+                                        <strong>No staff performance data</strong>
+                                        <span>No completed appointments found</span>
+                                    </div>
+                                </div>
+                                <div class="staff-meta">
+                                    <span class="amount">$0.00</span>
+                                </div>
+                            </li>
+                        </c:otherwise>
+                    </c:choose>
                 </ul>
             </div>
         </div>
@@ -729,42 +737,113 @@
 <script>
     const revenueCtx = document.getElementById('revenueChart');
     if (revenueCtx) {
-        new Chart(revenueCtx, {
-            type: 'line',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                datasets: [{
-                    label: 'Revenue',
-                    data: [15200, 17450, 18900, 20500, 22800, 24650],
-                    fill: true,
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37,99,235,0.16)',
-                    tension: 0.38,
-                    borderWidth: 3,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#2563eb'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { mode: 'index', intersect: false }
-                },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: '#6b7280' }
+        <c:choose>
+            <c:when test="${not empty revenueTrends}">
+                const revenueTrends = [
+                    <c:forEach var="trend" items="${revenueTrends}" varStatus="status">
+                        {
+                            month: '<c:out value="${trend.month}"/>',
+                            revenue: ${trend.revenue}
+                        }<c:if test="${!status.last}">,</c:if>
+                    </c:forEach>
+                ];
+                
+                const labels = revenueTrends.map(t => t.month);
+                const data = revenueTrends.map(t => t.revenue);
+                
+                new Chart(revenueCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Revenue',
+                            data: data,
+                            fill: true,
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37,99,235,0.16)',
+                            tension: 0.38,
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#2563eb'
+                        }]
                     },
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(148,163,184,0.25)', borderDash: [6, 6] },
-                        ticks: { color: '#6b7280' }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { 
+                                mode: 'index', 
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Revenue: $' + context.parsed.y.toLocaleString('en-US', {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        });
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#6b7280' }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(148,163,184,0.25)', borderDash: [6, 6] },
+                                ticks: { 
+                                    color: '#6b7280',
+                                    callback: function(value) {
+                                        return '$' + value.toLocaleString('en-US');
+                                    }
+                                }
+                            }
+                        }
                     }
-                }
-            }
-        });
+                });
+            </c:when>
+            <c:otherwise>
+                // Fallback to empty chart if no data
+                new Chart(revenueCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['No Data'],
+                        datasets: [{
+                            label: 'Revenue',
+                            data: [0],
+                            fill: true,
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37,99,235,0.16)',
+                            tension: 0.38,
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#2563eb'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { mode: 'index', intersect: false }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#6b7280' }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(148,163,184,0.25)', borderDash: [6, 6] },
+                                ticks: { color: '#6b7280' }
+                            }
+                        }
+                    }
+                });
+            </c:otherwise>
+        </c:choose>
     }
 
     const serviceCtx = document.getElementById('serviceChart');

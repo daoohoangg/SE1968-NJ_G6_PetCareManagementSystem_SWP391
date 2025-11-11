@@ -174,9 +174,9 @@
             <i class="ri-robot-line"></i>AI Features
         </a>
 
-<%--        <a href="${pageContext.request.contextPath}/admin/reports"--%>
-<%--           class="menu-item ${activePage == 'reports' ? 'active' : ''}">--%>
-<%--            <i class="ri-bar-chart-2-line"></i>Generate Reports--%>
-<%--        </a>--%>
+        <a href="${pageContext.request.contextPath}/admin/reports"
+           class="menu-item ${activePage == 'reports' ? 'active' : ''}">
+            <i class="ri-bar-chart-2-line"></i>Generate Reports
+        </a>
     </nav>
 </aside>

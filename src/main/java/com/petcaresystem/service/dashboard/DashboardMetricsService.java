@@ -429,4 +429,63 @@ public class DashboardMetricsService {
     private String safeText(String value) {
         return value == null ? "" : value.trim();
     }
+
+    /**
+     * Get revenue trends for the last 6 months from completed appointments
+     * Returns a list of maps with "month" (String) and "revenue" (Double)
+     */
+    public List<Map<String, Object>> getRevenueTrendsLast6Months() {
+        List<Map<String, Object>> monthlyRevenue = appointmentDAO.getMonthlyRevenueLast6Months();
+        
+        // Convert BigDecimal to Double for easier use in JSP
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map<String, Object> monthData : monthlyRevenue) {
+            Map<String, Object> converted = new HashMap<>();
+            converted.put("month", monthData.get("month"));
+            
+            Object revenueObj = monthData.get("revenue");
+            double revenue = 0.0;
+            if (revenueObj instanceof java.math.BigDecimal) {
+                revenue = ((java.math.BigDecimal) revenueObj).doubleValue();
+            } else if (revenueObj instanceof Number) {
+                revenue = ((Number) revenueObj).doubleValue();
+            }
+            converted.put("revenue", revenue);
+            
+            result.add(converted);
+        }
+        
+        return result;
+    }
+
+    /**
+     * Get staff performance statistics
+     * Returns a list of maps with staff info, completed appointment count, and total revenue
+     */
+    public List<Map<String, Object>> getStaffPerformanceStats() {
+        List<Map<String, Object>> staffStats = appointmentDAO.getStaffPerformanceStats();
+        
+        // Convert BigDecimal to Double for easier use in JSP
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map<String, Object> staffData : staffStats) {
+            Map<String, Object> converted = new HashMap<>();
+            converted.put("staffId", staffData.get("staffId"));
+            converted.put("fullName", staffData.get("fullName"));
+            converted.put("specialization", staffData.get("specialization"));
+            converted.put("completedCount", staffData.get("completedCount"));
+            
+            Object revenueObj = staffData.get("totalRevenue");
+            double totalRevenue = 0.0;
+            if (revenueObj instanceof java.math.BigDecimal) {
+                totalRevenue = ((java.math.BigDecimal) revenueObj).doubleValue();
+            } else if (revenueObj instanceof Number) {
+                totalRevenue = ((Number) revenueObj).doubleValue();
+            }
+            converted.put("totalRevenue", totalRevenue);
+            
+            result.add(converted);
+        }
+        
+        return result;
+    }
 }

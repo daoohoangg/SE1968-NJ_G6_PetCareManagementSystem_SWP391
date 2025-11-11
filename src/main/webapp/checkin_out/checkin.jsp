@@ -156,7 +156,7 @@
                 <tbody>
                 <c:choose>
                     <c:when test="${empty appointments}">
-                        <tr><td colspan="7" class="empty">No appointments available for check-in today.</td></tr>
+                        <tr><td colspan="7" class="empty">No appointments with CONFIRMED status available for check-in.</td></tr>
                     </c:when>
                     <c:otherwise>
                         <c:forEach var="apt" items="${appointments}">
@@ -170,11 +170,11 @@
                                         ${svc.serviceName}<c:if test="${!status.last}">, </c:if>
                                     </c:forEach>
                                 </td>
-                                <td><span class="status ${apt.status == 'SCHEDULED' ? 'pending' : 'checked-in'}">${apt.status}</span></td>
+                                <td><span class="status ${apt.status == 'CONFIRMED' ? 'pending' : 'checked-in'}">${apt.status}</span></td>
                                 <td>
                                     <div style="display:flex;gap:6px;align-items:center">
                                         <c:choose>
-                                            <c:when test="${apt.status == 'SCHEDULED'}">
+                                            <c:when test="${apt.status == 'CONFIRMED'}">
                                                 <form method="post" action="${pageContext.request.contextPath}/reception/checkin" style="display:inline">
                                                     <input type="hidden" name="appointmentId" value="${apt.appointmentId}"/>
                                                     <button type="submit" class="btn-checkin" onclick="return confirm('Confirm check-in for ${apt.customer.fullName}?');">
