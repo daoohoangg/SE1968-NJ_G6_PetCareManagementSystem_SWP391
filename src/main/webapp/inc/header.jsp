@@ -162,9 +162,7 @@
                 <li class="nav-item">
                     <a class="nav-link" href="<%= request.getContextPath() %>/reception/checkin">Check-In</a>
                 </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<%= request.getContextPath() %>/reception/checkout">Check-Out</a>
-                    </li>
+                  
                     <li class="nav-item">
                         <a class="nav-link" href="<%= request.getContextPath() %>/invoices">Invoice</a>
                     </li>
