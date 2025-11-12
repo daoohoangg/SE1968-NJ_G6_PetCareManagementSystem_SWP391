@@ -129,6 +129,11 @@ public class AppointmentDAO {
             }
             a.setStatus(newStatus);
             a.setNotes(notes);
+            
+            // Khi complete, set end_date = thời gian hiện tại
+            if (newStatus == AppointmentStatus.COMPLETED) {
+                a.setEndDate(LocalDateTime.now());
+            }
 
             s.merge(a);
             tx.commit();
@@ -148,6 +153,91 @@ public class AppointmentDAO {
     private Staff getDefaultStaff(Session s) {
         String hql = "from Staff st order by st.accountId asc";
         return s.createQuery(hql, Staff.class).setMaxResults(1).uniqueResult();
+    }
+
+    /**
+     * Kiểm tra conflict với appointments có status IN_PROGRESS
+     * @param session Hibernate session
+     * @param startTime Thời gian bắt đầu
+     * @param endTime Thời gian kết thúc
+     * @return null nếu không có conflict, hoặc thông báo lỗi nếu có conflict
+     */
+    private String checkTimeConflictWithInProgress(Session session, LocalDateTime startTime, LocalDateTime endTime) {
+        try {
+            // Validate input
+            if (startTime == null || endTime == null) {
+                return null;
+            }
+            
+            if (!endTime.isAfter(startTime)) {
+                return null;
+            }
+            
+            // Lấy TẤT CẢ appointments IN_PROGRESS
+            String hql = """
+                select a from Appointment a
+                where a.status = :inProgress
+                """;
+            
+            List<Appointment> inProgressAppointments = session.createQuery(hql, Appointment.class)
+                    .setParameter("inProgress", AppointmentStatus.IN_PROGRESS)
+                    .getResultList();
+            
+            if (inProgressAppointments.isEmpty()) {
+                return null;
+            }
+            
+            LocalDateTime now = LocalDateTime.now();
+            
+            // Kiểm tra conflict với từng appointment
+            for (Appointment conflict : inProgressAppointments) {
+                LocalDateTime conflictStart = conflict.getAppointmentDate();
+                LocalDateTime conflictEnd = conflict.getEndDate();
+                
+                if (conflictStart == null) {
+                    continue;
+                }
+                
+                // Nếu endDate null, tính từ startDate + 2 giờ HOẶC nếu đang diễn ra thì dùng thời gian hiện tại + buffer
+                if (conflictEnd == null) {
+                    // Nếu appointment đã bắt đầu nhưng chưa có endDate, có thể đang diễn ra
+                    if (conflictStart.isBefore(now) || conflictStart.isEqual(now)) {
+                        // Đang diễn ra, ước tính endDate = now + 1 giờ (buffer)
+                        conflictEnd = now.plusHours(1);
+                    } else {
+                        // Chưa bắt đầu, dùng mặc định 2 giờ
+                        conflictEnd = conflictStart.plusHours(2);
+                    }
+                }
+                
+                // Đảm bảo conflictEnd > conflictStart
+                if (!conflictEnd.isAfter(conflictStart)) {
+                    conflictEnd = conflictStart.plusHours(2);
+                }
+                
+                // LOGIC OVERLAP: Hai khoảng thời gian overlap nếu:
+                // [startTime, endTime] và [conflictStart, conflictEnd] có phần chung
+                // Điều kiện: startTime < conflictEnd AND endTime > conflictStart
+                boolean isOverlapping = startTime.isBefore(conflictEnd) && endTime.isAfter(conflictStart);
+                
+                if (isOverlapping) {
+                    String conflictTime = conflictStart.format(
+                        java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+                    String conflictEndTime = conflictEnd.format(
+                        java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+                    return String.format(
+                        "Không thể đặt lịch. Có appointment đang IN_PROGRESS từ %s đến %s trùng với thời gian bạn chọn. Vui lòng chọn thời gian khác.",
+                        conflictTime, conflictEndTime);
+                }
+            }
+            
+            return null; // Không có conflict
+        } catch (Exception e) {
+            System.err.println("❌ ERROR checking IN_PROGRESS conflict: " + e.getMessage());
+            e.printStackTrace();
+            // Nếu có lỗi, cho phép tiếp tục (fallback)
+            return null;
+        }
     }
 
     public boolean create(Long customerAccountId,
@@ -193,19 +283,65 @@ public class AppointmentDAO {
             if (serviceIds == null || serviceIds.isEmpty()) {
                 throw new IllegalArgumentException("Bạn phải chọn ít nhất một dịch vụ.");
             }
-
+            
             Appointment a = new Appointment();
             a.setCustomer(customer);
             a.setPet(pet);
             a.setAppointmentDate(start);
-            a.setEndDate(end);
             a.setNotes(notes);
 
-            // Lọc trùng serviceIds (khuyến nghị)
+            // Lọc trùng serviceIds (khuyến nghị) và tính tổng duration
+            int totalDurationMinutes = 0;
             for (Long sid : new LinkedHashSet<>(serviceIds)) {
                 Service sv = s.get(Service.class, sid);
-                if (sv != null) a.getServices().add(sv);
+                if (sv != null) {
+                    a.getServices().add(sv);
+                    // Cộng duration của service vào tổng (nếu có)
+                    if (sv.getDurationMinutes() != null && sv.getDurationMinutes() > 0) {
+                        totalDurationMinutes += sv.getDurationMinutes();
+                    }
+                }
             }
+            
+            // Tính end_date dựa trên tổng duration của các services
+            // Nếu user đã nhập end, ưu tiên dùng giá trị đó
+            // Nếu không, tính từ start + tổng duration
+            LocalDateTime calculatedEnd;
+            if (end != null) {
+                calculatedEnd = end;
+                a.setEndDate(end);
+                System.out.println("=== CREATE APPOINTMENT ===");
+                System.out.println("  Using provided end time: " + end);
+            } else if (totalDurationMinutes > 0) {
+                // Tính end_date = start + tổng số phút
+                calculatedEnd = start.plusMinutes(totalDurationMinutes);
+                a.setEndDate(calculatedEnd);
+                System.out.println("=== CREATE APPOINTMENT ===");
+                System.out.println("  Calculated end from services duration: " + calculatedEnd);
+                System.out.println("  Total duration: " + totalDurationMinutes + " minutes");
+            } else {
+                // Nếu không có duration, mặc định 2 giờ
+                calculatedEnd = start.plusHours(2);
+                a.setEndDate(calculatedEnd);
+                System.out.println("=== CREATE APPOINTMENT ===");
+                System.out.println("  Using default 2 hours: " + calculatedEnd);
+            }
+            
+            System.out.println("  Start time: " + start);
+            System.out.println("  End time: " + calculatedEnd);
+            System.out.println("  Customer: " + customer.getCustomerId());
+            System.out.println("  Pet: " + pet.getIdpet());
+            System.out.println("  Services count: " + a.getServices().size());
+            
+            // Kiểm tra conflict với appointments IN_PROGRESS
+            System.out.println("  Checking for IN_PROGRESS conflicts...");
+            String conflictCheck = checkTimeConflictWithInProgress(s, start, calculatedEnd);
+            if (conflictCheck != null) {
+                System.out.println("  CONFLICT DETECTED: " + conflictCheck);
+                System.out.println("  Appointment creation ABORTED");
+                throw new IllegalArgumentException(conflictCheck);
+            }
+            System.out.println("  No conflicts found. Proceeding with appointment creation...");
             
             // Áp dụng voucher nếu có
             if (voucherId != null) {

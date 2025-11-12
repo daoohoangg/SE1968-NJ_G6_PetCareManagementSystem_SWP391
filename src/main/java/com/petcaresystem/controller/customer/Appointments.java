@@ -95,10 +95,6 @@ public class Appointments extends HttpServlet {
                 resp.sendRedirect(req.getContextPath() + "/customer/appointments?cancelled=1");
                 return;
             }
-            case "checkAvailability": {
-                checkAvailability(req, resp);
-                return;
-            }
             case "list":
             default: {
                 loadModel(req, customerAid);
@@ -158,11 +154,20 @@ public class Appointments extends HttpServlet {
 
             /* --- 3) Parse thời gian bắt đầu (input datetime-local: yyyy-MM-dd'T'HH:mm) --- */
             String startAtStr = req.getParameter("startAt");
-            if (startAtStr == null || startAtStr.isBlank()) {
-                req.setAttribute("error", "Vui lòng chọn thời gian bắt đầu.");
+            if (startAtStr == null || startAtStr.isBlank() || 
+                startAtStr.trim().equals("T") || startAtStr.trim().startsWith("T") ||
+                startAtStr.contains("--") || startAtStr.length() < 10) {
+                req.setAttribute("error", "Vui lòng chọn thời gian bắt đầu hợp lệ.");
                 loadModel(req, customerAid); forward(req, resp); return;
             }
-            LocalDateTime startAt = LocalDateTime.parse(startAtStr.trim(), ISO_LOCAL);
+            
+            LocalDateTime startAt;
+            try {
+                startAt = LocalDateTime.parse(startAtStr.trim(), ISO_LOCAL);
+            } catch (Exception e) {
+                req.setAttribute("error", "Định dạng thời gian không hợp lệ. Vui lòng chọn lại ngày và giờ.");
+                loadModel(req, customerAid); forward(req, resp); return;
+            }
 
             // Nếu hiện tại bạn chưa cho nhập 'end', để null; có thể tính theo tổng duration service sau
             LocalDateTime endAt = null;
@@ -209,39 +214,4 @@ public class Appointments extends HttpServlet {
 
     }
 
-    /* ===================== Check Availability ===================== */
-    
-    private void checkAvailability(HttpServletRequest req, HttpServletResponse resp)
-            throws IOException {
-        try {
-            String startTimeStr = req.getParameter("startTime");
-            String endTimeStr = req.getParameter("endTime");
-            
-            if (startTimeStr == null || endTimeStr == null) {
-                resp.setContentType("application/json");
-                resp.getWriter().write("{\"available\": false, \"message\": \"Invalid time parameters\"}");
-                return;
-            }
-            
-            LocalDateTime startTime = LocalDateTime.parse(startTimeStr, ISO_LOCAL);
-            LocalDateTime endTime = endTimeStr.isEmpty() ? startTime.plusHours(2) : LocalDateTime.parse(endTimeStr, ISO_LOCAL);
-            
-            // Check if there are available staff at this time
-            List<Staff> availableStaff = staffDAO.getAvailableStaffAtTime(startTime, endTime);
-            
-            resp.setContentType("application/json");
-            resp.setCharacterEncoding("UTF-8");
-            
-            if (availableStaff.isEmpty()) {
-                resp.getWriter().write("{\"available\": false, \"message\": \"No staff available at this time. Please choose another time.\"}");
-            } else {
-                resp.getWriter().write("{\"available\": true, \"count\": " + availableStaff.size() + 
-                        ", \"message\": \"" + availableStaff.size() + " staff member(s) available for your booking.\"}");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            resp.setContentType("application/json");
-            resp.getWriter().write("{\"available\": false, \"message\": \"Error checking availability\"}");
-        }
-    }
 }

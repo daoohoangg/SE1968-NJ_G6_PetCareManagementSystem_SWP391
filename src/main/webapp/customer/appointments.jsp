@@ -70,6 +70,34 @@
         .actions-cell { width: 160px; }
         .actions-cell .btn { white-space: nowrap; }
         body.modal-open .page-container { filter: blur(3px); transition: filter .2s ease; }
+        
+        /* Date & Time Picker Styling */
+        #appointmentDate, #appointmentTime {
+            border-left: none;
+            transition: all 0.3s ease;
+        }
+        #appointmentDate:focus, #appointmentTime:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+        .input-group-text {
+            border-right: none;
+            border-color: #dee2e6;
+        }
+        .input-group:focus-within .input-group-text {
+            border-color: #0d6efd;
+            background-color: #e7f1ff;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator:hover,
+        input[type="time"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
     </style>
 </head>
 
@@ -100,7 +128,7 @@
     <div class="card mb-4">
         <div class="card-header"><i class="bi bi-calendar-plus-fill me-2"></i>BOOK A NEW APPOINTMENT</div>
         <div class="card-body">
-            <form method="post" action="<%= ctx %>/customer/appointments">
+            <form method="post" action="<%= ctx %>/customer/appointments" id="appointmentForm" onsubmit="return validateAppointmentForm()">
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label required">Pet</label>
@@ -146,8 +174,11 @@
                                     }
                                     BigDecimal price = s.getPrice();
                                     String priceStr = (price != null) ? price.toPlainString() : "0";
+                                    Integer duration = s.getDurationMinutes();
+                                    String durationAttr = (duration != null && duration > 0) ? " data-duration=\"" + duration + "\"" : "";
+                                    String durationText = (duration != null && duration > 0) ? " - " + duration + " min" : "";
                                 %>
-                                <option value="<%= s.getServiceId() %>"><%= s.getServiceName() %> (<%= priceStr %> đ)</option>
+                                <option value="<%= s.getServiceId() %>"<%= durationAttr %>><%= s.getServiceName() %> (<%= priceStr %> đ)<%= durationText %></option>
                                 <%
                                     if (i == sortedServices.size() - 1) { %></optgroup><% }
                         }
@@ -177,8 +208,32 @@
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label required">Start date & time</label>
-                        <input type="datetime-local" id="startAt" name="startAt" class="form-control" required>
+                        <label class="form-label required">Appointment Date & Time</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="bi bi-calendar3 text-primary"></i>
+                                    </span>
+                                    <input type="date" id="appointmentDate" class="form-control" required>
+                                </div>
+                                <small class="text-muted">Date</small>
+                            </div>
+                            <div class="col-6">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="bi bi-clock text-primary"></i>
+                                    </span>
+                                    <input type="time" id="appointmentTime" class="form-control" required>
+                                </div>
+                                <small class="text-muted">Time</small>
+                            </div>
+                        </div>
+                        <input type="hidden" id="startAt" name="startAt" required>
+                        <small class="text-muted d-block mt-2">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Please select a date and time for your appointment
+                        </small>
                     </div>
 
                     <div class="col-12">
@@ -378,6 +433,92 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Date & Time Picker Setup
+        const dateInput = document.getElementById('appointmentDate');
+        const timeInput = document.getElementById('appointmentTime');
+        const hiddenInput = document.getElementById('startAt');
+        
+        // Set minimum date to today
+        if (dateInput) {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            dateInput.min = `${year}-${month}-${day}`;
+            
+            // Set default to today if not set
+            if (!dateInput.value) {
+                dateInput.value = `${year}-${month}-${day}`;
+            }
+        }
+        
+        // Combine date and time into datetime-local format
+        function updateDateTime() {
+            if (dateInput && timeInput && hiddenInput) {
+                const date = dateInput.value;
+                const time = timeInput.value;
+                // Only set value if both date and time are valid and not empty
+                if (date && date.trim() !== '' && time && time.trim() !== '') {
+                    hiddenInput.value = `${date}T${time}`;
+                } else {
+                    hiddenInput.value = '';
+                }
+            }
+        }
+        
+        // Set default time if not set
+        if (timeInput && !timeInput.value) {
+            // Set default time to current time + 1 hour (rounded to nearest 30 minutes)
+            const now = new Date();
+            now.setHours(now.getHours() + 1);
+            const minutes = Math.ceil(now.getMinutes() / 30) * 30;
+            now.setMinutes(minutes);
+            now.setSeconds(0);
+            const hours = String(now.getHours()).padStart(2, '0');
+            const mins = String(now.getMinutes()).padStart(2, '0');
+            timeInput.value = `${hours}:${mins}`;
+        }
+        
+        if (dateInput) dateInput.addEventListener('change', updateDateTime);
+        if (timeInput) timeInput.addEventListener('change', updateDateTime);
+        
+        // Initial update (only if both date and time have values)
+        setTimeout(updateDateTime, 100);
+        
+        // Form validation before submit
+        function validateAppointmentForm() {
+            const form = document.getElementById('appointmentForm');
+            if (!form) return true;
+            
+            const date = dateInput ? dateInput.value : '';
+            const time = timeInput ? timeInput.value : '';
+            const hiddenStartAt = hiddenInput ? hiddenInput.value : '';
+            
+            // Validate date and time are selected
+            if (!date || date.trim() === '' || !time || time.trim() === '') {
+                alert('Vui lòng chọn cả ngày và giờ cho cuộc hẹn.');
+                if (dateInput && !dateInput.value) dateInput.focus();
+                else if (timeInput && !timeInput.value) timeInput.focus();
+                return false;
+            }
+            
+            // Validate hidden input has valid value
+            if (!hiddenStartAt || hiddenStartAt.trim() === '' || 
+                hiddenStartAt === 'T' || hiddenStartAt.startsWith('T') ||
+                hiddenStartAt.includes('--') || hiddenStartAt.length < 10) {
+                // Try to update it
+                updateDateTime();
+                const updatedValue = hiddenInput ? hiddenInput.value : '';
+                if (!updatedValue || updatedValue.trim() === '' || 
+                    updatedValue === 'T' || updatedValue.startsWith('T')) {
+                    alert('Thời gian không hợp lệ. Vui lòng chọn lại ngày và giờ.');
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
         // Voucher handling - declare first so it's available everywhere
         let currentVoucher = null;
         let currentSubtotal = 0;
