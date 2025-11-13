@@ -40,7 +40,7 @@ public class PetDAO {
     public List<Pet> findByCustomerId(Long accountId) {
         try (Session s = HibernateUtil.getSessionFactory().openSession()) {
             return s.createQuery(
-                            "select p from Pet p join fetch p.customer c " +
+                            "select distinct p from Pet p join fetch p.customer c " +
                                     "where c.accountId = :cid order by p.name", Pet.class)
                     .setParameter("cid", accountId)
                     .getResultList();

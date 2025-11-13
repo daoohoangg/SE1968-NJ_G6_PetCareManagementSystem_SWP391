@@ -39,4 +39,7 @@ public interface IServiceManageService {
 
     boolean updateService(int serviceId, String serviceName, String description, BigDecimal price,
                           Integer durationMinutes, Integer categoryId, boolean isActive);
+
+    // Validation helpers
+    boolean isServiceNameExists(String serviceName, Integer excludeServiceId);
 }

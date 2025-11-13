@@ -30,6 +30,17 @@ public class AiConfigController extends HttpServlet {
         
         // If no path info, show the JSP page
         if (path == null || path.equals("/")) {
+            // Load current AI configuration from database to pass to JSP
+            AiData currentConfig = aiDataService.getCurrentConfiguration();
+            if (currentConfig != null) {
+                req.setAttribute("aiConfig", currentConfig);
+                req.setAttribute("systemPrompt", currentConfig.getPrompt() != null ? currentConfig.getPrompt() : "");
+                req.setAttribute("creativityLevel", currentConfig.getCreativityLevel());
+            } else {
+                // Set default values if no configuration exists
+                req.setAttribute("systemPrompt", "");
+                req.setAttribute("creativityLevel", 40);
+            }
             req.getRequestDispatcher("/adminpage/ai-features.jsp").forward(req, resp);
             return;
         }

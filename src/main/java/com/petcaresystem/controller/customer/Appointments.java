@@ -153,20 +153,29 @@ public class Appointments extends HttpServlet {
                     .collect(Collectors.toList());
 
             /* --- 3) Parse thời gian bắt đầu (input datetime-local: yyyy-MM-dd'T'HH:mm) --- */
+            // Không bắt buộc chọn thời gian, nhưng nếu có chọn thì không được chọn thời gian trong quá khứ
             String startAtStr = req.getParameter("startAt");
-            if (startAtStr == null || startAtStr.isBlank() || 
-                startAtStr.trim().equals("T") || startAtStr.trim().startsWith("T") ||
-                startAtStr.contains("--") || startAtStr.length() < 10) {
-                req.setAttribute("error", "Vui lòng chọn thời gian bắt đầu hợp lệ.");
-                loadModel(req, customerAid); forward(req, resp); return;
-            }
-            
             LocalDateTime startAt;
-            try {
-                startAt = LocalDateTime.parse(startAtStr.trim(), ISO_LOCAL);
-            } catch (Exception e) {
-                req.setAttribute("error", "Định dạng thời gian không hợp lệ. Vui lòng chọn lại ngày và giờ.");
-                loadModel(req, customerAid); forward(req, resp); return;
+            LocalDateTime now = LocalDateTime.now();
+            
+            if (startAtStr != null && !startAtStr.isBlank() && 
+                !startAtStr.trim().equals("T") && !startAtStr.trim().startsWith("T") &&
+                !startAtStr.contains("--") && startAtStr.length() >= 10) {
+                try {
+                    startAt = LocalDateTime.parse(startAtStr.trim(), ISO_LOCAL);
+                    
+                    // Kiểm tra thời gian đã chọn có phải là quá khứ không
+                    if (startAt.isBefore(now)) {
+                        req.setAttribute("error", "Không thể đặt lịch hẹn trong quá khứ. Vui lòng chọn thời gian trong tương lai.");
+                        loadModel(req, customerAid); forward(req, resp); return;
+                    }
+                } catch (Exception e) {
+                    // Nếu parse lỗi, dùng thời gian hiện tại + 1 giờ
+                    startAt = now.plusHours(1);
+                }
+            } else {
+                // Nếu không có thời gian, dùng thời gian hiện tại + 1 giờ
+                startAt = now.plusHours(1);
             }
 
             // Nếu hiện tại bạn chưa cho nhập 'end', để null; có thể tính theo tổng duration service sau

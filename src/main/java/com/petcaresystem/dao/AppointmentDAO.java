@@ -771,6 +771,27 @@ public class AppointmentDAO {
             return result != null ? result : 0L;
         }
     }
+    /**
+     * Lấy 5 appointments gần nhất (cả quá khứ và tương lai), sắp xếp theo appointmentDate desc (mới nhất trước)
+     */
+    public List<Appointment> findRecentAppointments(int limit) {
+        int effectiveLimit = limit <= 0 ? 5 : limit;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = """
+                    select distinct a from Appointment a
+                    join fetch a.customer c
+                    join fetch a.pet p
+                    left join fetch a.staff s
+                    left join fetch a.services sv
+                    order by a.appointmentDate desc
+                    """;
+            Query<Appointment> query = session.createQuery(hql, Appointment.class)
+                    .setReadOnly(true)
+                    .setMaxResults(effectiveLimit);
+            return query.getResultList();
+        }
+    }
+
     public List<Appointment> findUpcomingAppointments(int limit) {
         int effectiveLimit = limit <= 0 ? 5 : limit;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
@@ -1014,6 +1035,9 @@ public class AppointmentDAO {
 
     /**
      * Get monthly revenue from completed appointments for the last 6 months
+     * Lấy doanh thu từ cột total_amount trong bảng appointments
+     * Chỉ tính các appointments có status = 'COMPLETED'
+     * 
      * Returns a list of maps with "month" (format: "MMM") and "revenue" (BigDecimal)
      */
     public List<Map<String, Object>> getMonthlyRevenueLast6Months() {
@@ -1024,24 +1048,47 @@ public class AppointmentDAO {
             LocalDate endOfCurrentMonth = now.withDayOfMonth(now.lengthOfMonth());
 
             // SQL query to get monthly revenue grouped by month (SQL Server compatible)
+            // Lấy từ cột total_amount trong bảng appointments, chỉ tính appointments đã hoàn thành
+            // Status được lưu dưới dạng enum string (COMPLETED, PENDING, etc.)
             String sql = """
                 SELECT 
-                    FORMAT(COALESCE(appointment_date, created_at), 'yyyy-MM') as month_key,
+                    FORMAT(appointment_date, 'yyyy-MM') as month_key,
                     COALESCE(SUM(total_amount), 0) as revenue
                 FROM appointments
-                WHERE UPPER(status) = 'COMPLETED'
-                  AND COALESCE(appointment_date, created_at) >= :startDate
-                  AND COALESCE(appointment_date, created_at) <= :endDate
-                GROUP BY FORMAT(COALESCE(appointment_date, created_at), 'yyyy-MM')
+                WHERE status = 'COMPLETED'
+                  AND total_amount IS NOT NULL
+                  AND total_amount > 0
+                  AND appointment_date IS NOT NULL
+                  AND appointment_date >= :startDate
+                  AND appointment_date <= :endDate
+                GROUP BY FORMAT(appointment_date, 'yyyy-MM')
                 ORDER BY month_key ASC
                 """;
 
             Query<?> query = session.createNativeQuery(sql);
-            query.setParameter("startDate", Timestamp.valueOf(sixMonthsAgo.atStartOfDay()));
-            query.setParameter("endDate", Timestamp.valueOf(endOfCurrentMonth.atTime(LocalTime.MAX)));
+            Timestamp startTimestamp = Timestamp.valueOf(sixMonthsAgo.atStartOfDay());
+            Timestamp endTimestamp = Timestamp.valueOf(endOfCurrentMonth.atTime(LocalTime.MAX));
+            query.setParameter("startDate", startTimestamp);
+            query.setParameter("endDate", endTimestamp);
+
+            // Debug: Log query parameters
+            System.out.println("=== AppointmentDAO.getMonthlyRevenueLast6Months ===");
+            System.out.println("Date range: " + sixMonthsAgo + " to " + endOfCurrentMonth);
+            System.out.println("SQL: " + sql.replaceAll("\\s+", " "));
 
             @SuppressWarnings("unchecked")
             List<Object[]> results = (List<Object[]>) query.getResultList();
+            
+            // Debug: Log query results
+            System.out.println("SQL Query executed. Results count: " + results.size());
+            if (results.isEmpty()) {
+                System.out.println("WARNING: No revenue data found for completed appointments in the last 6 months!");
+                System.out.println("Check if there are appointments with status='COMPLETED' and total_amount > 0");
+            } else {
+                for (Object[] row : results) {
+                    System.out.println("Query result - Month: " + row[0] + ", Revenue: " + row[1]);
+                }
+            }
 
             // Create a map of month_key -> revenue for quick lookup
             Map<String, BigDecimal> revenueMap = new HashMap<>();
@@ -1074,8 +1121,86 @@ public class AppointmentDAO {
                 current = current.plusMonths(1);
             }
 
+            // Debug: Log số lượng tháng có dữ liệu
+            System.out.println("=== AppointmentDAO.getMonthlyRevenueLast6Months ===");
+            System.out.println("Total months returned: " + monthlyRevenue.size());
+            for (Map<String, Object> month : monthlyRevenue) {
+                System.out.println("Month: " + month.get("month") + ", Revenue: " + month.get("revenue"));
+            }
+            
             return monthlyRevenue;
         } catch (Exception e) {
+            System.err.println("ERROR in getMonthlyRevenueLast6Months: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Get daily revenue for a specific month
+     * Lấy doanh thu theo ngày trong tháng
+     * Trục x: các ngày trong tháng (1, 2, 3, ..., 31)
+     * Trục y: doanh thu (total_amount từ appointments COMPLETED)
+     * 
+     * @param year Năm
+     * @param month Tháng (1-12)
+     * @return List of maps với: day (số ngày), revenue (doanh thu)
+     */
+    public List<Map<String, Object>> getDailyRevenueByMonth(int year, int month) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            // Tạo start và end date cho tháng
+            LocalDate start = LocalDate.of(year, month, 1);
+            LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
+            
+            // SQL query để lấy doanh thu theo ngày trong tháng
+            String sql = """
+                SELECT 
+                    DAY(appointment_date) as day,
+                    COALESCE(SUM(total_amount), 0) as revenue
+                FROM appointments
+                WHERE status = 'COMPLETED'
+                  AND total_amount IS NOT NULL
+                  AND total_amount > 0
+                  AND appointment_date IS NOT NULL
+                  AND appointment_date >= :startDate
+                  AND appointment_date <= :endDate
+                GROUP BY DAY(appointment_date)
+                ORDER BY day ASC
+                """;
+            
+            Query<?> query = session.createNativeQuery(sql);
+            query.setParameter("startDate", Timestamp.valueOf(start.atStartOfDay()));
+            query.setParameter("endDate", Timestamp.valueOf(end.atTime(LocalTime.MAX)));
+            
+            @SuppressWarnings("unchecked")
+            List<Object[]> results = (List<Object[]>) query.getResultList();
+            
+            // Tạo map để lưu revenue theo ngày
+            Map<Integer, BigDecimal> revenueMap = new HashMap<>();
+            for (Object[] row : results) {
+                Integer day = ((Number) row[0]).intValue();
+                Object revenueObj = row[1];
+                BigDecimal revenue = BigDecimal.ZERO;
+                if (revenueObj instanceof BigDecimal) {
+                    revenue = (BigDecimal) revenueObj;
+                } else if (revenueObj instanceof Number) {
+                    revenue = BigDecimal.valueOf(((Number) revenueObj).doubleValue());
+                }
+                revenueMap.put(day, revenue);
+            }
+            
+            // Tạo list cho tất cả các ngày trong tháng, kể cả ngày không có doanh thu
+            List<Map<String, Object>> dailyRevenue = new ArrayList<>();
+            for (int day = 1; day <= end.lengthOfMonth(); day++) {
+                Map<String, Object> dayData = new HashMap<>();
+                dayData.put("day", day);
+                dayData.put("revenue", revenueMap.getOrDefault(day, BigDecimal.ZERO));
+                dailyRevenue.add(dayData);
+            }
+            
+            return dailyRevenue;
+        } catch (Exception e) {
+            System.err.println("ERROR in getDailyRevenueByMonth: " + e.getMessage());
             e.printStackTrace();
             return Collections.emptyList();
         }
@@ -1083,6 +1208,9 @@ public class AppointmentDAO {
 
     /**
      * Get monthly revenue from completed appointments for a date range
+     * Lấy doanh thu từ cột total_amount trong bảng appointments
+     * Chỉ tính các appointments có status = 'COMPLETED'
+     * 
      * Returns a list of maps with "month" (format: "MMM") and "revenue" (BigDecimal)
      */
     public List<Map<String, Object>> getMonthlyRevenueByDateRange(LocalDate startDate, LocalDate endDate) {
@@ -1091,15 +1219,20 @@ public class AppointmentDAO {
             LocalDate end = endDate != null ? endDate.withDayOfMonth(endDate.lengthOfMonth()) : LocalDate.now();
 
             // SQL query to get monthly revenue grouped by month (SQL Server compatible)
+            // Lấy từ cột total_amount trong bảng appointments, chỉ tính appointments đã hoàn thành
+            // Status được lưu dưới dạng enum string (COMPLETED, PENDING, etc.)
             String sql = """
                 SELECT 
-                    FORMAT(COALESCE(appointment_date, created_at), 'yyyy-MM') as month_key,
+                    FORMAT(appointment_date, 'yyyy-MM') as month_key,
                     COALESCE(SUM(total_amount), 0) as revenue
                 FROM appointments
-                WHERE UPPER(status) = 'COMPLETED'
-                  AND COALESCE(appointment_date, created_at) >= :startDate
-                  AND COALESCE(appointment_date, created_at) <= :endDate
-                GROUP BY FORMAT(COALESCE(appointment_date, created_at), 'yyyy-MM')
+                WHERE status = 'COMPLETED'
+                  AND total_amount IS NOT NULL
+                  AND total_amount > 0
+                  AND appointment_date IS NOT NULL
+                  AND appointment_date >= :startDate
+                  AND appointment_date <= :endDate
+                GROUP BY FORMAT(appointment_date, 'yyyy-MM')
                 ORDER BY month_key ASC
                 """;
 
@@ -1151,20 +1284,27 @@ public class AppointmentDAO {
 
     /**
      * Get total revenue from completed appointments
-     * Returns the sum of total_amount from appointments with status COMPLETED
+     * Lấy tổng doanh thu từ cột total_amount trong bảng appointments
+     * Total Revenue = tổng các total_amount của TẤT CẢ appointments có status = 'COMPLETED'
+     * 
+     * @param startDate Ngày bắt đầu (null nếu muốn lấy tất cả)
+     * @param endDate Ngày kết thúc (null nếu muốn lấy tất cả)
+     * @return Tổng total_amount của appointments có status COMPLETED
      */
     public BigDecimal getTotalRevenueFromAppointments(LocalDate startDate, LocalDate endDate) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             // SQL query to sum total_amount from completed appointments
-            // Handle NULL total_amount values by treating them as 0
+            // Total Revenue = tổng các total_amount của TẤT CẢ appointments có status = 'COMPLETED'
+            // Chỉ tính appointments có total_amount > 0 (không filter theo appointment_date để lấy tất cả)
             StringBuilder sql = new StringBuilder(
-                    "SELECT COALESCE(SUM(COALESCE(total_amount, 0)), 0) FROM appointments WHERE UPPER(status) = 'COMPLETED'");
+                    "SELECT COALESCE(SUM(total_amount), 0) FROM appointments WHERE status = 'COMPLETED' AND total_amount IS NOT NULL AND total_amount > 0");
 
+            // Chỉ thêm điều kiện date range nếu được cung cấp
             if (startDate != null) {
-                sql.append(" AND COALESCE(appointment_date, created_at) >= :from");
+                sql.append(" AND appointment_date >= :from");
             }
             if (endDate != null) {
-                sql.append(" AND COALESCE(appointment_date, created_at) <= :to");
+                sql.append(" AND appointment_date <= :to");
             }
 
             Query<?> query = session.createNativeQuery(sql.toString());
@@ -1194,13 +1334,219 @@ public class AppointmentDAO {
     }
 
     /**
+     * Get revenue by service category from completed appointments
+     * Thống kê doanh thu theo service category từ appointments đã hoàn thành
+     * 
+     * @param startDate Ngày bắt đầu
+     * @param endDate Ngày kết thúc
+     * @return List of maps với: categoryName, bookings (count), revenue (sum), avgPrice (revenue/bookings)
+     */
+    public List<Map<String, Object>> getRevenueByServiceCategory(LocalDate startDate, LocalDate endDate) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            // SQL query để lấy revenue theo service category từ appointments đã hoàn thành
+            // Thống kê doanh thu theo từng service category trong TOÀN BỘ thời gian
+            // Tính revenue: mỗi appointment có total_amount, chia đều cho số services trong appointment
+            // Sử dụng CTE để tránh lỗi "Cannot perform an aggregate function on an expression containing an aggregate or a subquery"
+            StringBuilder sql = new StringBuilder("""
+                WITH AppointmentServiceCount AS (
+                    SELECT 
+                        ap.appointment_id,
+                        COUNT(aps.service_id) as service_count
+                    FROM appointments ap
+                    INNER JOIN appointment_services aps ON ap.appointment_id = aps.appointment_id
+                    WHERE ap.status = 'COMPLETED'
+                      AND ap.total_amount IS NOT NULL
+                      AND ap.total_amount > 0
+                """);
+            
+            // Thêm điều kiện date range vào CTE nếu có
+            if (startDate != null) {
+                sql.append(" AND ap.appointment_date >= :startDate");
+            }
+            if (endDate != null) {
+                sql.append(" AND ap.appointment_date <= :endDate");
+            }
+            
+            sql.append("""
+                    GROUP BY ap.appointment_id
+                )
+                SELECT 
+                    COALESCE(c.name, 'Unknown') as categoryName,
+                    COUNT(DISTINCT ap.appointment_id) as bookings,
+                    COALESCE(SUM(CAST(ap.total_amount AS FLOAT) / CAST(appt_sc.service_count AS FLOAT)), 0) as revenue
+                FROM appointments ap
+                INNER JOIN appointment_services aps ON ap.appointment_id = aps.appointment_id
+                INNER JOIN service s ON aps.service_id = s.service_id
+                INNER JOIN service_category c ON s.category_id = c.category_id
+                INNER JOIN AppointmentServiceCount appt_sc ON ap.appointment_id = appt_sc.appointment_id
+                WHERE ap.status = 'COMPLETED'
+                  AND ap.total_amount IS NOT NULL
+                  AND ap.total_amount > 0
+                """);
+            
+            // Thêm điều kiện date range vào main query nếu có
+            if (startDate != null) {
+                sql.append(" AND ap.appointment_date >= :startDate");
+            }
+            if (endDate != null) {
+                sql.append(" AND ap.appointment_date <= :endDate");
+            }
+            
+            sql.append("""
+                GROUP BY c.category_id, c.name
+                ORDER BY revenue DESC
+                """);
+            
+            Query<?> query = session.createNativeQuery(sql.toString());
+            
+            if (startDate != null) {
+                query.setParameter("startDate", Timestamp.valueOf(startDate.atStartOfDay()));
+            }
+            if (endDate != null) {
+                query.setParameter("endDate", Timestamp.valueOf(endDate.atTime(LocalTime.MAX)));
+            }
+            
+            @SuppressWarnings("unchecked")
+            List<Object[]> results = (List<Object[]>) query.getResultList();
+            
+            System.out.println("=== AppointmentDAO.getRevenueByServiceCategory ===");
+            System.out.println("StartDate: " + startDate + ", EndDate: " + endDate);
+            System.out.println("Query results count: " + (results != null ? results.size() : 0));
+            
+            List<Map<String, Object>> serviceRevenue = new ArrayList<>();
+            for (Object[] row : results) {
+                System.out.println("Processing row: categoryName=" + row[0] + ", bookings=" + row[1] + ", revenue=" + row[2]);
+                Map<String, Object> serviceData = new HashMap<>();
+                
+                // categoryName
+                serviceData.put("name", row[0] != null ? row[0].toString() : "Unknown");
+                
+                // bookings (count)
+                Object bookingsObj = row[1];
+                long bookings = 0;
+                if (bookingsObj instanceof Number) {
+                    bookings = ((Number) bookingsObj).longValue();
+                }
+                serviceData.put("bookings", bookings);
+                
+                // revenue
+                Object revenueObj = row[2];
+                BigDecimal revenue = BigDecimal.ZERO;
+                if (revenueObj instanceof BigDecimal) {
+                    revenue = (BigDecimal) revenueObj;
+                } else if (revenueObj instanceof Number) {
+                    revenue = BigDecimal.valueOf(((Number) revenueObj).doubleValue());
+                }
+                serviceData.put("revenue", revenue);
+                
+                // avgPrice = revenue / bookings
+                double avgPrice = bookings > 0 
+                        ? revenue.doubleValue() / bookings 
+                        : 0.0;
+                serviceData.put("avgPrice", avgPrice);
+                
+                serviceRevenue.add(serviceData);
+            }
+            
+            System.out.println("Final serviceRevenue list size: " + serviceRevenue.size());
+            if (!serviceRevenue.isEmpty()) {
+                System.out.println("First service category: " + serviceRevenue.get(0));
+            }
+            
+            return serviceRevenue;
+        } catch (Exception e) {
+            System.err.println("ERROR in getRevenueByServiceCategory: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Get service volume by month - thống kê tổng các service có appointment COMPLETED theo các tháng
+     * Đếm TỔNG số service (từ appointment_services) của các appointments có status = 'COMPLETED'
+     * Mỗi service trong appointment_services được đếm, kể cả khi cùng một service được booking nhiều lần
+     * 
+     * @param months Số tháng cần lấy (12 tháng gần nhất)
+     * @return List of maps với: month (format: "MMM"), completed (tổng số service đã hoàn thành)
+     */
+    public List<Map<String, Object>> getServiceVolumeByMonth(int months) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            LocalDate now = LocalDate.now();
+            LocalDate startDate = now.minusMonths(months - 1).withDayOfMonth(1);
+            LocalDate endDate = now.withDayOfMonth(now.lengthOfMonth());
+            
+            // SQL query để thống kê tổng các service có appointment COMPLETED theo các tháng
+            // Đếm TỔNG số service (từ appointment_services) của các appointments có status = 'COMPLETED'
+            // Mỗi service trong appointment_services được đếm, kể cả khi cùng một service được booking nhiều lần
+            String sql = """
+                SELECT 
+                    FORMAT(ap.appointment_date, 'yyyy-MM') as month_key,
+                    COUNT(aps.service_id) as service_count
+                FROM appointments ap
+                INNER JOIN appointment_services aps ON ap.appointment_id = aps.appointment_id
+                WHERE ap.status = 'COMPLETED'
+                  AND ap.appointment_date IS NOT NULL
+                  AND ap.appointment_date >= :startDate
+                  AND ap.appointment_date <= :endDate
+                GROUP BY FORMAT(ap.appointment_date, 'yyyy-MM')
+                ORDER BY month_key ASC
+                """;
+            
+            Query<?> query = session.createNativeQuery(sql);
+            query.setParameter("startDate", Timestamp.valueOf(startDate.atStartOfDay()));
+            query.setParameter("endDate", Timestamp.valueOf(endDate.atTime(LocalTime.MAX)));
+            
+            @SuppressWarnings("unchecked")
+            List<Object[]> results = (List<Object[]>) query.getResultList();
+            
+            // Tạo map để lưu service count theo tháng
+            Map<String, Long> serviceCountMap = new HashMap<>();
+            for (Object[] row : results) {
+                String monthKey = (String) row[0];
+                Object countObj = row[1];
+                long count = 0;
+                if (countObj instanceof Number) {
+                    count = ((Number) countObj).longValue();
+                }
+                serviceCountMap.put(monthKey, count);
+            }
+            
+            // Tạo list cho tất cả các tháng trong range, kể cả tháng không có service
+            List<Map<String, Object>> serviceVolume = new ArrayList<>();
+            LocalDate current = startDate;
+            java.time.format.DateTimeFormatter monthFormatter = java.time.format.DateTimeFormatter.ofPattern("MMM", java.util.Locale.ENGLISH);
+            
+            while (!current.isAfter(endDate)) {
+                Map<String, Object> monthData = new HashMap<>();
+                String monthKey = current.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM"));
+                String monthName = current.format(monthFormatter);
+                
+                monthData.put("month", monthName);
+                monthData.put("monthKey", monthKey);
+                monthData.put("completed", serviceCountMap.getOrDefault(monthKey, 0L));
+                serviceVolume.add(monthData);
+                
+                current = current.plusMonths(1);
+            }
+            
+            return serviceVolume;
+        } catch (Exception e) {
+            System.err.println("ERROR in getServiceVolumeByMonth: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    /**
      * Get staff performance statistics
+     * Thống kê năng suất làm việc của các staff, tổng doanh thu từ appointments họ đem lại
      * Returns a list of maps with staff info, completed appointment count, and total revenue
-     * Only includes staff who have at least one completed appointment
+     * Only includes staff who have at least one completed appointment with total_amount > 0
      */
     public List<Map<String, Object>> getStaffPerformanceStats() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             // SQL query to get staff performance (completed appointments count and total revenue)
+            // Thống kê từ appointments có status = 'COMPLETED' và total_amount > 0
             // Only includes staff who have at least one completed appointment
             String sql = """
                 SELECT 
@@ -1211,7 +1557,10 @@ public class AppointmentDAO {
                     COALESCE(SUM(ap.total_amount), 0) as totalRevenue
                 FROM staff s
                 INNER JOIN accounts a ON s.account_id = a.account_id
-                INNER JOIN appointments ap ON ap.staff_id = s.account_id AND UPPER(ap.status) = 'COMPLETED'
+                INNER JOIN appointments ap ON ap.staff_id = s.account_id 
+                    AND ap.status = 'COMPLETED'
+                    AND ap.total_amount IS NOT NULL
+                    AND ap.total_amount > 0
                 WHERE a.is_deleted = 0
                 GROUP BY s.account_id, a.full_name, s.specialization
                 ORDER BY totalRevenue DESC, completedCount DESC

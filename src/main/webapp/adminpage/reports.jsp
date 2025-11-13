@@ -1,4 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <title>Generate Reports</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
@@ -309,6 +312,72 @@
     .action-btn:hover{
         filter:brightness(.95);
     }
+    .staff-card{
+        gap:20px;
+    }
+    .staff-card .card-header{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:6px;
+    }
+    .staff-list{
+        list-style:none;
+        margin:0;
+        padding:0;
+        display:flex;
+        flex-direction:column;
+        gap:14px;
+    }
+    .staff-list li{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:16px;
+        padding:14px 0;
+        border-top:1px solid var(--line);
+    }
+    .staff-list li:first-child{
+        border-top:none;
+        padding-top:0;
+    }
+    .staff-info{
+        display:flex;
+        align-items:center;
+        gap:14px;
+    }
+    .staff-avatar{
+        width:44px;
+        height:44px;
+        border-radius:14px;
+        background:var(--primary-soft);
+        color:var(--primary);
+        font-weight:700;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size:14px;
+    }
+    .staff-info strong{
+        display:block;
+        font-size:15px;
+        color:var(--text);
+        margin-bottom:4px;
+    }
+    .staff-info span{
+        font-size:13px;
+        color:var(--muted);
+    }
+    .staff-meta{
+        display:flex;
+        align-items:center;
+        gap:18px;
+        font-size:14px;
+        font-weight:600;
+    }
+    .staff-meta .amount{
+        color:var(--primary);
+        font-size:16px;
+    }
     @media (max-width:992px){
         .reports-main{padding:28px;}
         .chart-grid{grid-template-columns:1fr;}
@@ -331,29 +400,42 @@
                     <h1>Generate Reports</h1>
                     <p>Operational and financial reports from the system</p>
                 </div>
-                <div class="date-range">
-                    <div class="date-field">
-                        <i class="ri-calendar-line"></i>
-                        <input type="date" value="2024-01-01">
-                    </div>
-                    <span style="color:var(--muted);font-weight:600;">to</span>
-                    <div class="date-field">
-                        <i class="ri-calendar-line"></i>
-                        <input type="date" value="2024-01-31">
-                    </div>
-                </div>
             </div>
 
             <div class="stats-grid">
                 <div class="stat-card">
                     <span class="stat-label">Total Revenue</span>
-                    <span class="stat-value">$91,000</span>
+                    <span class="stat-value">
+                        <c:choose>
+                            <c:when test="${not empty totalRevenue}">
+                                $<fmt:formatNumber value="${totalRevenue}" type="number" minFractionDigits="2" maxFractionDigits="2" groupingUsed="true"/>
+                            </c:when>
+                            <c:otherwise>$0.00</c:otherwise>
+                        </c:choose>
+                    </span>
                     <span class="stat-sub success"><i class="ri-arrow-up-s-line"></i>+12.5%</span>
                 </div>
                 <div class="stat-card">
                     <span class="stat-label">Total Appointments</span>
-                    <span class="stat-value">624</span>
-                    <span class="stat-sub"><i class="ri-check-line"></i><a href="#">94.2% completed</a></span>
+                    <span class="stat-value">
+                        <c:choose>
+                            <c:when test="${not empty totalAppointments}">
+                                <fmt:formatNumber value="${totalAppointments}" type="number" groupingUsed="true"/>
+                            </c:when>
+                            <c:otherwise>0</c:otherwise>
+                        </c:choose>
+                    </span>
+                    <span class="stat-sub">
+                        <i class="ri-check-line"></i>
+                        <a href="#">
+                            <c:choose>
+                                <c:when test="${not empty completionRate}">
+                                    <fmt:formatNumber value="${completionRate}" type="number" minFractionDigits="1" maxFractionDigits="1"/>% completed
+                                </c:when>
+                                <c:otherwise>0% completed</c:otherwise>
+                            </c:choose>
+                        </a>
+                    </span>
                 </div>
                 <div class="stat-card">
                     <span class="stat-label">Avg Transaction</span>
@@ -386,6 +468,10 @@
                             <div class="chart-wrapper">
                                 <canvas id="revenueTrendChart"></canvas>
                             </div>
+                            <!-- Hidden data container for daily revenue data (Monthly Revenue Trend) -->
+                            <!-- Trục x: các ngày trong tháng (1, 2, 3, ..., 31) -->
+                            <!-- Trục y: doanh thu (total_amount từ appointments COMPLETED) -->
+                            <div id="revenueDataContainer" style="display:none;" data-revenue='<c:choose><c:when test="${not empty initialDailyRevenue}">[<c:forEach var="day" items="${initialDailyRevenue}" varStatus="status">{"day":<c:out value="${day.day}"/>,"revenue":<c:choose><c:when test="${day.revenue != null}"><fmt:formatNumber value="${day.revenue}" type="number" minFractionDigits="2" maxFractionDigits="2" groupingUsed="false"/></c:when><c:otherwise>0</c:otherwise></c:choose>}<c:if test="${!status.last}">,</c:if></c:forEach>]</c:when><c:otherwise>[]</c:otherwise></c:choose>'></div>
                         </div>
 
                         <div class="card">
@@ -401,11 +487,11 @@
                         </div>
                     </div>
 
-                    <div class="card table-card">
+                    <!-- Detailed Financial Report - Tạm thời ẩn -->
+                    <div class="card table-card" style="display: none;">
                         <div class="card-header">
                             <h2>Detailed Financial Report</h2>
                             <div class="table-actions">
-                                <button class="action-btn primary" type="button" id="generateReportBtn"><i class="ri-bar-chart-2-line"></i>Generate Report</button>
                                 <button class="action-btn secondary" type="button" id="printReportBtn"><i class="ri-printer-line"></i>Print</button>
                             </div>
                         </div>
@@ -419,42 +505,53 @@
                                 <th>Growth</th>
                             </tr>
                             </thead>
-                            <tbody>
-                            <tr>
-                                <td>Dog Grooming</td>
-                                <td>35</td>
-                                <td>$8,750</td>
-                                <td>$250.00</td>
-                                <td><span class="growth up"><i class="ri-arrow-up-s-line"></i>+18%</span></td>
+                            <tbody id="financialReportTableBody">
+                            <!-- Debug: serviceRevenue = ${serviceRevenue}, length = ${fn:length(serviceRevenue)} -->
+                            <c:choose>
+                                <c:when test="${not empty serviceRevenue}">
+                                    <c:forEach var="service" items="${serviceRevenue}">
+                                        <c:set var="serviceName" value="${service.name}"/>
+                                        <c:set var="bookings" value="${service.bookings}"/>
+                                        <c:set var="revenue" value="${service.revenue}"/>
+                                        <c:set var="avgPrice" value="${service.avgPrice}"/>
+                                        <c:set var="growth" value="${service.growth}"/>
+                                        <tr>
+                                            <td><c:out value="${serviceName}"/></td>
+                                            <td><fmt:formatNumber value="${bookings}" type="number" groupingUsed="true"/></td>
+                                            <td>$<fmt:formatNumber value="${revenue}" type="number" minFractionDigits="2" maxFractionDigits="2" groupingUsed="true"/></td>
+                                            <td>$<fmt:formatNumber value="${avgPrice}" type="number" minFractionDigits="2" maxFractionDigits="2" groupingUsed="true"/></td>
+                                            <td>
+                                                <c:choose>
+                                                    <c:when test="${not empty growth and growth != '0%'}">
+                                                        <c:set var="growthValue" value="${fn:replace(growth, '%', '')}"/>
+                                                        <c:choose>
+                                                            <c:when test="${growthValue > 0}">
+                                                                <span class="growth up"><i class="ri-arrow-up-s-line"></i><c:out value="${growth}"/></span>
+                                                            </c:when>
+                                                            <c:when test="${growthValue < 0}">
+                                                                <span class="growth down"><i class="ri-arrow-down-s-line"></i><c:out value="${growth}"/></span>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <span class="growth flat"><i class="ri-subtract-line"></i><c:out value="${growth}"/></span>
+                                                            </c:otherwise>
+                                                        </c:choose>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <span class="growth flat"><i class="ri-subtract-line"></i>0%</span>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </td>
                             </tr>
-                            <tr>
-                                <td>Cat Grooming</td>
-                                <td>25</td>
-                                <td>$5,500</td>
-                                <td>$220.00</td>
-                                <td><span class="growth up"><i class="ri-arrow-up-s-line"></i>+12%</span></td>
+                                    </c:forEach>
+                                </c:when>
+                                <c:otherwise>
+                                    <tr>
+                                        <td colspan="5" style="text-align:center;color:var(--muted);padding:20px;">
+                                            No financial data available for the selected date range
+                                        </td>
                             </tr>
-                            <tr>
-                                <td>Health Checkup</td>
-                                <td>20</td>
-                                <td>$6,300</td>
-                                <td>$315.00</td>
-                                <td><span class="growth flat"><i class="ri-subtract-line"></i>0%</span></td>
-                            </tr>
-                            <tr>
-                                <td>Vaccination</td>
-                                <td>15</td>
-                                <td>$4,800</td>
-                                <td>$320.00</td>
-                                <td><span class="growth down"><i class="ri-arrow-down-s-line"></i>-6%</span></td>
-                            </tr>
-                            <tr>
-                                <td>Training</td>
-                                <td>5</td>
-                                <td>$1,200</td>
-                                <td>$240.00</td>
-                                <td><span class="growth down"><i class="ri-arrow-down-s-line"></i>-7%</span></td>
-                            </tr>
+                                </c:otherwise>
+                            </c:choose>
                             </tbody>
                         </table>
                     </div>
@@ -462,7 +559,7 @@
 
                 <div class="reports-panel" data-panel="operational">
                     <div class="chart-grid">
-                        <div class="card">
+                        <div class="card" style="grid-column: 1 / -1;">
                             <div class="card-header">
                                 <h2>Service Volume Trends</h2>
                                 <span class="chip"><i class="ri-download-2-line"></i>Export</span>
@@ -470,8 +567,11 @@
                             <div class="chart-wrapper">
                                 <canvas id="serviceVolumeChart"></canvas>
                             </div>
+                            <!-- Hidden data container for service volume data -->
+                            <div id="serviceVolumeDataContainer" style="display:none;" data-volume='<c:choose><c:when test="${not empty initialServiceVolume}">[<c:forEach var="month" items="${initialServiceVolume}" varStatus="status">{"month":"<c:out value="${month.month}" escapeXml="true"/>","completed":<c:out value="${month.completed}"/>}<c:if test="${!status.last}">,</c:if></c:forEach>]</c:when><c:otherwise>[]</c:otherwise></c:choose>'></div>
                         </div>
-                        <div class="card">
+                        <!-- Customer Acquisition - Tạm thời ẩn -->
+                        <div class="card" style="display: none;">
                             <div class="card-header">
                                 <h2>Customer Acquisition</h2>
                                 <span class="chip"><i class="ri-download-2-line"></i>Export</span>
@@ -509,6 +609,75 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="card staff-card">
+                        <div class="card-header">
+                            <h2>Staff Performance</h2>
+                            <p>Highlights from the team</p>
+                        </div>
+                        <ul class="staff-list">
+                            <c:choose>
+                                <c:when test="${not empty staffPerformance}">
+                                    <c:forEach var="staff" items="${staffPerformance}">
+                                        <c:set var="fullName" value="${staff.fullName}"/>
+                                        <c:set var="specialization" value="${staff.specialization}"/>
+                                        <c:set var="completedCount" value="${staff.completedCount}"/>
+                                        <c:set var="totalRevenue" value="${staff.totalRevenue}"/>
+                                        
+                                        <%-- Generate avatar initials from full name --%>
+                                        <c:set var="nameParts" value="${fn:split(fullName, ' ')}"/>
+                                        <c:set var="initials" value=""/>
+                                        <c:choose>
+                                            <c:when test="${fn:length(nameParts) >= 2}">
+                                                <c:set var="initials" value="${fn:substring(nameParts[0], 0, 1)}${fn:substring(nameParts[fn:length(nameParts)-1], 0, 1)}"/>
+                                            </c:when>
+                                            <c:when test="${fn:length(nameParts) == 1}">
+                                                <c:set var="initials" value="${fn:substring(nameParts[0], 0, 1)}"/>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <c:set var="initials" value="ST"/>
+                                            </c:otherwise>
+                                        </c:choose>
+                                        
+                                        <li>
+                                            <div class="staff-info">
+                                                <div class="staff-avatar">${fn:toUpperCase(initials)}</div>
+                                                <div>
+                                                    <strong><c:out value="${fullName}"/></strong>
+                                                    <span>
+                                                        <c:out value="${empty specialization ? 'Staff' : specialization}"/>
+                                                        &middot; 
+                                                        <fmt:formatNumber value="${completedCount}" type="number"/>
+                                                        <c:choose>
+                                                            <c:when test="${completedCount == 1}"> appointment</c:when>
+                                                            <c:otherwise> appointments</c:otherwise>
+                                                        </c:choose>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="staff-meta">
+                                                <span class="amount">$<fmt:formatNumber value="${totalRevenue}" type="number" minFractionDigits="2" maxFractionDigits="2" groupingUsed="true"/></span>
+                                            </div>
+                                        </li>
+                                    </c:forEach>
+                                </c:when>
+                                <c:otherwise>
+                                    <li>
+                                        <div class="staff-info">
+                                            <div class="staff-avatar">--</div>
+                                            <div>
+                                                <strong>No staff performance data</strong>
+                                                <span>No completed appointments found</span>
+                                            </div>
+                                        </div>
+                                        <div class="staff-meta">
+                                            <span class="amount">$0.00</span>
+                                        </div>
+                                    </li>
+                                </c:otherwise>
+                            </c:choose>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -518,21 +687,22 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Date range inputs
-        const startDateInput = document.querySelectorAll('.date-field input')[0];
-        const endDateInput = document.querySelectorAll('.date-field input')[1];
+        // Date range inputs - kiểm tra null/undefined để tránh lỗi
+        const dateFieldInputs = document.querySelectorAll('.date-field input');
+        const startDateInput = dateFieldInputs.length > 0 ? dateFieldInputs[0] : null;
+        const endDateInput = dateFieldInputs.length > 1 ? dateFieldInputs[1] : null;
         
         // Generate Report button
         const generateReportBtn = document.getElementById('generateReportBtn');
         
-        // Set default dates if not set
-        if (startDateInput && startDateInput.value === '' || !startDateInput.value) {
+        // Set default dates if not set (chỉ khi input tồn tại)
+        if (startDateInput && (startDateInput.value === '' || !startDateInput.value)) {
             const startDate = new Date();
             startDate.setMonth(startDate.getMonth() - 1);
             startDateInput.value = startDate.toISOString().split('T')[0];
         }
         
-        if (endDateInput && endDateInput.value === '' || !endDateInput.value) {
+        if (endDateInput && (endDateInput.value === '' || !endDateInput.value)) {
             const endDate = new Date();
             endDateInput.value = endDate.toISOString().split('T')[0];
         }
@@ -540,8 +710,8 @@
                  // Generate report handler
          if (generateReportBtn) {
              generateReportBtn.addEventListener('click', async () => {
-                 const startDate = startDateInput.value;
-                 const endDate = endDateInput.value;
+                 const startDate = startDateInput ? startDateInput.value : '';
+                 const endDate = endDateInput ? endDateInput.value : '';
                  
                  if (!startDate || !endDate) {
                      alert('Please select date range');
@@ -638,7 +808,7 @@
         
         // Function to load stats when page loads
         function loadStatsOnLoad() {
-            if (startDateInput.value && endDateInput.value) {
+            if (startDateInput && endDateInput && startDateInput.value && endDateInput.value) {
                 setTimeout(() => {
                     if (generateReportBtn) {
                         generateReportBtn.click();
@@ -660,18 +830,152 @@
         const createChart = (id, config) => {
             const canvas = document.getElementById(id);
             if (!canvas) {
+                console.error('Canvas element not found:', id);
                 return null;
             }
-            return new Chart(canvas, config);
+            
+            // Destroy existing chart if exists
+            const existingChart = Chart.getChart(canvas);
+            if (existingChart) {
+                existingChart.destroy();
+            }
+            
+            try {
+                const chart = new Chart(canvas, config);
+                console.log('Chart created successfully:', id);
+                return chart;
+            } catch (e) {
+                console.error('Error creating chart:', id, e);
+                return null;
+            }
         };
 
-        createChart('revenueTrendChart', {
+        // Revenue Trends Chart - Data from appointments.total_amount (COMPLETED status only)
+        // Dữ liệu được lấy từ bảng appointments, cột total_amount, chỉ tính các appointments đã hoàn thành
+        
+        // Initialize revenue data from backend (appointments with COMPLETED status)
+        // Lấy dữ liệu từ data attribute
+        var initialRevenueData = [];
+        try {
+            var revenueDataContainer = document.getElementById('revenueDataContainer');
+            if (revenueDataContainer) {
+                var revenueDataJson = revenueDataContainer.getAttribute('data-revenue');
+                console.log('Raw revenue data JSON:', revenueDataJson);
+                if (revenueDataJson) {
+                    initialRevenueData = JSON.parse(revenueDataJson);
+                }
+            }
+        } catch (e) {
+            console.error('Error parsing revenue data:', e);
+            initialRevenueData = [];
+        }
+        
+        console.log('Initial Revenue Data from appointments (COMPLETED):', initialRevenueData);
+        console.log('Data length:', initialRevenueData.length);
+        
+        // Create chart with data from appointments (COMPLETED status only)
+        const revenueChartCanvas = document.getElementById('revenueTrendChart');
+        if (!revenueChartCanvas) {
+            console.error('Revenue chart canvas not found!');
+        } else {
+            console.log('Revenue chart canvas found, creating chart...');
+        }
+        
+        // Luôn tạo chart, dù có dữ liệu hay không
+        // Monthly Revenue Trend: Trục x là các ngày trong tháng, Trục y là doanh thu
+        if (initialRevenueData && initialRevenueData.length > 0) {
+            console.log('Initial Daily Revenue Data from appointments (COMPLETED):', initialRevenueData);
+            
+            // Trục x: các ngày trong tháng (1, 2, 3, ..., 31)
+            const revenueLabels = initialRevenueData.map(d => String(d.day));
+            // Trục y: doanh thu
+            const revenueData = initialRevenueData.map(d => {
+                const val = parseFloat(d.revenue);
+                return isNaN(val) ? 0 : val;
+            });
+            
+            console.log('Chart Labels (Days):', revenueLabels);
+            console.log('Chart Data (Revenue):', revenueData);
+            
+            if (revenueLabels.length === 0 || revenueData.length === 0) {
+                console.error('Labels or data is empty!');
+            }
+            
+            if (revenueLabels.length !== revenueData.length) {
+                console.error('Labels and data length mismatch!', revenueLabels.length, 'vs', revenueData.length);
+            }
+            
+            // Tạo chart với dữ liệu thực
+            const chart = createChart('revenueTrendChart', {
             type: 'line',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    labels: revenueLabels,
                 datasets: [{
-                    label: 'Revenue',
-                    data: [15500, 17800, 16900, 19000, 21000, 22400],
+                        label: 'Daily Revenue (from appointments.total_amount)',
+                        data: revenueData,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37,99,235,0.18)',
+                        borderWidth: 3,
+                        tension: 0.38,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#2563eb'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { 
+                            mode: 'index', 
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Revenue: $' + context.parsed.y.toLocaleString('en-US', {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    });
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#6b7280' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(148,163,184,0.25)', borderDash: [6, 6] },
+                            ticks: { 
+                                color: '#6b7280',
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString('en-US');
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            if (!chart) {
+                console.error('Failed to create revenue chart with data!');
+            }
+        } else {
+            // Fallback: Hiển thị chart rỗng nếu không có dữ liệu
+            console.warn('No revenue data available from appointments. Data:', initialRevenueData);
+            console.warn('Data length:', initialRevenueData ? initialRevenueData.length : 'null');
+            
+            // Tạo chart với dữ liệu rỗng - các ngày trong tháng (1-31)
+            const emptyDays = Array.from({length: 31}, (_, i) => String(i + 1));
+            const chart = createChart('revenueTrendChart', {
+                type: 'line',
+                data: {
+                    labels: emptyDays,
+                    datasets: [{
+                        label: 'Daily Revenue',
+                        data: Array(31).fill(0),
                     borderColor: '#2563eb',
                     backgroundColor: 'rgba(37,99,235,0.18)',
                     borderWidth: 3,
@@ -694,7 +998,7 @@
                         ticks: { color: '#6b7280' }
                     },
                     y: {
-                        beginAtZero: false,
+                            beginAtZero: true,
                         grid: { color: 'rgba(148,163,184,0.25)', borderDash: [6, 6] },
                         ticks: { color: '#6b7280' }
                     }
@@ -702,7 +1006,21 @@
             }
         });
 
-        createChart('servicePieChart', {
+            if (!chart) {
+                console.error('Failed to create empty revenue chart!');
+            }
+        }
+        
+        // Đảm bảo servicePieChart được tạo
+        const servicePieCanvas = document.getElementById('servicePieChart');
+        if (!servicePieCanvas) {
+            console.error('Service pie chart canvas not found!');
+        } else {
+            console.log('Service pie chart canvas found');
+        }
+
+        // Tạo service pie chart
+        const servicePieChart = createChart('servicePieChart', {
             type: 'doughnut',
             data: {
                 labels: ['Dog Grooming 35%', 'Cat Grooming 25%', 'Health Checkup 20%', 'Vaccination 15%', 'Training 5%'],
@@ -726,14 +1044,44 @@
                 }
             }
         });
+        
+        if (!servicePieChart) {
+            console.error('Failed to create service pie chart!');
+        } else {
+            console.log('Service pie chart created successfully!');
+        }
+
+        // Load service volume data from hidden container
+        const serviceVolumeContainer = document.getElementById('serviceVolumeDataContainer');
+        let initialServiceVolume = [];
+        if (serviceVolumeContainer) {
+            try {
+                const volumeDataAttr = serviceVolumeContainer.getAttribute('data-volume');
+                if (volumeDataAttr) {
+                    initialServiceVolume = JSON.parse(volumeDataAttr);
+                    console.log('Service Volume Data from appointments (COMPLETED):', initialServiceVolume);
+                }
+            } catch (e) {
+                console.error('Error parsing service volume data:', e);
+                initialServiceVolume = [];
+            }
+        }
+
+        // Tạo service volume chart với dữ liệu từ database
+        if (initialServiceVolume && initialServiceVolume.length > 0) {
+            const labels = initialServiceVolume.map(m => m.month || 'Unknown');
+            const data = initialServiceVolume.map(m => parseInt(m.completed) || 0);
+            
+            console.log('Service Volume Chart Labels:', labels);
+            console.log('Service Volume Chart Data:', data);
 
         createChart('serviceVolumeChart', {
             type: 'bar',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    labels: labels,
                 datasets: [{
                     label: 'Completed Services',
-                    data: [84, 88, 92, 104, 116, 128],
+                        data: data,
                     backgroundColor: '#2563eb',
                     borderRadius: 12,
                     barThickness: 30
@@ -758,54 +1106,93 @@
                 }
             }
         });
+        }
 
-                 createChart('customerAcquisitionChart', {
-             type: 'bar',
-             data: {
-                 labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                 datasets: [
-                     {
-                         label: 'New Customers',
-                         data: [24, 28, 34, 38, 42, 47],
-                         backgroundColor: '#2563eb',
-                         borderRadius: 12,
-                         barThickness: 24
-                     },
-                     {
-                         label: 'Returning Customers',
-                         data: [18, 20, 24, 29, 33, 38],
-                         backgroundColor: '#22c55e',
-                         borderRadius: 12,
-                         barThickness: 24
-                     }
-                 ]
-             },
-             options: {
-                 responsive: true,
-                 maintainAspectRatio: false,
-                 plugins: {
-                     legend: {
-                         display: true,
-                         position: 'bottom',
-                         labels: {
-                             usePointStyle: true,
-                             padding: 20
-                         }
-                     }
-                 },
-                 scales: {
-                     x: {
-                         grid: { display: false },
-                         ticks: { color: '#6b7280' }
-                     },
-                     y: {
-                         beginAtZero: true,
-                         grid: { color: 'rgba(148,163,184,0.25)', borderDash: [6, 6] },
-                         ticks: { color: '#6b7280' }
-                     }
-                 }
-             }
-         });
+        // Customer Acquisition Chart (đã ẩn, giữ lại code)
+        createChart('customerAcquisitionChart', {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [
+                    {
+                        label: 'New Customers',
+                        data: [24, 28, 34, 38, 42, 47],
+                        backgroundColor: '#2563eb',
+                        borderRadius: 12,
+                        barThickness: 24
+                    },
+                    {
+                        label: 'Returning Customers',
+                        data: [18, 20, 24, 29, 33, 38],
+                        backgroundColor: '#22c55e',
+                        borderRadius: 12,
+                        barThickness: 24
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#6b7280' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(148,163,184,0.25)', borderDash: [6, 6] },
+                        ticks: { color: '#6b7280' }
+                    }
+                }
+            }
+        });
+
+        // Fallback cho service volume chart nếu không có dữ liệu (12 tháng)
+        if (!initialServiceVolume || initialServiceVolume.length === 0) {
+            // Fallback: Tạo chart rỗng nếu không có dữ liệu
+            console.warn('No service volume data available. Creating empty chart.');
+            createChart('serviceVolumeChart', {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Completed Services',
+                        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        backgroundColor: '#2563eb',
+                        borderRadius: 12,
+                        barThickness: 30
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#6b7280' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(148,163,184,0.25)', borderDash: [6, 6] },
+                            ticks: { color: '#6b7280' }
+                        }
+                    }
+                }
+            });
+        }
          
          // ===== Export PDF/Excel Chip Buttons =====
          const pdfChips = document.querySelectorAll('.chip');
@@ -820,86 +1207,124 @@
                      exportToExcel(); // Default export
                  }
              });
-         });
+        });
+        
+        // Export to PDF function
+        function exportToPDF() {
+            const startDate = document.getElementById('startDate')?.value || '';
+            const endDate = document.getElementById('endDate')?.value || '';
+            
+            let url = '<%= request.getContextPath() %>/admin/reports/export?format=pdf';
+            if (startDate) url += '&startDate=' + encodeURIComponent(startDate);
+            if (endDate) url += '&endDate=' + encodeURIComponent(endDate);
+            
+            window.open(url, '_blank');
+        }
+        
+        // Export to Excel function
+        function exportToExcel() {
+            const startDate = document.getElementById('startDate')?.value || '';
+            const endDate = document.getElementById('endDate')?.value || '';
+            
+            let url = '<%= request.getContextPath() %>/admin/reports/export?format=excel';
+            if (startDate) url += '&startDate=' + encodeURIComponent(startDate);
+            if (endDate) url += '&endDate=' + encodeURIComponent(endDate);
+            
+            window.open(url, '_blank');
+        }
          
-                   // Export to PDF function
-          function exportToPDF() {
-              const startDate = document.getElementById('startDate')?.value || '';
-              const endDate = document.getElementById('endDate')?.value || '';
-              
-              let url = '<%= request.getContextPath() %>/admin/reports/export?format=pdf';
-              if (startDate) url += '&startDate=' + encodeURIComponent(startDate);
-              if (endDate) url += '&endDate=' + encodeURIComponent(endDate);
-              
-              window.open(url, '_blank');
-          }
-          
-          // Export to Excel function
-          function exportToExcel() {
-              const startDate = document.getElementById('startDate')?.value || '';
-              const endDate = document.getElementById('endDate')?.value || '';
-              
-              let url = '<%= request.getContextPath() %>/admin/reports/export?format=excel';
-              if (startDate) url += '&startDate=' + encodeURIComponent(startDate);
-              if (endDate) url += '&endDate=' + encodeURIComponent(endDate);
-              
-              window.open(url, '_blank');
-          }
+        // Function to update financial charts
+        function updateFinancialCharts(financialData) {
+            // Update revenue trend chart - Data from appointments.total_amount (COMPLETED status only)
+            const revenueChart = Chart.getChart('revenueTrendChart');
+            if (revenueChart && financialData.monthlyRevenue) {
+                console.log('Updating revenue chart with data from appointments (COMPLETED):', financialData.monthlyRevenue);
+                const labels = financialData.monthlyRevenue.map(m => m.month);
+                const data = financialData.monthlyRevenue.map(m => parseFloat(m.revenue) || 0);
+                
+                revenueChart.data.labels = labels;
+                revenueChart.data.datasets[0].data = data;
+                revenueChart.update();
+            }
+            
+            // Update service pie chart
+            const pieChart = Chart.getChart('servicePieChart');
+            if (pieChart && financialData.serviceRevenue) {
+                const labels = financialData.serviceRevenue.map(s => s.name + ' ' + s.percentage + '%');
+                const data = financialData.serviceRevenue.map(s => s.percentage);
+                const colors = ['#2563eb', '#22c55e', '#f59e0b', '#f97316', '#a855f7'];
+                
+                pieChart.data.labels = labels;
+                pieChart.data.datasets[0].data = data;
+                pieChart.data.datasets[0].backgroundColor = colors.slice(0, data.length);
+                pieChart.update();
+            }
+            
+            // Update Detailed Financial Report table
+            const tableBody = document.getElementById('financialReportTableBody');
+            if (tableBody && financialData.serviceRevenue) {
+                let html = '';
+                if (financialData.serviceRevenue.length > 0) {
+                    financialData.serviceRevenue.forEach(function(service) {
+                        const revenue = parseFloat(service.revenue) || 0;
+                        const avgPrice = parseFloat(service.avgPrice) || 0;
+                        const growth = service.growth || '0%';
+                        const growthValue = parseFloat(growth.replace('%', '')) || 0;
+                        
+                        let growthClass = 'flat';
+                        let growthIcon = 'ri-subtract-line';
+                        if (growthValue > 0) {
+                            growthClass = 'up';
+                            growthIcon = 'ri-arrow-up-s-line';
+                        } else if (growthValue < 0) {
+                            growthClass = 'down';
+                            growthIcon = 'ri-arrow-down-s-line';
+                        }
+                        
+                        html += '<tr>' +
+                            '<td>' + (service.name || 'Unknown') + '</td>' +
+                            '<td>' + (service.bookings || 0).toLocaleString() + '</td>' +
+                            '<td>$' + revenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</td>' +
+                            '<td>$' + avgPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</td>' +
+                            '<td><span class="growth ' + growthClass + '"><i class="' + growthIcon + '"></i>' + growth + '</span></td>' +
+                            '</tr>';
+                    });
+                } else {
+                    html = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px;">No financial data available for the selected date range</td></tr>';
+                }
+                tableBody.innerHTML = html;
+            }
+        }
          
-         // Function to update financial charts
-         function updateFinancialCharts(financialData) {
-             // Update revenue trend chart
-             const revenueChart = Chart.getChart('revenueTrendChart');
-             if (revenueChart && financialData.monthlyRevenue) {
-                 const labels = financialData.monthlyRevenue.map(m => m.month);
-                 const data = financialData.monthlyRevenue.map(m => m.revenue);
-                 
-                 revenueChart.data.labels = labels;
-                 revenueChart.data.datasets[0].data = data;
-                 revenueChart.update();
-             }
-             
-             // Update service pie chart
-             const pieChart = Chart.getChart('servicePieChart');
-             if (pieChart && financialData.serviceRevenue) {
-                 const labels = financialData.serviceRevenue.map(s => s.name + ' ' + s.percentage + '%');
-                 const data = financialData.serviceRevenue.map(s => s.percentage);
-                 const colors = ['#2563eb', '#22c55e', '#f59e0b', '#f97316', '#a855f7'];
-                 
-                 pieChart.data.labels = labels;
-                 pieChart.data.datasets[0].data = data;
-                 pieChart.data.datasets[0].backgroundColor = colors.slice(0, data.length);
-                 pieChart.update();
-             }
-         }
-         
-         // Function to update operational charts
-         function updateOperationalCharts(operationalData) {
-             // Update service volume chart
-             const serviceVolumeChart = Chart.getChart('serviceVolumeChart');
-             if (serviceVolumeChart && operationalData.serviceVolume) {
-                 const labels = operationalData.serviceVolume.map(s => s.month);
-                 const data = operationalData.serviceVolume.map(s => s.completed);
-                 
-                 serviceVolumeChart.data.labels = labels;
-                 serviceVolumeChart.data.datasets[0].data = data;
-                 serviceVolumeChart.update();
-             }
-             
-             // Update customer acquisition chart
-             const customerChart = Chart.getChart('customerAcquisitionChart');
-             if (customerChart && operationalData.customerAcquisition) {
-                 const labels = operationalData.customerAcquisition.map(c => c.month);
-                 const newCustomers = operationalData.customerAcquisition.map(c => c.newCustomers);
-                 const returningCustomers = operationalData.customerAcquisition.map(c => c.returningCustomers);
-                 
-                 customerChart.data.labels = labels;
-                 customerChart.data.datasets[0].data = newCustomers;
-                 customerChart.data.datasets[1].data = returningCustomers;
-                 customerChart.update();
-             }
-         }
-     });
+        // Function to update operational charts
+        function updateOperationalCharts(operationalData) {
+            // Update service volume chart
+            const serviceVolumeChart = Chart.getChart('serviceVolumeChart');
+            if (serviceVolumeChart && operationalData.serviceVolume) {
+                const labels = operationalData.serviceVolume.map(s => s.month);
+                const data = operationalData.serviceVolume.map(s => s.completed);
+                
+                serviceVolumeChart.data.labels = labels;
+                serviceVolumeChart.data.datasets[0].data = data;
+                serviceVolumeChart.update();
+            }
+            
+            // Update customer acquisition chart
+            const customerChart = Chart.getChart('customerAcquisitionChart');
+            if (customerChart && operationalData.customerAcquisition) {
+                const labels = operationalData.customerAcquisition.map(c => c.month);
+                const newCustomers = operationalData.customerAcquisition.map(c => c.newCustomers);
+                const returningCustomers = operationalData.customerAcquisition.map(c => c.returningCustomers);
+                
+                customerChart.data.labels = labels;
+                customerChart.data.datasets[0].data = newCustomers;
+                customerChart.data.datasets[1].data = returningCustomers;
+                customerChart.update();
+            }
+        }
+    });
  </script>
 <jsp:include page="../inc/chatbox.jsp" />
 <jsp:include page="../inc/footer.jsp" />
+
+

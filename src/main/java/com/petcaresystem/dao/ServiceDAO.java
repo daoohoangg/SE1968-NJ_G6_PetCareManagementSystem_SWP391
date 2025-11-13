@@ -105,6 +105,36 @@ public class ServiceDAO {
         }
     }
 
+    /**
+     * Kiểm tra tên service có trùng với service khác không (case-insensitive)
+     * @param serviceName Tên service cần kiểm tra
+     * @param excludeServiceId ID của service cần loại trừ (khi update, null khi create)
+     * @return true nếu tên đã tồn tại, false nếu không trùng
+     */
+    public boolean isServiceNameExists(String serviceName, Integer excludeServiceId) {
+        if (serviceName == null || serviceName.trim().isEmpty()) {
+            return false;
+        }
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "SELECT COUNT(s) FROM Service s WHERE LOWER(TRIM(s.serviceName)) = LOWER(TRIM(:name))";
+            if (excludeServiceId != null && excludeServiceId > 0) {
+                hql += " AND s.serviceId != :excludeId";
+            }
+            
+            Query<Long> query = session.createQuery(hql, Long.class);
+            query.setParameter("name", serviceName.trim());
+            if (excludeServiceId != null && excludeServiceId > 0) {
+                query.setParameter("excludeId", excludeServiceId);
+            }
+            
+            Long count = query.uniqueResult();
+            return count != null && count > 0;
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error checking service name existence", e);
+            return false;
+        }
+    }
+
     /** Tạo service */
     public boolean createService(Service service) {
         Transaction tx = null;

@@ -228,6 +228,13 @@ public class ServiceController extends HttpServlet {
         Integer categoryId= parseInt(req.getParameter("categoryId"));
         boolean isActive  = parseActiveFlag(req);
 
+        // Kiểm tra tên service không được trùng
+        if (name != null && serviceManageService.isServiceNameExists(name, null)) {
+            flash(req, "error", "Service name already exists. Please choose a different name.");
+            resp.sendRedirect(req.getContextPath() + "/admin/service?action=list");
+            return;
+        }
+
         boolean ok = serviceManageService.createService(
                 name, desc, price, duration, categoryId, isActive
         );
@@ -251,6 +258,13 @@ public class ServiceController extends HttpServlet {
         Integer duration  = parseInt(req.getParameter("durationMinutes"));
         Integer categoryId= parseInt(req.getParameter("categoryId"));
         boolean isActive  = parseActiveFlag(req);
+
+        // Kiểm tra tên service không được trùng với service khác (trừ chính nó)
+        if (name != null && serviceManageService.isServiceNameExists(name, serviceId)) {
+            flash(req, "error", "Service name already exists. Please choose a different name.");
+            resp.sendRedirect(req.getContextPath() + "/admin/service?action=list");
+            return;
+        }
 
         boolean ok = serviceManageService.updateService(
                 serviceId, name, desc, price, duration, categoryId, isActive

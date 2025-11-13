@@ -610,6 +610,7 @@
                             <c:choose>
                                 <c:when test="${acc.role eq 'ADMIN'}"><span class="role-pill role-admin">Admin</span></c:when>
                                 <c:when test="${acc.role eq 'STAFF'}"><span class="role-pill role-staff">Staff</span></c:when>
+                                <c:when test="${acc.role eq 'RECEPTIONIST'}"><span class="role-pill role-staff">Receptionist</span></c:when>
                                 <c:otherwise><span class="role-pill role-customer">Customer</span></c:otherwise>
                             </c:choose>
                         </td>
@@ -834,14 +835,14 @@
                     <label for="addPhone">Phone</label>
                     <input id="addPhone" name="phone" type="tel" placeholder="+1 (555) 000-0000" />
                 </div>
-                <div class="modal-field">
-                    <label for="addRole">Role</label>
-                    <select id="addRole" name="role">
-                        <option value="CUSTOMER">Customer</option>
-                        <option value="STAFF">Staff</option>
-                        <option value="ADMIN">Admin</option>
-                    </select>
-                </div>
+<%--                <div class="modal-field">--%>
+<%--                    <label for="addRole">Role</label>--%>
+<%--                    <select id="addRole" name="role">--%>
+<%--                        <option value="CUSTOMER">Customer</option>--%>
+<%--                        <option value="STAFF">Staff</option>--%>
+<%--                        <option value="ADMIN">Admin</option>--%>
+<%--                    </select>--%>
+<%--                </div>--%>
                 <div class="modal-field">
                     <label for="addPassword">Password</label>
                     <input id="addPassword" name="password" type="password" placeholder="••••••••" required />
@@ -884,14 +885,14 @@
                     <label for="editPhone">Phone</label>
                     <input id="editPhone" name="phone" type="tel" />
                 </div>
-                <div class="modal-field">
-                    <label for="editRole">Role</label>
-                    <select id="editRole" name="role">
-                        <option value="CUSTOMER">Customer</option>
-                        <option value="STAFF">Staff</option>
-                        <option value="ADMIN">Admin</option>
-                    </select>
-                </div>
+<%--                <div class="modal-field">--%>
+<%--                    <label for="editRole">Role</label>--%>
+<%--                    <select id="editRole" name="role">--%>
+<%--                        <option value="CUSTOMER">Customer</option>--%>
+<%--                        <option value="STAFF">Staff</option>--%>
+<%--                        <option value="ADMIN">Admin</option>--%>
+<%--                    </select>--%>
+<%--                </div>--%>
                 <div class="modal-field">
                     <label for="editPassword">Password (leave blank to keep)</label>
                     <input id="editPassword" name="password" type="password" />

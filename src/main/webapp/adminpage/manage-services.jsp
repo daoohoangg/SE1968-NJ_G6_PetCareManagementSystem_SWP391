@@ -142,8 +142,7 @@
         }
         .modal-card form{background:#fff;}
         .modal-header,
-        .modal-body,
-        .modal-actions{background:#fff;}
+        .modal-body{background:#fff;}
         .modal-header{
             padding:22px 28px 12px;display:flex;justify-content:space-between;align-items:flex-start;
         }
@@ -153,7 +152,7 @@
             border:none;background:transparent;color:#6b7280;font-size:22px;cursor:pointer;
             padding:0;margin:0 0 0 12px;line-height:1;
         }
-        .modal-body{padding:0 28px 28px}
+        .modal-body{padding:0 28px 0}
         .modal-grid{display:grid;gap:14px}
         .modal-field{display:flex;flex-direction:column;gap:6px}
         .modal-field label{font-size:13px;font-weight:600;color:#374151}
@@ -170,12 +169,39 @@
         .modal-field select:focus{
             border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.18);outline:none;
         }
-        .modal-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:22px}
-        .modal-actions button{
-            padding:10px 16px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;
+        .modal-actions{
+            margin-top:22px;
+            padding:16px 28px 28px;
+            border-top:1px solid var(--line);
+            display:flex;
+            justify-content:flex-end;
+            align-items:center;
+            gap:12px;
+            background:#fff;
+            margin-left:-28px;
+            margin-right:-28px;
         }
-        .btn-cancel{background:#f3f4f6;color:#374151}
-        .btn-primary{background:var(--primary);color:#fff;box-shadow:0 1px 0 rgba(0,0,0,.05)}
+        .modal-actions button{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            padding:10px 16px;
+            border-radius:10px;
+            font-size:14px;
+            font-weight:600;
+            cursor:pointer;
+            border:none;
+            white-space:nowrap;
+        }
+        .btn-cancel{
+            background:#f3f4f6;
+            color:#374151;
+        }
+        .btn-primary{
+            background:var(--primary);
+            color:#fff;
+            box-shadow:0 1px 0 rgba(0,0,0,.05);
+        }
         .btn-primary:hover{filter:brightness(.96)}
         body.modal-open{overflow:hidden}
         @keyframes modalShow{
@@ -212,11 +238,39 @@
             transform: translateZ(0);
             will-change: transform;
         }
-        .modal-card, .modal-card *{
-            background-color:#fff !important;       /* mọi nền trong modal phải trắng nét */
+        /* Set background cho modal card và các phần tử con, nhưng không override button */
+        .modal-card{
+            background-color:#fff !important;
+        }
+        .modal-card *{
             opacity: 1 !important;
             filter: none !important;
             mix-blend-mode: normal !important;
+        }
+        /* Đảm bảo nút trong modal-actions hiển thị đúng với màu nền riêng */
+        .modal-actions{
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: flex !important;
+            background: #fff !important;
+        }
+        .modal-actions button,
+        .modal-actions .btn-primary,
+        .modal-actions .btn-cancel{
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: inline-flex !important;
+            background-color: initial !important; /* Reset về giá trị ban đầu */
+        }
+        .modal-actions .btn-primary{
+            background: var(--primary) !important;
+            background-color: var(--primary) !important;
+            color: #fff !important;
+        }
+        .modal-actions .btn-cancel{
+            background: #f3f4f6 !important;
+            background-color: #f3f4f6 !important;
+            color: #374151 !important;
         }
     </style>
 </head>

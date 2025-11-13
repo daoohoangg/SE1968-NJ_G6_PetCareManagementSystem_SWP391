@@ -78,14 +78,15 @@ public class DashboardMetricsService {
 
     public List<RecentActivityView> getRecentActivities(int limit) {
         int effectiveLimit = limit <= 0 ? DEFAULT_ACTIVITY_LIMIT : limit;
-        List<PetServiceHistory> histories = petServiceHistoryDAO.getRecentHistories(effectiveLimit);
-        if (histories == null || histories.isEmpty()) {
+        // Lấy appointments gần nhất thay vì PetServiceHistory
+        List<Appointment> appointments = appointmentDAO.findRecentAppointments(effectiveLimit);
+        if (appointments == null || appointments.isEmpty()) {
             return Collections.emptyList();
         }
 
-        List<RecentActivityView> activities = new ArrayList<>(histories.size());
-        for (PetServiceHistory history : histories) {
-            activities.add(toRecentActivity(history));
+        List<RecentActivityView> activities = new ArrayList<>(appointments.size());
+        for (Appointment appointment : appointments) {
+            activities.add(toRecentActivityFromAppointment(appointment));
         }
         return activities;
     }
@@ -106,6 +107,81 @@ public class DashboardMetricsService {
             items.add(toScheduleItem(appointment));
         }
         return items;
+    }
+
+    /**
+     * Convert Appointment to RecentActivityView for Recent Activities section
+     * Chuyển đổi Appointment thành RecentActivityView để hiển thị trong Recent Activities
+     */
+    private RecentActivityView toRecentActivityFromAppointment(Appointment appointment) {
+        if (appointment == null) {
+            return RecentActivityView.builder()
+                    .icon("ri-calendar-event-line")
+                    .primaryText("Appointment update")
+                    .secondaryText(null)
+                    .badgeClass("in-progress")
+                    .badgeLabel("Pending")
+                    .timeLabel("Date pending")
+                    .urgent(false)
+                    .build();
+        }
+
+        // Lấy thông tin service
+        String serviceName = deriveServiceName(appointment.getServices());
+        String title = !serviceName.isEmpty() ? serviceName : "Appointment";
+
+        // Lấy thông tin pet và customer
+        Pet pet = appointment.getPet();
+        String petName = pet != null ? safeText(pet.getName()) : "";
+        String petSpecies = pet != null ? safeText(pet.getSpecies()) : "";
+        Customer customer = appointment.getCustomer();
+        String ownerName = customer != null ? safeText(customer.getFullName()) : "";
+
+        // Lấy thông tin staff
+        Staff staff = appointment.getStaff();
+        String staffName = staff != null ? safeText(staff.getFullName()) : "";
+
+        // Tạo secondary text
+        StringBuilder secondary = new StringBuilder();
+        if (!ownerName.isEmpty()) {
+            secondary.append(ownerName);
+        }
+        if (!petName.isEmpty()) {
+            if (secondary.length() > 0) {
+                secondary.append(" - ");
+            }
+            secondary.append(petName);
+            if (!petSpecies.isEmpty()) {
+                secondary.append(" (").append(petSpecies).append(")");
+            }
+        }
+        if (!staffName.isEmpty()) {
+            if (secondary.length() > 0) {
+                secondary.append(" · Staff: ").append(staffName);
+            } else {
+                secondary.append("Staff: ").append(staffName);
+            }
+        }
+
+        // Xác định badge và icon dựa trên status
+        AppointmentStatus status = appointment.getStatus();
+        String badgeClass = determineActivityBadgeClassFromStatus(status);
+        String badgeLabel = determineActivityBadgeLabelFromStatus(status);
+        String icon = resolveActivityIconFromAppointment(serviceName, status);
+
+        // Format time
+        LocalDateTime appointmentDate = appointment.getAppointmentDate();
+        String timeLabel = humanizeDateTime(appointmentDate);
+
+        return RecentActivityView.builder()
+                .icon(icon)
+                .primaryText(title)
+                .secondaryText(secondary.length() > 0 ? secondary.toString() : null)
+                .badgeClass(badgeClass)
+                .badgeLabel(badgeLabel)
+                .timeLabel(timeLabel)
+                .urgent(status == AppointmentStatus.CANCELLED || status == AppointmentStatus.NO_SHOW)
+                .build();
     }
 
     private RecentActivityView toRecentActivity(PetServiceHistory history) {
@@ -296,6 +372,107 @@ public class DashboardMetricsService {
         }
     }
 
+    /**
+     * Determine badge class for appointment status in Recent Activities
+     */
+    private String determineActivityBadgeClassFromStatus(AppointmentStatus status) {
+        if (status == null) {
+            return "in-progress";
+        }
+        switch (status) {
+            case IN_PROGRESS:
+            case CHECKED_IN:
+                return "in-progress";
+            case CONFIRMED:
+            case SCHEDULED:
+                return "upcoming";
+            case COMPLETED:
+                return "success";
+            case CANCELLED:
+            case NO_SHOW:
+                return "urgent";
+            default:
+                return "in-progress";
+        }
+    }
+
+    /**
+     * Determine badge label for appointment status in Recent Activities
+     */
+    private String determineActivityBadgeLabelFromStatus(AppointmentStatus status) {
+        if (status == null) {
+            return "Pending";
+        }
+        switch (status) {
+            case IN_PROGRESS:
+                return "In Progress";
+            case CHECKED_IN:
+                return "Checked-in";
+            case CONFIRMED:
+                return "Confirmed";
+            case SCHEDULED:
+                return "Scheduled";
+            case COMPLETED:
+                return "Completed";
+            case CANCELLED:
+                return "Cancelled";
+            case NO_SHOW:
+                return "No Show";
+            default:
+                return "Pending";
+        }
+    }
+
+    /**
+     * Humanize date time for Recent Activities display
+     */
+    private String humanizeDateTime(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return "Date pending";
+        }
+        LocalDateTime now = LocalDateTime.now();
+        LocalDate today = LocalDate.now();
+        LocalDate date = dateTime.toLocalDate();
+        
+        if (date.isEqual(today)) {
+            return "Today · " + dateTime.format(TIME_FORMATTER);
+        }
+        if (date.isEqual(today.plusDays(1))) {
+            return "Tomorrow · " + dateTime.format(TIME_FORMATTER);
+        }
+        if (date.isAfter(today) && date.isBefore(today.plusDays(7))) {
+            return date.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.ENGLISH) +
+                    " · " + dateTime.format(TIME_FORMATTER);
+        }
+        
+        long days = ChronoUnit.DAYS.between(date, today);
+        if (days > 0) {
+            return days == 1 ? "1 day ago" : days + " days ago";
+        }
+        
+        long ahead = Math.abs(days);
+        if (ahead == 1) {
+            return "In 1 day";
+        }
+        return "In " + ahead + " days";
+    }
+
+    /**
+     * Resolve icon for appointment in Recent Activities
+     */
+    private String resolveActivityIconFromAppointment(String serviceName, AppointmentStatus status) {
+        if (status == AppointmentStatus.CANCELLED || status == AppointmentStatus.NO_SHOW) {
+            return "ri-close-circle-line";
+        }
+        if (status == AppointmentStatus.COMPLETED) {
+            return "ri-check-double-line";
+        }
+        if (status == AppointmentStatus.IN_PROGRESS || status == AppointmentStatus.CHECKED_IN) {
+            return "ri-time-line";
+        }
+        return resolveScheduleIcon(serviceName, status);
+    }
+
     private String humanizeDate(LocalDate date) {
         if (date == null) {
             return "Date pending";
@@ -432,30 +609,65 @@ public class DashboardMetricsService {
 
     /**
      * Get revenue trends for the last 6 months from completed appointments
+     * Lấy doanh thu từ cột total_amount trong bảng appointments
+     * Chỉ tính các appointments có status = 'COMPLETED' và total_amount IS NOT NULL
+     * 
      * Returns a list of maps with "month" (String) and "revenue" (Double)
      */
     public List<Map<String, Object>> getRevenueTrendsLast6Months() {
-        List<Map<String, Object>> monthlyRevenue = appointmentDAO.getMonthlyRevenueLast6Months();
-        
-        // Convert BigDecimal to Double for easier use in JSP
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (Map<String, Object> monthData : monthlyRevenue) {
-            Map<String, Object> converted = new HashMap<>();
-            converted.put("month", monthData.get("month"));
+        try {
+            // Lấy dữ liệu từ AppointmentDAO - query từ bảng appointments.total_amount
+            List<Map<String, Object>> monthlyRevenue = appointmentDAO.getMonthlyRevenueLast6Months();
             
-            Object revenueObj = monthData.get("revenue");
-            double revenue = 0.0;
-            if (revenueObj instanceof java.math.BigDecimal) {
-                revenue = ((java.math.BigDecimal) revenueObj).doubleValue();
-            } else if (revenueObj instanceof Number) {
-                revenue = ((Number) revenueObj).doubleValue();
+            // Debug: Log dữ liệu nhận được
+            System.out.println("=== DashboardMetricsService.getRevenueTrendsLast6Months ===");
+            System.out.println("Raw data size: " + monthlyRevenue.size());
+            
+            // Convert BigDecimal to Double for easier use in JSP
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (Map<String, Object> monthData : monthlyRevenue) {
+                Map<String, Object> converted = new HashMap<>();
+                converted.put("month", monthData.get("month"));
+                
+                Object revenueObj = monthData.get("revenue");
+                double revenue = 0.0;
+                if (revenueObj instanceof java.math.BigDecimal) {
+                    revenue = ((java.math.BigDecimal) revenueObj).doubleValue();
+                } else if (revenueObj instanceof Number) {
+                    revenue = ((Number) revenueObj).doubleValue();
+                }
+                converted.put("revenue", revenue);
+                
+                System.out.println("Converted - Month: " + converted.get("month") + ", Revenue: " + revenue);
+                result.add(converted);
             }
-            converted.put("revenue", revenue);
             
-            result.add(converted);
+            System.out.println("Final result size: " + result.size());
+            return result;
+        } catch (Exception e) {
+            System.err.println("ERROR in getRevenueTrendsLast6Months: " + e.getMessage());
+            e.printStackTrace();
+            // Return empty list with 6 months structure để chart vẫn hiển thị
+            return createEmptyRevenueTrends();
         }
+    }
+    
+    /**
+     * Tạo dữ liệu rỗng cho 6 tháng gần nhất (để chart vẫn hiển thị)
+     */
+    private List<Map<String, Object>> createEmptyRevenueTrends() {
+        List<Map<String, Object>> empty = new ArrayList<>();
+        LocalDate now = LocalDate.now();
+        java.time.format.DateTimeFormatter monthFormatter = java.time.format.DateTimeFormatter.ofPattern("MMM", java.util.Locale.ENGLISH);
         
-        return result;
+        for (int i = 5; i >= 0; i--) {
+            LocalDate month = now.minusMonths(i);
+            Map<String, Object> monthData = new HashMap<>();
+            monthData.put("month", month.format(monthFormatter));
+            monthData.put("revenue", 0.0);
+            empty.add(monthData);
+        }
+        return empty;
     }
 
     /**

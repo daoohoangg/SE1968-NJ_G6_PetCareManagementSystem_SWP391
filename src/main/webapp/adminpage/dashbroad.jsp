@@ -551,7 +551,7 @@
                                     <c:set var="percentage" value="${item.percentage}"/>
                                     <c:set var="categoryLower" value="${fn:toLowerCase(categoryName)}"/>
                                     <li>
-                                        <span class="dot 
+                                        <span class="dot
                                             <c:choose>
                                                 <c:when test="${fn:contains(categoryLower, 'groom')}">grooming</c:when>
                                                 <c:when test="${fn:contains(categoryLower, 'vet') || fn:contains(categoryLower, 'medical')}">veterinary</c:when>
@@ -735,23 +735,69 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const revenueCtx = document.getElementById('revenueChart');
-    if (revenueCtx) {
-        <c:choose>
+    // Đợi DOM và Chart.js load xong
+    document.addEventListener('DOMContentLoaded', function() {
+        // Kiểm tra Chart.js đã load chưa
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js is not loaded!');
+            return;
+        }
+        
+        // Helper function to create/destroy charts
+        function createChart(canvasId, config) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) {
+                console.error('Canvas not found:', canvasId);
+                return null;
+            }
+            
+            // Destroy existing chart if exists
+            const existingChart = Chart.getChart(canvas);
+            if (existingChart) {
+                existingChart.destroy();
+            }
+            
+            try {
+                const chart = new Chart(canvas, config);
+                console.log('Chart created successfully:', canvasId);
+                return chart;
+            } catch (e) {
+                console.error('Error creating chart:', canvasId, e);
+                return null;
+            }
+        }
+        
+        // Revenue Trends Chart - Data from appointments.total_amount (COMPLETED status only)
+        // Dữ liệu được lấy từ bảng appointments, cột total_amount, chỉ tính các appointments đã hoàn thành
+        
+        const revenueCtx = document.getElementById('revenueChart');
+        if (revenueCtx) {
+            console.log('Revenue chart canvas found');
+            
+            <c:choose>
             <c:when test="${not empty revenueTrends}">
-                const revenueTrends = [
+                // Dữ liệu revenue trends từ appointments.total_amount (đã được xử lý từ backend)
+                var revenueTrendsData = [
                     <c:forEach var="trend" items="${revenueTrends}" varStatus="status">
-                        {
-                            month: '<c:out value="${trend.month}"/>',
-                            revenue: ${trend.revenue}
-                        }<c:if test="${!status.last}">,</c:if>
+                    {
+                        month: '<c:out value="${trend.month}"/>',
+                        revenue: <c:choose>
+                            <c:when test="${trend.revenue != null}"><fmt:formatNumber value="${trend.revenue}" type="number" minFractionDigits="2" maxFractionDigits="2" groupingUsed="false"/></c:when>
+                            <c:otherwise>0</c:otherwise>
+                        </c:choose>
+                    }<c:if test="${!status.last}">,</c:if>
                     </c:forEach>
                 ];
                 
-                const labels = revenueTrends.map(t => t.month);
-                const data = revenueTrends.map(t => t.revenue);
+                console.log('Revenue Trends Data:', revenueTrendsData);
                 
-                new Chart(revenueCtx, {
+                const labels = revenueTrendsData.map(t => t.month);
+                const data = revenueTrendsData.map(t => {
+                    const val = parseFloat(t.revenue);
+                    return isNaN(val) ? 0 : val;
+                });
+                
+                createChart('revenueChart', {
                     type: 'line',
                     data: {
                         labels: labels,
@@ -805,14 +851,18 @@
                 });
             </c:when>
             <c:otherwise>
-                // Fallback to empty chart if no data
-                new Chart(revenueCtx, {
+                // Fallback: Hiển thị 6 tháng gần nhất với giá trị 0 nếu không có dữ liệu
+                console.warn('No revenue trends data available, showing empty chart');
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                const emptyData = [0, 0, 0, 0, 0, 0];
+                
+                createChart('revenueChart', {
                     type: 'line',
                     data: {
-                        labels: ['No Data'],
+                        labels: months,
                         datasets: [{
                             label: 'Revenue',
-                            data: [0],
+                            data: emptyData,
                             fill: true,
                             borderColor: '#2563eb',
                             backgroundColor: 'rgba(37,99,235,0.16)',
@@ -844,26 +894,33 @@
                 });
             </c:otherwise>
         </c:choose>
+    } else {
+        console.error('Revenue chart canvas not found!');
     }
 
+    // Service Distribution Chart
     const serviceCtx = document.getElementById('serviceChart');
     if (serviceCtx) {
+        console.log('Service chart canvas found');
+        
         <c:choose>
             <c:when test="${not empty serviceDistribution}">
-                const serviceDistribution = [
+                const serviceDistributionData = [
                     <c:forEach var="item" items="${serviceDistribution}" varStatus="status">
-                        {
-                            name: '<c:out value="${item.categoryName}"/>',
-                            percentage: ${item.percentage}
-                        }<c:if test="${!status.last}">,</c:if>
+                    {
+                        name: '<c:out value="${item.categoryName}"/>',
+                        percentage: ${item.percentage}
+                    }<c:if test="${!status.last}">,</c:if>
                     </c:forEach>
                 ];
                 
-                const labels = serviceDistribution.map(item => item.name);
-                const data = serviceDistribution.map(item => item.percentage);
+                console.log('Service Distribution Data:', serviceDistributionData);
+                
+                const labels = serviceDistributionData.map(item => item.name);
+                const data = serviceDistributionData.map(item => item.percentage);
                 const colors = ['#2563eb', '#16a34a', '#f97316', '#f59e0b', '#ef4444', '#a855f7', '#ec4899', '#14b8a6'];
                 
-                new Chart(serviceCtx, {
+                createChart('serviceChart', {
                     type: 'doughnut',
                     data: {
                         labels: labels,
@@ -893,7 +950,8 @@
                 });
             </c:when>
             <c:otherwise>
-                new Chart(serviceCtx, {
+                console.warn('No service distribution data available, showing empty chart');
+                createChart('serviceChart', {
                     type: 'doughnut',
                     data: {
                         labels: ['No Data'],
@@ -915,7 +973,10 @@
                 });
             </c:otherwise>
         </c:choose>
+    } else {
+        console.error('Service chart canvas not found!');
     }
+    }); // End DOMContentLoaded
 </script>
 <jsp:include page="../inc/chatbox.jsp" />
 <jsp:include page="../inc/footer.jsp" />

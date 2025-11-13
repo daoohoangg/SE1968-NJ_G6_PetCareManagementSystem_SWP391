@@ -27,7 +27,15 @@ public class DashboardController extends HttpServlet {
         req.setAttribute("upcomingSchedule", dashboardMetricsService.getUpcomingSchedule());
         req.setAttribute("emergencyContact", dashboardMetricsService.getEmergencyContactAdmin());
         req.setAttribute("serviceDistribution", dashboardMetricsService.getServiceDistributionByCategory());
-        req.setAttribute("revenueTrends", dashboardMetricsService.getRevenueTrendsLast6Months());
+        
+        // Load revenue trends with debug logging
+        var revenueTrends = dashboardMetricsService.getRevenueTrendsLast6Months();
+        System.out.println("=== DashboardController.doGet ===");
+        System.out.println("Revenue trends size: " + (revenueTrends != null ? revenueTrends.size() : "null"));
+        if (revenueTrends != null && !revenueTrends.isEmpty()) {
+            System.out.println("First item: " + revenueTrends.get(0));
+        }
+        req.setAttribute("revenueTrends", revenueTrends);
         req.setAttribute("staffPerformance", dashboardMetricsService.getStaffPerformanceStats());
 
         req.getRequestDispatcher("/adminpage/dashbroad.jsp").forward(req, resp);

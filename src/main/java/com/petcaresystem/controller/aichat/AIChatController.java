@@ -33,7 +33,7 @@ public class AIChatController extends HttpServlet {
 
         try {
             // 1) Lấy API key từ ENV — KHÔNG hardcode
-            String apiKey = "AIzaSyDfVy3S60vku_UkWQzpBGdyNSRAklc3mCM";
+            String apiKey = "AIzaSyDHGqC7CS-iIl6JFyVw3GrksUgVLT5fjKU";
             if (apiKey == null || apiKey.isBlank()) {
                 resp.setStatus(500);
                 resp.getWriter().write("{\"error\":\"GEMINI_API_KEY is missing (set it on server)\"}");

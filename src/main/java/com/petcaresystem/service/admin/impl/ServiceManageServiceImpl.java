@@ -62,6 +62,12 @@ public class ServiceManageServiceImpl implements IServiceManageService {
         if (!validateBase(s)) return false;
         // bắt buộc có category entity
         if (s.getCategory() == null || s.getCategory().getCategoryId() <= 0) return false;
+        
+        // Kiểm tra tên service không được trùng với service khác
+        if (serviceDAO.isServiceNameExists(s.getServiceName(), null)) {
+            return false; // Tên đã tồn tại
+        }
+        
         // có thể load lại entity sạch từ DB để tránh detached
         ServiceCategory cat = categoryDAO.getById(s.getCategory().getCategoryId());
         if (cat == null) return false;
@@ -73,6 +79,11 @@ public class ServiceManageServiceImpl implements IServiceManageService {
     public boolean updateService(Service s) {
         if (s == null || s.getServiceId() <= 0) return false;
         if (!validateNamePrice(s.getServiceName(), s.getPrice())) return false;
+
+        // Kiểm tra tên service không được trùng với service khác (trừ chính nó)
+        if (serviceDAO.isServiceNameExists(s.getServiceName(), s.getServiceId())) {
+            return false; // Tên đã tồn tại ở service khác
+        }
 
         if (s.getCategory() != null && s.getCategory().getCategoryId() > 0) {
             ServiceCategory cat = categoryDAO.getById(s.getCategory().getCategoryId());
@@ -105,12 +116,17 @@ public class ServiceManageServiceImpl implements IServiceManageService {
         return categoryDAO.getById(id);
     }
 
-    // ===== “Move-from-controller” helpers (nhận raw params) =====
+    // ===== "Move-from-controller" helpers (nhận raw params) =====
     @Override
     public boolean createService(String serviceName, String description, BigDecimal price,
                                  Integer durationMinutes, Integer categoryId, boolean isActive) {
         if (!validateNamePrice(serviceName, price)) return false;
         if (categoryId == null || categoryId <= 0) return false;
+
+        // Kiểm tra tên service không được trùng với service khác
+        if (serviceDAO.isServiceNameExists(serviceName, null)) {
+            return false; // Tên đã tồn tại
+        }
 
         ServiceCategory cat = categoryDAO.getById(categoryId);
         if (cat == null) return false;
@@ -134,6 +150,11 @@ public class ServiceManageServiceImpl implements IServiceManageService {
 
         Service s = serviceDAO.getServiceById(serviceId);
         if (s == null) return false;
+
+        // Kiểm tra tên service không được trùng với service khác (trừ chính nó)
+        if (serviceDAO.isServiceNameExists(serviceName, serviceId)) {
+            return false; // Tên đã tồn tại ở service khác
+        }
 
         s.setServiceName(serviceName);
         s.setDescription(description);
@@ -160,5 +181,10 @@ public class ServiceManageServiceImpl implements IServiceManageService {
         if (name == null || name.trim().isEmpty()) return false;
         if (price == null || price.signum() <= 0) return false;
         return true;
+    }
+
+    @Override
+    public boolean isServiceNameExists(String serviceName, Integer excludeServiceId) {
+        return serviceDAO.isServiceNameExists(serviceName, excludeServiceId);
     }
 }

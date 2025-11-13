@@ -544,8 +544,8 @@
                     <div class="config-field">
                         <label>AI Creativity Level</label>
                         <div class="slider-row">
-                            <input id="creativitySlider" type="range" min="0" max="100" value="40" />
-                            <span class="slider-value" id="creativityValue">40%</span>
+                            <input id="creativitySlider" type="range" min="0" max="100" value="${creativityLevel != null ? creativityLevel : 40}" />
+                            <span class="slider-value" id="creativityValue">${creativityLevel != null ? creativityLevel : 40}%</span>
                         </div>
                         <small style="display:block;margin-top:6px;font-size:12px;color:var(--muted);">
                             Lower = more focused, Higher = more creative responses.
@@ -559,7 +559,7 @@
 
                 <div class="config-field">
                     <label for="systemPrompt">System Prompt</label>
-                    <textarea id="systemPrompt" placeholder="Enter your system prompt here...">You are a helpful AI assistant for a pet care management system. Provide professional, caring, and accurate advice about pet care services, scheduling, and customer support. Always prioritise pet welfare and customer satisfaction.</textarea>
+                    <textarea id="systemPrompt" placeholder="Enter your system prompt here..."><c:out value="${systemPrompt != null ? systemPrompt : ''}" /></textarea>
                     <div id="promptStats" style="margin-top: 8px; font-size: 12px; color: var(--muted);">
                         <span id="promptLength">0</span> characters
                     </div>
@@ -642,22 +642,57 @@
             }
         }
 
-        // Reset configuration
-        function resetConfiguration() {
+        // Reset configuration - Load default from database
+        async function resetConfiguration() {
             if (confirm('Are you sure you want to reset the configuration to default values?')) {
-                if (systemPrompt) {
-                    systemPrompt.value = 'You are a helpful AI assistant for a pet care management system. Provide professional, caring, and accurate advice about pet care services, scheduling, and customer support. Always prioritise pet welfare and customer satisfaction.';
-                    updatePromptLength();
-                }
-                
-                if (slider) {
-                    slider.value = 40;
-                    if (valueLabel) {
-                        valueLabel.textContent = slider.value + '%';
+                try {
+                    // Load current configuration from database
+                    const response = await fetch('<%= request.getContextPath() %>/admin/ai/current', {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.configuration) {
+                            const config = data.configuration;
+                            
+                            // Reset system prompt from database
+                            if (systemPrompt && config.prompt) {
+                                systemPrompt.value = config.prompt;
+                                updatePromptLength();
+                            }
+                            
+                            // Reset creativity level from database
+                            if (slider && config.creativityLevel != null) {
+                                slider.value = config.creativityLevel;
+                                if (valueLabel) {
+                                    valueLabel.textContent = slider.value + '%';
+                                }
+                            }
+                            
+                            showNotification('Configuration reset to database values', 'success');
+                        } else {
+                            // Fallback if no config in database
+                            if (systemPrompt) {
+                                systemPrompt.value = '';
+                                updatePromptLength();
+                            }
+                            if (slider) {
+                                slider.value = 40;
+                                if (valueLabel) {
+                                    valueLabel.textContent = slider.value + '%';
+                                }
+                            }
+                            showNotification('Configuration reset (no database config found)', 'info');
+                        }
+                    } else {
+                        throw new Error('Failed to load configuration');
                     }
+                } catch (error) {
+                    console.error('Reset config error:', error);
+                    showNotification('Error loading configuration: ' + error.message, 'error');
                 }
-                
-                showNotification('Configuration reset to default values', 'info');
             }
         }
         

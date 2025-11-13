@@ -44,6 +44,142 @@ public class ReportController extends HttpServlet {
                 writeErrorResponse(resp, "Internal server error: " + e.getMessage());
             }
         } else {
+            // Load initial data for reports page - lấy từ appointments có status COMPLETED
+            // Monthly Revenue Trend thống kê trong 1 tháng (tháng hiện tại)
+            // Trục x: các ngày trong tháng (1, 2, 3, ..., 31)
+            // Trục y: doanh thu (total_amount từ appointments COMPLETED)
+            LocalDate now = LocalDate.now();
+            LocalDate defaultStart = now.withDayOfMonth(1); // Đầu tháng hiện tại
+            LocalDate defaultEnd = now; // Ngày hiện tại
+            
+            // Load daily revenue for current month - Monthly Revenue Trend
+            List<Map<String, Object>> dailyRevenueRaw = appointmentDAO.getDailyRevenueByMonth(now.getYear(), now.getMonthValue());
+            
+            // Convert để frontend dễ sử dụng
+            List<Map<String, Object>> initialDailyRevenue = new ArrayList<>();
+            for (Map<String, Object> dayData : dailyRevenueRaw) {
+                Map<String, Object> converted = new HashMap<>();
+                converted.put("day", dayData.get("day"));
+                
+                Object revenueObj = dayData.get("revenue");
+                double revenue = 0.0;
+                if (revenueObj instanceof java.math.BigDecimal) {
+                    revenue = ((java.math.BigDecimal) revenueObj).doubleValue();
+                } else if (revenueObj instanceof Number) {
+                    revenue = ((Number) revenueObj).doubleValue();
+                }
+                converted.put("revenue", revenue);
+                initialDailyRevenue.add(converted);
+            }
+            
+            System.out.println("=== ReportController - Loading daily revenue data ===");
+            System.out.println("Month: " + now.getYear() + "-" + now.getMonthValue());
+            System.out.println("Daily revenue data size: " + initialDailyRevenue.size());
+            
+            req.setAttribute("initialDailyRevenue", initialDailyRevenue);
+            req.setAttribute("defaultStartDate", defaultStart.toString());
+            req.setAttribute("defaultEndDate", defaultEnd.toString());
+            
+            // Load total revenue from completed appointments - tổng các total_amount của TẤT CẢ appointments có status COMPLETED
+            // Không filter theo date range để hiển thị tổng tất cả
+            BigDecimal totalRevenueAmount = appointmentDAO.getTotalRevenueFromAppointments(null, null);
+            double totalRevenue = totalRevenueAmount != null ? totalRevenueAmount.doubleValue() : 0.0;
+            req.setAttribute("totalRevenue", totalRevenue);
+            
+            // Load total appointments - tổng TẤT CẢ appointments ở mọi status (không filter theo thời gian)
+            long totalAppointments = reportMetricsService.countAppointments(null, null);
+            req.setAttribute("totalAppointments", totalAppointments);
+            
+            // Load completed appointments để tính completion rate và avg transaction
+            // Completed appointments cũng lấy tất cả để tính completion rate chính xác
+            long completedAppointments = reportMetricsService.countCompletedAppointments(null, null);
+            double completionRate = totalAppointments > 0 
+                    ? (completedAppointments * 100.0) / totalAppointments 
+                    : 0.0;
+            req.setAttribute("completionRate", Math.round(completionRate * 10.0) / 10.0);
+            
+            // Tính avg transaction = tổng tiền / số appointments đã hoàn thành (status COMPLETED)
+            // Total revenue đã là tổng tất cả, completedAppointments cũng là tổng tất cả
+            double avgTransaction = completedAppointments > 0 
+                    ? totalRevenue / completedAppointments 
+                    : 0.0;
+            req.setAttribute("avgTransaction", Math.round(avgTransaction * 100.0) / 100.0);
+            
+            // Load revenue by service category - Detailed Financial Report
+            // Thống kê doanh thu theo từng service category trong TOÀN BỘ thời gian (không filter theo date range)
+            List<Map<String, Object>> serviceRevenueRaw = appointmentDAO.getRevenueByServiceCategory(null, null);
+            
+            // Tính tổng revenue để tính percentage
+            double totalRevenueForPercentage = serviceRevenueRaw.stream()
+                    .mapToDouble(s -> {
+                        Object rev = s.get("revenue");
+                        if (rev instanceof BigDecimal) {
+                            return ((BigDecimal) rev).doubleValue();
+                        } else if (rev instanceof Number) {
+                            return ((Number) rev).doubleValue();
+                        }
+                        return 0.0;
+                    })
+                    .sum();
+            
+            // Convert và tính percentage
+            List<Map<String, Object>> serviceRevenue = new ArrayList<>();
+            for (Map<String, Object> raw : serviceRevenueRaw) {
+                Map<String, Object> serviceData = new HashMap<>();
+                serviceData.put("name", raw.get("name"));
+                serviceData.put("bookings", raw.get("bookings"));
+                
+                Object revenueObj = raw.get("revenue");
+                double revenue = 0.0;
+                if (revenueObj instanceof BigDecimal) {
+                    revenue = ((BigDecimal) revenueObj).doubleValue();
+                } else if (revenueObj instanceof Number) {
+                    revenue = ((Number) revenueObj).doubleValue();
+                }
+                serviceData.put("revenue", revenue);
+                serviceData.put("avgPrice", raw.get("avgPrice"));
+                
+                // Tính percentage
+                double percentage = totalRevenueForPercentage > 0 
+                        ? (revenue / totalRevenueForPercentage) * 100 
+                        : 0.0;
+                serviceData.put("percentage", Math.round(percentage));
+                
+                serviceRevenue.add(serviceData);
+            }
+            
+            System.out.println("=== ReportController - Service Revenue Data ===");
+            System.out.println("Raw data size: " + serviceRevenueRaw.size());
+            System.out.println("Processed data size: " + serviceRevenue.size());
+            if (!serviceRevenue.isEmpty()) {
+                System.out.println("First service: " + serviceRevenue.get(0));
+            } else {
+                System.out.println("WARNING: serviceRevenue is EMPTY!");
+            }
+            
+            req.setAttribute("serviceRevenue", serviceRevenue);
+            
+            // Load service volume by month - số service được booking theo các tháng (12 tháng)
+            List<Map<String, Object>> serviceVolumeRaw = appointmentDAO.getServiceVolumeByMonth(12);
+            List<Map<String, Object>> initialServiceVolume = new ArrayList<>();
+            for (Map<String, Object> monthData : serviceVolumeRaw) {
+                Map<String, Object> converted = new HashMap<>();
+                converted.put("month", monthData.get("month"));
+                
+                Object completedObj = monthData.get("completed");
+                long completed = 0;
+                if (completedObj instanceof Number) {
+                    completed = ((Number) completedObj).longValue();
+                }
+                converted.put("completed", completed);
+                initialServiceVolume.add(converted);
+            }
+            req.setAttribute("initialServiceVolume", initialServiceVolume);
+            
+            // Load staff performance statistics - thống kê năng suất và tổng doanh thu từ appointments
+            List<Map<String, Object>> staffPerformance = dashboardMetricsService.getStaffPerformanceStats();
+            req.setAttribute("staffPerformance", staffPerformance);
+            
             req.getRequestDispatcher("/adminpage/reports.jsp").forward(req, resp);
         }
     }
@@ -154,11 +290,13 @@ public class ReportController extends HttpServlet {
     
     /**
      * Generate financial report data
+     * Lấy dữ liệu từ bảng appointments có status = 'COMPLETED'
      */
     private Map<String, Object> generateFinancialData(LocalDate start, LocalDate end) {
         Map<String, Object> financial = new HashMap<>();
         
-        // Monthly revenue trend - use real data from database
+        // Monthly revenue trend - lấy từ appointments.total_amount WHERE status = 'COMPLETED'
+        // Data source: appointments table, total_amount column, only COMPLETED appointments
         List<Map<String, Object>> monthlyRevenueRaw = appointmentDAO.getMonthlyRevenueByDateRange(start, end);
         List<Map<String, Object>> monthlyRevenue = new ArrayList<>();
         for (Map<String, Object> monthData : monthlyRevenueRaw) {
@@ -177,44 +315,51 @@ public class ReportController extends HttpServlet {
         }
         financial.put("monthlyRevenue", monthlyRevenue);
         
-        // Revenue by service
+        // Revenue by service category - thống kê doanh thu theo từng service category trong TOÀN BỘ thời gian
+        // Không filter theo date range để hiển thị tổng tất cả
+        List<Map<String, Object>> serviceRevenueRaw = appointmentDAO.getRevenueByServiceCategory(null, null);
+        
+        // Tính tổng revenue để tính percentage
+        double totalRevenueForPercentage = serviceRevenueRaw.stream()
+                .mapToDouble(s -> {
+                    Object rev = s.get("revenue");
+                    if (rev instanceof BigDecimal) {
+                        return ((BigDecimal) rev).doubleValue();
+                    } else if (rev instanceof Number) {
+                        return ((Number) rev).doubleValue();
+                    }
+                    return 0.0;
+                })
+                .sum();
+        
+        // Convert và tính percentage, growth (tạm thời để 0% vì cần so sánh với kỳ trước)
         List<Map<String, Object>> serviceRevenue = new ArrayList<>();
-        
-        Map<String, Object> service1 = new HashMap<>();
-        service1.put("name", "Dog Grooming");
-        service1.put("bookings", 35);
-        service1.put("revenue", 8750);
-        service1.put("avgPrice", 250.0);
-        service1.put("percentage", 35);
-        service1.put("growth", "+18%");
-        serviceRevenue.add(service1);
-        
-        Map<String, Object> service2 = new HashMap<>();
-        service2.put("name", "Cat Grooming");
-        service2.put("bookings", 25);
-        service2.put("revenue", 5500);
-        service2.put("avgPrice", 220.0);
-        service2.put("percentage", 25);
-        service2.put("growth", "+12%");
-        serviceRevenue.add(service2);
-        
-        Map<String, Object> service3 = new HashMap<>();
-        service3.put("name", "Health Checkup");
-        service3.put("bookings", 20);
-        service3.put("revenue", 6300);
-        service3.put("avgPrice", 315.0);
-        service3.put("percentage", 20);
-        service3.put("growth", "0%");
-        serviceRevenue.add(service3);
-        
-        Map<String, Object> service4 = new HashMap<>();
-        service4.put("name", "Vaccination");
-        service4.put("bookings", 15);
-        service4.put("revenue", 4800);
-        service4.put("avgPrice", 320.0);
-        service4.put("percentage", 15);
-        service4.put("growth", "-6%");
-        serviceRevenue.add(service4);
+        for (Map<String, Object> raw : serviceRevenueRaw) {
+            Map<String, Object> serviceData = new HashMap<>();
+            serviceData.put("name", raw.get("name"));
+            serviceData.put("bookings", raw.get("bookings"));
+            
+            Object revenueObj = raw.get("revenue");
+            double revenue = 0.0;
+            if (revenueObj instanceof BigDecimal) {
+                revenue = ((BigDecimal) revenueObj).doubleValue();
+            } else if (revenueObj instanceof Number) {
+                revenue = ((Number) revenueObj).doubleValue();
+            }
+            serviceData.put("revenue", revenue);
+            serviceData.put("avgPrice", raw.get("avgPrice"));
+            
+            // Tính percentage
+            double percentage = totalRevenueForPercentage > 0 
+                    ? (revenue / totalRevenueForPercentage) * 100 
+                    : 0.0;
+            serviceData.put("percentage", Math.round(percentage));
+            
+            // Growth tạm thời để 0% (cần so sánh với kỳ trước để tính)
+            serviceData.put("growth", "0%");
+            
+            serviceRevenue.add(serviceData);
+        }
         
         financial.put("serviceRevenue", serviceRevenue);
         
@@ -227,26 +372,31 @@ public class ReportController extends HttpServlet {
     private Map<String, Object> generateOperationalData(LocalDate start, LocalDate end) {
         Map<String, Object> operational = new HashMap<>();
         
-        // Service volume trends
-        List<Map<String, Object>> serviceVolume = new ArrayList<>();
-        LocalDate current = start.withDayOfMonth(1);
-        int index = 0;
+        // Service volume trends - số service được booking theo các tháng (12 tháng)
+        // Lấy từ database: đếm số service từ appointment_services của appointments COMPLETED
+        List<Map<String, Object>> serviceVolumeRaw = appointmentDAO.getServiceVolumeByMonth(12);
         
-        while (!current.isAfter(end)) {
-            Map<String, Object> month = new HashMap<>();
-            month.put("month", current.format(DateTimeFormatter.ofPattern("MMM")));
-            month.put("completed", 84 + (index * 7) + new Random().nextInt(10));
-            serviceVolume.add(month);
+        // Convert để frontend dễ sử dụng
+        List<Map<String, Object>> serviceVolume = new ArrayList<>();
+        for (Map<String, Object> monthData : serviceVolumeRaw) {
+            Map<String, Object> converted = new HashMap<>();
+            converted.put("month", monthData.get("month"));
             
-            current = current.plusMonths(1);
-            index++;
+            Object completedObj = monthData.get("completed");
+            long completed = 0;
+            if (completedObj instanceof Number) {
+                completed = ((Number) completedObj).longValue();
+            }
+            converted.put("completed", completed);
+            serviceVolume.add(converted);
         }
+        
         operational.put("serviceVolume", serviceVolume);
         
         // Customer acquisition
         List<Map<String, Object>> customerAcquisition = new ArrayList<>();
-        current = start.withDayOfMonth(1);
-        index = 0;
+        LocalDate current = start.withDayOfMonth(1);
+        int index = 0;
         
         while (!current.isAfter(end)) {
             Map<String, Object> month = new HashMap<>();
@@ -280,13 +430,16 @@ public class ReportController extends HttpServlet {
         Map<String, Object> stats = new HashMap<>();
 
         // Get total revenue from appointments with status COMPLETED
-        BigDecimal revenueAmount = appointmentDAO.getTotalRevenueFromAppointments(start, end);
+        // Total Revenue = tổng các total_amount của TẤT CẢ appointments có status COMPLETED (không filter theo date range)
+        BigDecimal revenueAmount = appointmentDAO.getTotalRevenueFromAppointments(null, null);
         double totalRevenue = revenueAmount != null ? revenueAmount.doubleValue() : 0.0;
         stats.put("totalRevenue", totalRevenue);
         stats.put("revenueGrowth", "+12.5%");
 
-        long totalAppointments = reportMetricsService.countAppointments(start, end);
-        long completedAppointments = reportMetricsService.countCompletedAppointments(start, end);
+        // Total Appointments = tổng TẤT CẢ appointments ở mọi status (không filter theo thời gian)
+        long totalAppointments = reportMetricsService.countAppointments(null, null);
+        // Completed Appointments cũng lấy tất cả để tính completion rate chính xác
+        long completedAppointments = reportMetricsService.countCompletedAppointments(null, null);
         stats.put("totalAppointments", totalAppointments);
 
         double completionRate = totalAppointments > 0
@@ -294,8 +447,9 @@ public class ReportController extends HttpServlet {
                 : 0.0;
         stats.put("completionRate", Math.round(completionRate * 10.0) / 10.0);
 
-        double avgTransaction = totalAppointments > 0
-                ? totalRevenue / totalAppointments
+        // Avg Transaction = tổng tiền / số appointments đã hoàn thành (status COMPLETED)
+        double avgTransaction = completedAppointments > 0
+                ? totalRevenue / completedAppointments
                 : 0.0;
         stats.put("avgTransaction", Math.round(avgTransaction * 100.0) / 100.0);
         stats.put("topService", "Dog Grooming");

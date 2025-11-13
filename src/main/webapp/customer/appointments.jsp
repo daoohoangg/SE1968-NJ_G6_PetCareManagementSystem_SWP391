@@ -136,10 +136,19 @@
                         <select class="form-select" disabled>
                             <option>(You don’t have any pets yet – please add one first)</option>
                         </select>
-                        <% } else { %>
+                        <% } else { 
+                            // Loại bỏ duplicate pets dựa trên ID
+                            Set<Long> seenIds = new HashSet<>();
+                            List<Pet> uniquePets = new ArrayList<>();
+                            for (Pet p : pets) {
+                                if (p != null && p.getIdpet() != null && seenIds.add(p.getIdpet())) {
+                                    uniquePets.add(p);
+                                }
+                            }
+                        %>
                         <select id="petId" name="petId" class="form-select" required>
                             <option value="" hidden>Select a pet</option>
-                            <% for (Pet p : pets) { if (p == null) continue; %>
+                            <% for (Pet p : uniquePets) { %>
                             <option value="<%= p.getIdpet() %>">
                                 <%= p.getName() %><%= (p.getBreed()!=null && !p.getBreed().isEmpty()) ? " - " + p.getBreed() : "" %>
                             </option>
@@ -208,14 +217,14 @@
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label required">Appointment Date & Time</label>
+                        <label class="form-label">Appointment Date & Time</label>
                         <div class="row g-2">
                             <div class="col-6">
                                 <div class="input-group">
                                     <span class="input-group-text bg-light">
                                         <i class="bi bi-calendar3 text-primary"></i>
                                     </span>
-                                    <input type="date" id="appointmentDate" class="form-control" required>
+                                    <input type="date" id="appointmentDate" class="form-control">
                                 </div>
                                 <small class="text-muted">Date</small>
                             </div>
@@ -224,12 +233,12 @@
                                     <span class="input-group-text bg-light">
                                         <i class="bi bi-clock text-primary"></i>
                                     </span>
-                                    <input type="time" id="appointmentTime" class="form-control" required>
+                                    <input type="time" id="appointmentTime" class="form-control">
                                 </div>
                                 <small class="text-muted">Time</small>
                             </div>
                         </div>
-                        <input type="hidden" id="startAt" name="startAt" required>
+                        <input type="hidden" id="startAt" name="startAt">
                         <small class="text-muted d-block mt-2">
                             <i class="bi bi-info-circle me-1"></i>
                             Please select a date and time for your appointment
@@ -487,36 +496,38 @@
         
         // Form validation before submit
         function validateAppointmentForm() {
-            const form = document.getElementById('appointmentForm');
-            if (!form) return true;
+            // Update datetime nếu có giá trị
+            if (dateInput && timeInput && hiddenInput) {
+                updateDateTime();
+            }
             
+            // Nếu có chọn thời gian, kiểm tra không được chọn thời gian trong quá khứ
             const date = dateInput ? dateInput.value : '';
             const time = timeInput ? timeInput.value : '';
             const hiddenStartAt = hiddenInput ? hiddenInput.value : '';
             
-            // Validate date and time are selected
-            if (!date || date.trim() === '' || !time || time.trim() === '') {
-                alert('Vui lòng chọn cả ngày và giờ cho cuộc hẹn.');
-                if (dateInput && !dateInput.value) dateInput.focus();
-                else if (timeInput && !timeInput.value) timeInput.focus();
-                return false;
-            }
-            
-            // Validate hidden input has valid value
-            if (!hiddenStartAt || hiddenStartAt.trim() === '' || 
-                hiddenStartAt === 'T' || hiddenStartAt.startsWith('T') ||
-                hiddenStartAt.includes('--') || hiddenStartAt.length < 10) {
-                // Try to update it
-                updateDateTime();
-                const updatedValue = hiddenInput ? hiddenInput.value : '';
-                if (!updatedValue || updatedValue.trim() === '' || 
-                    updatedValue === 'T' || updatedValue.startsWith('T')) {
-                    alert('Thời gian không hợp lệ. Vui lòng chọn lại ngày và giờ.');
-                    return false;
+            // Chỉ validate nếu có chọn cả date và time
+            if (date && time && hiddenStartAt && hiddenStartAt.trim() !== '' && 
+                hiddenStartAt !== 'T' && !hiddenStartAt.startsWith('T') &&
+                !hiddenStartAt.includes('--') && hiddenStartAt.length >= 10) {
+                try {
+                    // Parse datetime từ hidden input (format: yyyy-MM-ddTHH:mm)
+                    const selectedDateTime = new Date(hiddenStartAt);
+                    const now = new Date();
+                    
+                    // Kiểm tra thời gian đã chọn có phải là quá khứ không
+                    if (selectedDateTime < now) {
+                        alert('Không thể đặt lịch hẹn trong quá khứ. Vui lòng chọn thời gian trong tương lai.');
+                        if (dateInput) dateInput.focus();
+                        return false;
+                    }
+                } catch (e) {
+                    // Nếu parse lỗi, bỏ qua validation
+                    console.warn('Error parsing datetime:', e);
                 }
             }
             
-            return true;
+            return true; // Cho phép submit nếu không có thời gian hoặc thời gian hợp lệ
         }
         
         // Voucher handling - declare first so it's available everywhere
