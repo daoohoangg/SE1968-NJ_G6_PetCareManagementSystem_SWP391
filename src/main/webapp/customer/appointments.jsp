@@ -238,6 +238,12 @@
                                 <small class="text-muted">Time</small>
                             </div>
                         </div>
+                        <div class="mt-2">
+                            <button type="button" id="checkTimeBtn" class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-check-circle me-1"></i>Check time
+                            </button>
+                            <div id="timeCheckResult" class="mt-2" style="display: none;"></div>
+                        </div>
                         <input type="hidden" id="startAt" name="startAt">
                         <small class="text-muted d-block mt-2">
                             <i class="bi bi-info-circle me-1"></i>
@@ -494,6 +500,30 @@
         // Initial update (only if both date and time have values)
         setTimeout(updateDateTime, 100);
         
+        // Flag để track xem thời gian đã được check và hợp lệ chưa
+        let isTimeValidated = false;
+        let lastCheckedDate = '';
+        let lastCheckedTime = '';
+        
+        // Reset flag khi date hoặc time thay đổi
+        function resetTimeValidation() {
+            isTimeValidated = false;
+            lastCheckedDate = '';
+            lastCheckedTime = '';
+            const timeCheckResult = document.getElementById('timeCheckResult');
+            if (timeCheckResult) {
+                timeCheckResult.style.display = 'none';
+            }
+        }
+        
+        // Thêm event listener để reset khi date hoặc time thay đổi
+        if (dateInput) {
+            dateInput.addEventListener('change', resetTimeValidation);
+        }
+        if (timeInput) {
+            timeInput.addEventListener('change', resetTimeValidation);
+        }
+        
         // Form validation before submit
         function validateAppointmentForm() {
             // Update datetime nếu có giá trị
@@ -517,8 +547,24 @@
                     
                     // Kiểm tra thời gian đã chọn có phải là quá khứ không
                     if (selectedDateTime < now) {
-                        alert('Không thể đặt lịch hẹn trong quá khứ. Vui lòng chọn thời gian trong tương lai.');
+                        alert('Cannot book appointment in the past. Please select a future time.');
                         if (dateInput) dateInput.focus();
+                        return false;
+                    }
+                    
+                    // Kiểm tra thời gian đã được check và hợp lệ chưa
+                    // Nếu date hoặc time đã thay đổi so với lần check cuối, cần check lại
+                    if (date !== lastCheckedDate || time !== lastCheckedTime) {
+                        isTimeValidated = false;
+                    }
+                    
+                    // Nếu thời gian chưa được check hoặc không hợp lệ, không cho submit
+                    if (!isTimeValidated) {
+                        alert('Please check if the selected time is valid before submitting. Click "Check Time" button to verify.');
+                        if (checkTimeBtn) {
+                            checkTimeBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            checkTimeBtn.focus();
+                        }
                         return false;
                     }
                 } catch (e) {
@@ -527,7 +573,73 @@
                 }
             }
             
-            return true; // Cho phép submit nếu không có thời gian hoặc thời gian hợp lệ
+            return true; // Cho phép submit nếu không có thời gian hoặc thời gian đã được check và hợp lệ
+        }
+        window.validateAppointmentForm = validateAppointmentForm; // expose for inline onsubmit
+        
+        // Check time availability button handler
+        const checkTimeBtn = document.getElementById('checkTimeBtn');
+        const timeCheckResult = document.getElementById('timeCheckResult');
+        
+        if (checkTimeBtn) {
+            checkTimeBtn.addEventListener('click', function() {
+                const date = dateInput ? dateInput.value : '';
+                const time = timeInput ? timeInput.value : '';
+                
+                if (!date || !time) {
+                    timeCheckResult.innerHTML = '<div class="alert alert-warning py-2 px-3 mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Please select date and time</div>';
+                    timeCheckResult.style.display = 'block';
+                    isTimeValidated = false;
+                    return;
+                }
+                
+                // Disable button và hiển thị loading
+                checkTimeBtn.disabled = true;
+                checkTimeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Checking...';
+                timeCheckResult.style.display = 'none';
+                
+                // Gọi API để check thời gian
+                const url = '<%= ctx %>/customer/appointments?action=checkTime&date=' + encodeURIComponent(date) + '&time=' + encodeURIComponent(time);
+                
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Enable button lại
+                        checkTimeBtn.disabled = false;
+                        checkTimeBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Check Time';
+                        
+                        // Hiển thị kết quả
+                        timeCheckResult.style.display = 'block';
+                        if (data.valid) {
+                            // Thời gian hợp lệ - set flag và lưu date/time đã check
+                            isTimeValidated = true;
+                            lastCheckedDate = date;
+                            lastCheckedTime = time;
+                            timeCheckResult.innerHTML = '<div class="alert alert-success py-2 px-3 mb-0"><i class="bi bi-check-circle-fill me-2"></i>' + data.message + '</div>';
+                        } else {
+                            // Thời gian không hợp lệ - reset flag
+                            isTimeValidated = false;
+                            lastCheckedDate = '';
+                            lastCheckedTime = '';
+                            timeCheckResult.innerHTML = '<div class="alert alert-danger py-2 px-3 mb-0"><i class="bi bi-x-circle-fill me-2"></i>' + data.message + '</div>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking time:', error);
+                        // Enable button lại
+                        checkTimeBtn.disabled = false;
+                        checkTimeBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Check Time';
+                        
+                        // Reset flag khi có lỗi
+                        isTimeValidated = false;
+                        lastCheckedDate = '';
+                        lastCheckedTime = '';
+                        
+                        // Hiển thị lỗi
+                        timeCheckResult.style.display = 'block';
+                        timeCheckResult.innerHTML = '<div class="alert alert-danger py-2 px-3 mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Error when checking time. Please try again.</div>';
+                    });
+            });
         }
         
         // Voucher handling - declare first so it's available everywhere
